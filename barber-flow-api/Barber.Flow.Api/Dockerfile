@@ -7,15 +7,12 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# 👇 COPIAMOS EL CSPROJ REAL
-COPY ["Barber.Flow.Api/Barber.Flow.Api/Barber.Flow.Api.csproj", "Barber.Flow.Api/Barber.Flow.Api/"]
-RUN dotnet restore "Barber.Flow.Api/Barber.Flow.Api/Barber.Flow.Api.csproj"
+# ✅ RUTA CORRECTA SEGÚN ROOT DIRECTORY
+COPY ["Barber.Flow.Api/Barber.Flow.Api.csproj", "Barber.Flow.Api/"]
+RUN dotnet restore "Barber.Flow.Api/Barber.Flow.Api.csproj"
 
-# 👇 COPIAMOS TODO EL CONTEXTO
 COPY . .
-
-# 👇 NOS MOVEMOS AL DIRECTORIO CORRECTO
-WORKDIR "/src/Barber.Flow.Api/Barber.Flow.Api"
+WORKDIR "/src/Barber.Flow.Api"
 RUN dotnet build "Barber.Flow.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
