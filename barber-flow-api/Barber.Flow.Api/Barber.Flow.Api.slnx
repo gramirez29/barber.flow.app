@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="Barber.Flow.Api/Barber.Flow.Api.csproj" />
+    <Project Path="Barber.Flow.Application/Barber.Flow.Application.csproj" />
+    <Project Path="Barber.Flow.Domain/Barber.Flow.Domain.csproj" />
+    <Project Path="Barber.Flow.Infrastructure/Barber.Flow.Infrastructure.csproj" />
+  </Folder>
+</Solution>

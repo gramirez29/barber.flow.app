@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: barberflow-postgres
+    environment:
+      POSTGRES_DB: barberflow
+      POSTGRES_USER: barberflow_user
+      POSTGRES_PASSWORD: barberflow_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./barber-flow-api
+      dockerfile: Dockerfile
+    ports:
+      - "5119:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=barberflow;Username=barberflow_user;Password=barberflow_pass
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
