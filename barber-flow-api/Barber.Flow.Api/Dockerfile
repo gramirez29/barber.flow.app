@@ -7,20 +7,27 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Copiamos TODO el contexto primero (clave)
+# Copiamos TODO el contexto
 COPY . .
 
-# Debug visual (Railway lo mostrará en logs)
-RUN echo "==== FILE TREE ====" && ls -R .
+# 🔍 BUSCAMOS EL CSPROJ (esto es la clave)
+RUN echo "==== SEARCHING CSPROJ ====" \
+ && find . -name "*.csproj" -maxdepth 6
 
-# Ajustamos al path REAL que existe
-WORKDIR /src/Barber.Flow.Api/Barber.Flow.Api
-RUN dotnet restore "Barber.Flow.Api.csproj"
-RUN dotnet build "Barber.Flow.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
+# ⚠️ AJUSTA ESTE WORKDIR SEGÚN EL OUTPUT DEL find
+# (por ahora NO asumimos nada)
+WORKDIR /src
+
+# Intentamos restaurar usando path absoluto (lo corregimos luego)
+RUN dotnet restore $(find . -name "Barber.Flow.Api.csproj" | head -n 1)
+
+RUN dotnet build $(find . -name "Barber.Flow.Api.csproj" | head -n 1) \
+  -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "Barber.Flow.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish $(find . -name "Barber.Flow.Api.csproj" | head -n 1) \
+  -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
