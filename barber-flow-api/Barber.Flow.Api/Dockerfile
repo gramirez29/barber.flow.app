@@ -7,15 +7,15 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# ✅ RUTA REAL (DOS NIVELES)
-COPY ["Barber.Flow.Api/Barber.Flow.Api/Barber.Flow.Api.csproj", "Barber.Flow.Api/Barber.Flow.Api/"]
-RUN dotnet restore "Barber.Flow.Api/Barber.Flow.Api/Barber.Flow.Api.csproj"
-
-# Copiamos todo el contexto
+# Copiamos TODO el contexto primero (clave)
 COPY . .
 
-# Nos movemos al folder correcto
-WORKDIR "/src/Barber.Flow.Api/Barber.Flow.Api"
+# Debug visual (Railway lo mostrará en logs)
+RUN echo "==== FILE TREE ====" && ls -R .
+
+# Ajustamos al path REAL que existe
+WORKDIR /src/Barber.Flow.Api/Barber.Flow.Api
+RUN dotnet restore "Barber.Flow.Api.csproj"
 RUN dotnet build "Barber.Flow.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
