@@ -25,10 +25,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore Barber.Flow.Api/Barber.Flow.Api.csproj
 
       - name: Build project
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build Barber.Flow.Api/Barber.Flow.Api.csproj --configuration Release --no-restore
 
   deploy:
     name: Deploy to Railway
