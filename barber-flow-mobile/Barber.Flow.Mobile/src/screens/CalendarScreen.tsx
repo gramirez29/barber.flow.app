@@ -1,11 +1,17 @@
 import { StyleSheet, Text } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
-import { ScreenTitle } from '../components/ui/ScreenTitle';
-
+import { useNavigation, DrawerActions } from '@react-navigation/native';
 
 export const CalendarScreen = () => {
+    const navigation = useNavigation();
+
     return (
-        <ScreenLayout title='Calendar Screen Menu' backgroundColor='#659dd6' center>
+        <ScreenLayout
+            title='Calendar' 
+            backgroundColor='#659dd6'
+            center
+            onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+        >
             <Text style={{ fontSize: 28 }}>Calendar Screen</Text>
         </ScreenLayout>);
 }

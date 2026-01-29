@@ -7,16 +7,19 @@ interface ScreenLayoutProps {
     title?: string;
     backgroundColor?: string;
     center?: boolean;
+    onMenuPress?: () => void;
 }
 
 export const ScreenLayout = ({ 
     children,
     title,
     backgroundColor = '#F4F6F8',
-    center = false }: ScreenLayoutProps) => {
+    center = false,
+    onMenuPress,
+    }: ScreenLayoutProps) => {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor }, center && styles.center ]}>
-                {title && <Header title={title} />}
+                {title && <Header title={title} onMenuPress={onMenuPress} />}
 
                 <View style={[styles.content, center && styles.center]}>
                     {children}

@@ -10,9 +10,9 @@ interface HeaderProps {
 export const Header = ({ title, onMenuPress }: HeaderProps) => {
     return (
         <View style={ styles.container }>
-            <TouchableOpacity onPress={onMenuPress}>
+            {/* <TouchableOpacity onPress={onMenuPress}>
                 <Ionicons name="menu" size={24} color="#111" /> 
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <Text style={ styles.title }>{title}</Text>
 

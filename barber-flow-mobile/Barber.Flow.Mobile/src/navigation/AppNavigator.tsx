@@ -3,6 +3,7 @@ import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { CalendarScreen } from '../screens/CalendarScreen';
 import { CreateAppointmentScreen } from '../screens/CreateAppointmentScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import { ClientsScreen } from '../screens/ClientsScreen';
 import { fonts } from '../theme/fonts';
 import { colors } from '../theme/colors';
@@ -11,6 +12,7 @@ export type AppTabParamList = {
   Calendar: undefined;
   Clients: undefined;
   CreateAppointment: undefined;
+  SettingsScreen: undefined;
 };
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
@@ -38,6 +40,9 @@ export const AppNavigator = () => {
                 case 'CreateAppointment':
                     iconName = 'add-circle-outline';
                     break;
+                case 'SettingsScreen':
+                    iconName = 'settings-outline';
+                    break;
             }
 
             return <Ionicons name={iconName!} size={size} color={color} />;
@@ -57,6 +62,11 @@ export const AppNavigator = () => {
         name="CreateAppointment"
         component={CreateAppointmentScreen}
         options={{ title: 'Create Appointment' }}
+      />
+      <Tab.Screen
+        name="SettingsScreen"
+        component={SettingsScreen}
+        options={{ title: 'Settings' }}
       />
     </Tab.Navigator>
   );
