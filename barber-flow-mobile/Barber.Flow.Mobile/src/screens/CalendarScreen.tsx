@@ -1,9 +1,12 @@
 import { StyleSheet, Text } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { Button } from 'react-native';
+import { useAppTheme } from '../theme/ThemeContext';
 
 export const CalendarScreen = () => {
     const navigation = useNavigation();
+    const { theme } = useAppTheme();
 
     return (
         <ScreenLayout
@@ -12,7 +15,7 @@ export const CalendarScreen = () => {
             center
             onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-            <Text style={{ fontSize: 28 }}>Calendar Screen</Text>
+            <Text style={[styles.text, { color: theme.colors.textPrimary }]}>Calendar Screen</Text>
         </ScreenLayout>);
 }
 
@@ -20,4 +23,5 @@ const styles = StyleSheet.create({
     text: {
         justifyContent: 'center',
         alignItems: 'center',
+        fontSize: 18,
     }});

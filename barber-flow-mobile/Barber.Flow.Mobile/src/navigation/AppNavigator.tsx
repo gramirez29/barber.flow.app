@@ -7,6 +7,7 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { ClientsScreen } from '../screens/ClientsScreen';
 import { fonts } from '../theme/fonts';
 import { colors } from '../theme/colors';
+import { useAppTheme } from '../theme/ThemeContext';
 
 export type AppTabParamList = {
   Calendar: undefined;
@@ -18,11 +19,15 @@ export type AppTabParamList = {
 const Tab = createBottomTabNavigator<AppTabParamList>();
 
 export const AppNavigator = () => {
+
+  const { theme } = useAppTheme();
+
   return (
     <Tab.Navigator screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.inactive,
+        tabBarStyle: { backgroundColor: theme.colors.surface },
+        tabBarActiveTintColor: theme.colors.tabActive,
+        tabBarInactiveTintColor: theme.colors.tabInactive,
         tabBarLabelStyle: {
             fontFamily: fonts.medium,
             fontSize: 12,
