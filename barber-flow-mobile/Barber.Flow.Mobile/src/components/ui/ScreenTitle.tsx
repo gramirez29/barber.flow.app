@@ -4,6 +4,7 @@ interface Props {
     children?: React.ReactNode;
 }
 
+{/* Componente para mostrar el título de cada pantalla */}
 export const ScreenTitle = ({ children }: Props) => {
     return (
         <Text style={styles.title}>{children}</Text>

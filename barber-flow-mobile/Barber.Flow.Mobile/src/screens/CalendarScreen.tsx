@@ -6,7 +6,7 @@ import { ScreenTitle } from '../components/ui/ScreenTitle';
 export const CalendarScreen = () => {
     return (
         <ScreenLayout title='Calendar Screen Menu' backgroundColor='#659dd6' center>
-            <Text style={{ fontSize: 28 }}>Calendar Screen</Text>
+            <Text style={{ fontSize: 28 }}>Calendar Screen (Soon)</Text>
         </ScreenLayout>);
 }
 

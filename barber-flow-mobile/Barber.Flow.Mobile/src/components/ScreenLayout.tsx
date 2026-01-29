@@ -1,6 +1,7 @@
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StyleSheet, View } from "react-native";
-import { Header } from "./ui/Header";
+import { AppHeader } from "./ui/AppHeader";
+import { useTheme } from "../hooks/useTheme";
 
 interface ScreenLayoutProps {
     children: React.ReactNode;
@@ -14,10 +15,16 @@ export const ScreenLayout = ({
     title,
     backgroundColor = '#F4F6F8',
     center = false }: ScreenLayoutProps) => {
-        return (
-            <SafeAreaView style={[styles.container, { backgroundColor }, center && styles.center ]}>
-                {title && <Header title={title} />}
 
+        const { colors } = useTheme();
+
+        return (
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.background }, center && styles.center ]}>
+
+                {/* Si "title" no se recibe AppHeader no se muestra */}
+                {title && <AppHeader title={title} />}
+
+                {/* Children corresponde a cada screen que se muestra en la pantalla */}
                 <View style={[styles.content, center && styles.center]}>
                     {children}
                 </View>
