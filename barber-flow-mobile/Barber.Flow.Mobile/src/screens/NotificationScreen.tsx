@@ -3,21 +3,20 @@ import { StyleSheet, Text } from "react-native";
 import { useAppTheme } from "../theme/ThemeContext";
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 
-export const ClientsScreen = () => {
-
+export const NotificationScreen = () => {
     const navigation = useNavigation();
     const { theme } = useAppTheme();
-
+    
     return (
         <ScreenLayout
-            title="Clients"
+            title="Notifications"
             backgroundColor={theme.colors.background}
             center
-            onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-            >
-                <Text style={[styles.text, { color: theme.colors.textPrimary }]}>
-                    Clients Screen
-                </Text>
+
+        >
+            <Text style={[styles.text, { color: theme.colors.textPrimary }]}>
+                Notification Screen
+            </Text>
         </ScreenLayout>
     );
 };

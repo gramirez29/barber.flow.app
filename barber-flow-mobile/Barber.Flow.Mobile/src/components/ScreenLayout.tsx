@@ -1,8 +1,7 @@
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StyleSheet, View } from "react-native";
 import { Header } from "./ui/Header";
-import { useAppTheme } from "../theme/ThemeContext";
-
+import { useNavigation } from "@react-navigation/native"; 
 interface ScreenLayoutProps {
     children: React.ReactNode;
     title?: string;
@@ -14,20 +13,21 @@ interface ScreenLayoutProps {
 export const ScreenLayout = ({ 
     children,
     title,
-    backgroundColor, // establecer color de fondo desde las props si es necesario
+    backgroundColor,
     center = false,
     onMenuPress,
     }: ScreenLayoutProps) => {
 
-        const { theme } = useAppTheme();
+        const navigation = useNavigation<any>();
 
         return (
-            <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }, center && styles.center ]}>
-                {title && <Header title={title} onMenuPress={onMenuPress} />}
+            <SafeAreaView style={[styles.container, { backgroundColor: backgroundColor }, center && styles.center ]}>
+                {title && <Header title={title} onMenuPress={onMenuPress} onBellPress={() => navigation.navigate("NotificationScreen")} />}
 
                 <View style={[styles.content, center && styles.center]}>
                     {children}
                 </View>
+
             </SafeAreaView>
         );
     };

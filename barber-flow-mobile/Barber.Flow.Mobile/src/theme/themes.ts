@@ -9,6 +9,10 @@ export const lightTheme = {
     border: '#E5E7EB',
     tabActive: '#111827',
     tabInactive: '#9CA3AF',
+    notificationBadge: '#EF4444',
+    card: '#1E1E1E',
+    primaryInput: '#FFFFFF',
+    primaryTextInput: '#6B7280'
   },
 };
 
@@ -23,6 +27,10 @@ export const darkTheme = {
     border: '#334155',
     tabActive: '#FFFFFF',
     tabInactive: '#64748B',
+    notificationBadge: '#F87171',
+    card: '#F5F7FA',
+    primaryInput: '#FFFFFF',
+    primaryTextInput: '#6B7280'
   },
 };
 
