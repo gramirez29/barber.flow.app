@@ -10,12 +10,12 @@ export const CalendarScreen = () => {
 
     return (
         <ScreenLayout
-            title='Calendar' 
+            title='Calendario' 
             backgroundColor = { theme.colors.background }
             center
             onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
-            <Text style={[styles.text, { color: theme.colors.textPrimary }]}>Calendar Screen</Text>
+            <Text style={[styles.text, { color: theme.colors.textPrimary }]}>Pantalla de Calendario</Text>
         </ScreenLayout>
     );};
 

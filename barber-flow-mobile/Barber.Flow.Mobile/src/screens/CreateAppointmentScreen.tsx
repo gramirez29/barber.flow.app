@@ -10,13 +10,13 @@ export const CreateAppointmentScreen = () => {
 
   return (
     <ScreenLayout
-        title="Create Appointment"
+        title="Citas"
         backgroundColor = { theme.colors.background }
         center
         onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       >
       <Text style={[styles.text, { color: theme.colors.textPrimary }]}>
-        Appointment Screen
+        Pantalla de Citas
       </Text>
     </ScreenLayout>
   );};
