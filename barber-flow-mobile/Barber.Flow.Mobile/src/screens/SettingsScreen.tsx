@@ -51,10 +51,10 @@ export const SettingsScreen = () => {
                     </SettingSection>
 
                     <SettingSection title="Fake Section">
-                      <SettingItem label="Fake Label 1" icon="airplane-outline" value={true} onPress={OnPressLabel}/>
-                      <SettingItem label="Fake Label 2" icon="alarm-outline"/>
-                      <SettingItem label="Fake Label 3" icon="add-circle-outline"/>
-                      <SettingItem label="Fake Label 4" icon="bag-remove-outline"/>
+                      <SettingItem label="Etiqueta ejemplo 1" icon="airplane-outline" value={true} onPress={OnPressLabel}/>
+                      <SettingItem label="Etiqueta ejemplo 2" icon="alarm-outline"/>
+                      <SettingItem label="Etiqueta ejemplo 3" icon="add-circle-outline"/>
+                      <SettingItem label="Etiqueta ejemplo 4" icon="bag-remove-outline"/>
                     </SettingSection>
 
                     <SettingSection title="Preferencias">
@@ -73,8 +73,8 @@ export const SettingsScreen = () => {
                       </SettingSection>
 
                   <SettingSection title="ACERCA DE">
-                    <SettingItem label="Versión" icon="information-circle-outline" />
-                    <SettingItem label="Desarrollado por" icon="code-outline" />
+                    <SettingItem label="Versión -> 0.0.0.0" icon="information-circle-outline" />
+                    <SettingItem label="Desarrollado por Guillermo Ramirez" icon="code-outline" />
                   </SettingSection>
 
                   <TextInput

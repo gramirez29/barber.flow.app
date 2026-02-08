@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Barber.Flow.Mobile",
-    "slug": "Barber.Flow.Mobile",
+    "slug": "barber-flow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -26,6 +26,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7dac0395-3c83-4913-82dc-5793de184b98"
+      }
     }
   }
 }

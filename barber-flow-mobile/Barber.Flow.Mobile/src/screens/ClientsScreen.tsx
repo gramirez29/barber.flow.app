@@ -10,13 +10,13 @@ export const ClientsScreen = () => {
 
     return (
         <ScreenLayout
-            title="Clients"
+            title="Clientes"
             backgroundColor={theme.colors.background}
             center
             onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
             >
                 <Text style={[styles.text, { color: theme.colors.textPrimary }]}>
-                    Clients Screen
+                    Pantalla de Clientes
                 </Text>
         </ScreenLayout>
     );

@@ -9,13 +9,13 @@ export const NotificationScreen = () => {
     
     return (
         <ScreenLayout
-            title="Notifications"
+            title="Notificaciones"
             backgroundColor={theme.colors.background}
             center
 
         >
             <Text style={[styles.text, { color: theme.colors.textPrimary }]}>
-                Notification Screen
+                Pantalla de Notificaciones
             </Text>
         </ScreenLayout>
     );
