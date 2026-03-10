@@ -1,4 +1,4 @@
-﻿using Barber.Flow.Application.Core.Sample.Queries;
+﻿using Barber.Flow.Application.Services.Sample.Queries;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Barber.Flow.Api.Apis;

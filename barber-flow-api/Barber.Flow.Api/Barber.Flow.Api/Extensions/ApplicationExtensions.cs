@@ -1,4 +1,7 @@
-﻿using Barber.Flow.Application.Core.Sample.Queries;
+﻿using Barber.Flow.Application.Services.Auth;
+using Barber.Flow.Application.Services.Sample.Queries;
+using Barber.Flow.Domain.Interfaces;
+using Barber.Flow.Infrastructure.Services.Auth;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 
@@ -21,6 +24,9 @@ public static class ApplicationExtensions
         services.AddSwaggerGen();
 
         services.AddTransient<ISampleQuery, SampleQuery>();
+
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IJwtAuthService, JwtAuthService>();
 
         // services.AddSwaggerDocumentation(configuration);
 

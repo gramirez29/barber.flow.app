@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useAppTheme } from "../../theme/ThemeContext";
 import { useNotification } from "../../context/NotificationContext";
+import { useAuthStore } from '../../store/auth.store';
 
 interface HeaderProps {
     title: string;
@@ -20,6 +21,8 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
     const { toggleTheme, theme } = useAppTheme();
     const isDarkMode = theme.mode === "dark";
     const { clientNotifications } = useNotification();
+    const username = useAuthStore((s) => s.username);
+
     return (
     <View
         style={[
@@ -39,6 +42,8 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
         <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
             {title}
         </Text>
+
+        {username ? <Text style={{ color: theme.colors.textPrimary, marginLeft: 8 }}>{username}</Text> : <View style={{ width: 24 }} />}
 
         {/* Notification button */}
         <TouchableOpacity style={ styles.bellContainer } onPress={onBellPress} >

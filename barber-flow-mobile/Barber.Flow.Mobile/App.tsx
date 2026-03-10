@@ -1,8 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
-// import { DrawerNavigator } from './src/navigation/DrawerNavigator';
 import 'react-native-gesture-handler';
-import { AppNavigator } from './src/navigation/AppNavigator';
+import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider, useAppTheme } from './src/theme/ThemeContext';
 import { NotificationProvider } from './src/context/NotificationContext';
 
@@ -13,7 +12,7 @@ function Main() {
     <NavigationContainer>
       <NotificationProvider>
         <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
-        <AppNavigator />
+        <RootNavigator />
       </NotificationProvider>
     </NavigationContainer>
   );
