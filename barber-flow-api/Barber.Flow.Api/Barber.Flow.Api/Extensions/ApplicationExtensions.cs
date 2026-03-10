@@ -2,8 +2,11 @@
 using Barber.Flow.Application.Services.Sample.Queries;
 using Barber.Flow.Domain.Interfaces;
 using Barber.Flow.Infrastructure.Services.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
+using System.Text;
 
 namespace Barber.Flow.Api.Extensions;
 
@@ -29,6 +32,54 @@ public static class ApplicationExtensions
         services.AddScoped<IJwtAuthService, JwtAuthService>();
 
         // services.AddSwaggerDocumentation(configuration);
+
+        return services;
+    }
+
+    public static IServiceCollection AddAllowCORS(this IServiceCollection services) 
+    {
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowLocalhost", policy =>
+            {
+                policy
+                    .WithOrigins("http://localhost:8081")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddAuthentication(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
+    {
+        // Retrieve JWT configuration
+        var jwt = configuration.GetSection("Jwt");
+        var key = jwt["Key"] ?? throw new InvalidOperationException("Jwt:Key not configured");
+
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.RequireHttpsMetadata = !environment.IsDevelopment(); // Use HTTPS in production
+            options.SaveToken = true;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateIssuerSigningKey = true,
+                ValidateLifetime = true, // Ensure token expiration is validated
+                RequireExpirationTime = true, // Ensure tokens have an expiration time
+                ValidIssuer = jwt["Issuer"],
+                ValidAudience = jwt["Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+                ClockSkew = TimeSpan.Zero
+            };
+        });
 
         return services;
     }
