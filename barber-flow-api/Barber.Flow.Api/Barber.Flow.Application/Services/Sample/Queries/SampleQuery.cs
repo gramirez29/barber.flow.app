@@ -1,5 +1,4 @@
-﻿
-namespace Barber.Flow.Application.Core.Sample.Queries;
+﻿namespace Barber.Flow.Application.Services.Sample.Queries;
 
 public sealed class SampleQuery : ISampleQuery
 {
