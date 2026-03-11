@@ -4,8 +4,7 @@ import {
     View,
     StyleSheet,
     Text,
-    Button,
-    Switch,
+    Alert,
 } from "react-native";
 import { useAppTheme } from "../../theme/ThemeContext";
 import { useNotification } from "../../context/NotificationContext";
@@ -22,6 +21,25 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
     const isDarkMode = theme.mode === "dark";
     const { clientNotifications } = useNotification();
     const username = useAuthStore((s) => s.username);
+    const clearAuth = useAuthStore((s) => s.clearAuth);
+
+    const handleLogout = () => {
+        Alert.alert(
+            "Sign out",
+            "Are you sure you want to sign out?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Sign out",
+                    style: "destructive",
+                    onPress: () => {
+                        clearAuth();
+                    },
+                },
+            ],
+            { cancelable: true }
+        );
+    };
 
     return (
     <View
@@ -33,10 +51,21 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
             },
         ]}
     >
-        {/* Menu button */}
-        <TouchableOpacity onPress={onMenuPress} style={ styles.iconButton } activeOpacity={ 0.7 } >
-            <Ionicons name="menu" size={22} color={theme.colors.textPrimary} />
-        </TouchableOpacity>
+        {/* Left: menu button or placeholder to preserve centering */}
+        {onMenuPress ? (
+            <TouchableOpacity
+                onPress={onMenuPress}
+                onLongPress={handleLogout}
+                style={ styles.iconButton }
+                activeOpacity={ 0.7 }
+                accessibilityLabel="Menu"
+                accessibilityHint="Tap to open menu. Long press to sign out."
+            >
+                <Ionicons name="menu" size={22} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
+        ) : (
+            <View style={styles.iconPlaceholder} />
+        )}
 
         {/* Title */}
         <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
@@ -45,35 +74,34 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
 
         {username ? <Text style={{ color: theme.colors.textPrimary, marginLeft: 8 }}>{username}</Text> : <View style={{ width: 24 }} />}
 
-        {/* Notification button */}
-        <TouchableOpacity style={ styles.bellContainer } onPress={onBellPress} >
-            <Ionicons name="notifications-outline" size={22} color={theme.colors.textPrimary} />
-            {
-                clientNotifications > 0 && (
-                    <View style={ styles.badge }>
-                        <Text style={ styles.badgeText }>{ clientNotifications > 9 ? "9+" : clientNotifications }</Text>
-                    </View>
-                )
-            }
-        </TouchableOpacity>
+        {/* Notification button or placeholder */}
+        {onBellPress ? (
+            <TouchableOpacity style={ styles.bellContainer } onPress={onBellPress} >
+                <Ionicons name="notifications-outline" size={22} color={theme.colors.textPrimary} />
+                {
+                    clientNotifications > 0 && (
+                        <View style={ styles.badge }>
+                            <Text style={ styles.badgeText }>{ clientNotifications > 9 ? "9+" : clientNotifications }</Text>
+                        </View>
+                    )
+                }
+            </TouchableOpacity>
+        ) : (
+            <View style={{ width: 24 }} />
+        )}
 
-      {/* Espaciador para centrar el título */}
-        <View style={{ width: 24 }} />
-        </View>
+        <View style={{ width: 8 }} />
+    </View>
     );
 };
 
 const styles = StyleSheet.create({
     wrapper: {
         borderBottomWidth: 0.5,
-
-        // Sombra para iOS
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 4,
-
-        // Sombra para Android
         elevation: 4,
     },
     container: {
@@ -110,6 +138,10 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
     },
+    iconPlaceholder: {
+        width: 44,
+        height: 44,
+    },
     title: {
         flex: 1,
         textAlign: "center",
@@ -118,7 +150,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     side: {
-        width: 60, // MISMO ancho a ambos lados → centra el título
+        width: 60,
         alignItems: "flex-start",
     },
     rightSection: {

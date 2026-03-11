@@ -8,6 +8,7 @@ interface ScreenLayoutProps {
     backgroundColor?: string;
     center?: boolean;
     onMenuPress?: () => void;
+    hideHeaderActions?: boolean;
 }
 
 export const ScreenLayout = ({ 
@@ -16,13 +17,20 @@ export const ScreenLayout = ({
     backgroundColor,
     center = false,
     onMenuPress,
+    hideHeaderActions = false,
     }: ScreenLayoutProps) => {
 
         const navigation = useNavigation<any>();
 
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: backgroundColor }, center && styles.center ]}>
-                {title && <Header title={title} onMenuPress={onMenuPress} onBellPress={() => navigation.navigate("NotificationScreen")} />}
+                {title && (
+                  <Header
+                    title={title}
+                    onMenuPress={onMenuPress}
+                    onBellPress={hideHeaderActions ? undefined : () => navigation.navigate("NotificationScreen")}
+                  />
+                )}
 
                 <View style={[styles.content, center && styles.center]}>
                     {children}
