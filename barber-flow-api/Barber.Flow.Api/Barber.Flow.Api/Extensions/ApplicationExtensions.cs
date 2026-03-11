@@ -7,6 +7,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
+using Barber.Flow.Application.Services.Clients;
+using Barber.Flow.Infrastructure.Services.InMemory;
 
 namespace Barber.Flow.Api.Extensions;
 
@@ -25,11 +27,14 @@ public static class ApplicationExtensions
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
-
+        services.AddAuthorization();
         services.AddTransient<ISampleQuery, SampleQuery>();
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IJwtAuthService, JwtAuthService>();
+
+        services.AddScoped<IClientService, ClientService>();
+        services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 
         // services.AddSwaggerDocumentation(configuration);
 

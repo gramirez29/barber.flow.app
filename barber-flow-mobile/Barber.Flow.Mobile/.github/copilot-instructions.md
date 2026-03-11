@@ -41,7 +41,8 @@ src/
 │ └── SettingsScreen.tsx
 ├── services/ # API calls
 ├── store/ # Global Zustand stores
-└── theme/ # Theme system
+├── theme/ # Theme system
+└── types/ # TypeScript types 
 ├── fonts.ts
 ├── ThemeContext.tsx
 └── themes.ts
@@ -88,8 +89,22 @@ src/
 
 Barber.Flow.Api/
 ├── Barber.Flow.Domain/ # Entities, Enums, Interfaces (NO dependencies)
+│ ├── Entities/
+│ ├── Enums/
+│ ├── Interfaces/
+│ └── ValueObjects/
 ├── Barber.Flow.Application/ # DTOs, Use Cases, Validators, Service Interfaces
+│ ├── DTOs/
+│ └── Services/
+│    └── DTOs/ # Request/Response DTOs for services
 ├── Barber.Flow.Infrastructure/ # DbContext, Repositories, Migrations
+│ ├── Services/
+│ │   ├── Auth/
+│ │   │ ├── DTOs/
+│ │   │ └── DbContext/
+│ ├── Repositories/
+│ ├── Migrations/
+│ └── Services/
 └── Barber.Flow.Api/ # Controllers, Middleware, Program.cs
 
 
