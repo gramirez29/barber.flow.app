@@ -1,5 +1,5 @@
-const BASE_URL = __DEV__ ? 'https://localhost:7016' : 'https://barberflowapp-develop.up.railway.app/'; // Android emulator uses 10.0.2.2 for localhost
-// const BASE_URL = 'https://barberflowapp-develop.up.railway.app';
+// const BASE_URL = __DEV__ ? 'https://localhost:7016' : 'https://barberflowapp-develop.up.railway.app/'; // Android emulator uses 10.0.2.2 for localhost
+const BASE_URL = 'https://barberflowapp-develop.up.railway.app';
 
 export const authService = {
   login: async (userOrEmail: string, password: string) => {

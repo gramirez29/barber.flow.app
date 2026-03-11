@@ -4,6 +4,7 @@ export const lightTheme = {
     background: '#F4F6F8',
     surface: '#FFFFFF',
     primary: '#111827',
+    secondary: '#3B82F6', // Added secondary color (blue)
     textPrimary: '#111827',
     textSecondary: '#6B7280',
     border: '#E5E7EB',
@@ -43,6 +44,7 @@ export const darkTheme = {
     background: '#0F172A',
     surface: '#1E293B',
     primary: '#FFFFFF',
+    secondary: '#60A5FA', // Added secondary color (light blue)
     textPrimary: '#FFFFFF',
     textSecondary: '#94A3B8',
     border: '#334155',

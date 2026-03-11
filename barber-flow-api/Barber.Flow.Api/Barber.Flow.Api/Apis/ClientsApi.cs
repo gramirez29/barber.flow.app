@@ -38,7 +38,7 @@ public static class ClientsApi
             .WithTags(ClientTagName)
             .AllowAnonymous();
         
-        api.MapDelete("/{id}", DeleteClientAsync)
+        api.MapDelete("/delete/{id}", DeleteClientAsync)
             .WithName(nameof(DeleteClientAsync))
             .WithTags(ClientTagName);
 
