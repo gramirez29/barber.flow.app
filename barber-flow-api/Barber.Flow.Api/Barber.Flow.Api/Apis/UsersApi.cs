@@ -1,4 +1,5 @@
-﻿using Barber.Flow.Application.Services.Barbers;
+﻿using Barber.Flow.Api.DTOs.Requests;
+using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Application.Services.Users;
 
 namespace Barber.Flow.Api.Apis;
@@ -11,16 +12,16 @@ public static class UsersApi
     {
         var api = app.MapGroup("api/users");
 
-        api.MapGet("/authentication/{userName}", GetAuthenticationUserAsync)
+        api.MapPost("/authentication", GetAuthenticationUserAsync)
             .WithName(nameof(GetAuthenticationUserAsync))
             .WithTags(UsersTag);
 
         return api;
     }
 
-    private static async Task<IResult> GetAuthenticationUserAsync(string userName, string password, IUserService userService)
+    private static async Task<IResult> GetAuthenticationUserAsync(AuthRequest req, IUserService userService)
     {
-        var user = await userService.GetAuthenticationUserAsync(userName, password);
+        var user = await userService.GetAuthenticationUserAsync(req.UserName, req.Password);
         return user == null ? TypedResults.NotFound() : TypedResults.Ok(user);
     }
 }
