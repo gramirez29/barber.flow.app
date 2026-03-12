@@ -8,11 +8,11 @@ import { useAuthStore } from '../store/auth.store';
 const Stack = createNativeStackNavigator();
 
 export const RootNavigator = () => {
-  const username = useAuthStore((s) => s.username);
+  const user = useAuthStore((s) => s.user);
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {username ? (
+      {user ? (
         <Stack.Screen name="Main" component={DrawerNavigator} />
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />

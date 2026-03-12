@@ -10,16 +10,19 @@ import {
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/auth.store";
+import { authService } from "../../services/authService";
 import { useAppTheme } from "../../theme/ThemeContext";
 const pkg = require("../../../package.json");
 
 export const AppDrawerContent = (props: any) => {
-  const clearAuth = useAuthStore((s) => s.clearAuth);
-  const username = useAuthStore((s) => s.username);
+  const clearUser = useAuthStore((s) => s.clearUser);
+  const user = useAuthStore((s) => s.user);
   const { theme } = useAppTheme();
 
-  const name = username ?? "Guest";
-  const email = username ? `${username}@example.com` : "";
+  const name = user?.name ?? "Guest";
+  const email = user?.email ?? "";
+  const userName = user?.userName ?? "";
+  const role = user?.role ?? "";
   const avatarUri = "https://i.pravatar.cc/160?img=12";
 
   const handleLogout = () => {
@@ -28,9 +31,10 @@ export const AppDrawerContent = (props: any) => {
       {
         text: "Sign out",
         style: "destructive",
-        onPress: () => {
+        onPress: async () => {
           props.navigation.closeDrawer();
-          clearAuth();
+          clearUser();
+          await authService.clearStoredUser();
         },
       },
     ]);
@@ -72,20 +76,10 @@ export const AppDrawerContent = (props: any) => {
           ]}
         />
         <View style={styles.userInfo}>
-          <Text
-            style={[styles.name, { color: theme.colors.textPrimary }]}
-            numberOfLines={1}
-          >
-            {name}
-          </Text>
-          {email ? (
-            <Text
-              style={[styles.email, { color: theme.colors.textSecondary }]}
-              numberOfLines={1}
-            >
-              {email}
-            </Text>
-          ) : null}
+          <Text style={[styles.name, { color: theme.colors.textPrimary }]} numberOfLines={1}>{name}</Text>
+          {email ? (<Text style={[styles.email, { color: theme.colors.textSecondary }]} numberOfLines={1}>{email}</Text>) : null}
+          {userName ? (<Text style={[styles.email, { color: theme.colors.textSecondary }]} numberOfLines={1}>Username: {userName}</Text>) : null}
+          {role ? (<Text style={[styles.email, { color: theme.colors.textSecondary }]} numberOfLines={1}>Role: {role}</Text>) : null}
         </View>
       </View>
 

@@ -28,12 +28,12 @@ type Props = NativeStackScreenProps<any, any>;
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useAppTheme();
-  const [userOrEmail, setUserOrEmail] = useState('');
+  const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const setUser = useAuthStore((s) => s.setUser);
   const scrollRef = React.useRef<React.ElementRef<typeof ScrollView> | null>(null);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -54,14 +54,14 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   const submit = async () => {
     setError(null);
-    if (!userOrEmail.trim() || !password) {
-      setError('Please provide both username/email and password.');
+    if (!userName.trim() || !password) {
+      setError('Please provide both username and password.');
       return;
     }
     setLoading(true);
     try {
-      const res = await authService.login(userOrEmail.trim(), password);
-      setAuth(res.username, res.token);
+      const user = await authService.login(userName.trim(), password);
+      setUser(user);
       navigation.replace('Main');
     } catch (err: any) {
       setError(err?.message ?? 'Login failed');
@@ -102,12 +102,11 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
               <RNTextInput
                 ref={emailRef as any}
-                placeholder="Email or username"
-                value={userOrEmail}
-                onChangeText={setUserOrEmail}
+                placeholder="Username"
+                value={userName}
+                onChangeText={setUserName}
                 style={[styles.input, { backgroundColor: theme.colors.primaryInput, color: theme.colors.primaryTextInput }]}
                 autoCapitalize="none"
-                keyboardType="email-address"
                 returnKeyType="next"
                 onFocus={() => ensureVisible(emailRef)}
                 onSubmitEditing={() => passwordRef.current?.focus()}

@@ -2,6 +2,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Switch } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from "../../theme/ThemeContext";
 
+import { ReactNode } from "react";
+
 interface SettingItemProps {
     icon?: keyof typeof Ionicons.glyphMap;
     label: string;
@@ -10,6 +12,7 @@ interface SettingItemProps {
     onToggle?: () => void;
     showArrow?: boolean;
     isLast?: boolean;
+    customContent?: ReactNode;
 }
 
 export const SettingItem = ({
@@ -19,26 +22,26 @@ export const SettingItem = ({
     onPress,
     onToggle,
     showArrow = false,
-    isLast = false, 
+    isLast = false,
+    customContent,
 }: SettingItemProps) => {
-
     const { theme } = useAppTheme();
-
     return (
         <TouchableOpacity activeOpacity={onPress ? 0.6 : 1} onPress={onPress} style={[styles.row, !isLast && styles.divider]}>
             <View style={styles.left}>
                 <Ionicons name={icon} size={20} style={[{ color: theme.colors.textSecondary }]} />
                 <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{label}</Text>
             </View>
-            {
-                onToggle !== undefined ? (
-                    <Switch value={value} onValueChange={onToggle} />
-                ) : showArrow ? (
-                    <Ionicons name="chevron-forward-outline" size={20} style={[{ color: theme.colors.textSecondary }]} />
-                ) : null}
+            {customContent ? (
+                <View style={{ flex: 1 }}>{customContent}</View>
+            ) : onToggle !== undefined ? (
+                <Switch value={value} onValueChange={onToggle} />
+            ) : showArrow ? (
+                <Ionicons name="chevron-forward-outline" size={20} style={[{ color: theme.colors.textSecondary }]} />
+            ) : null}
         </TouchableOpacity>
     );
-};
+}
 
 const styles = StyleSheet.create({
     row: {
