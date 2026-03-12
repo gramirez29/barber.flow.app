@@ -40,6 +40,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
         firstName: "",
         lastName: "",
         phone: "",
+        email: undefined,
         address: "",
         birthday: undefined,
         preferences: "",
@@ -55,7 +56,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
     const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
 
     // validation state
-    const [errors, setErrors] = useState<{ firstName?: string; lastName?: string; phone?: string }>({});
+    const [errors, setErrors] = useState<{ firstName?: string; lastName?: string; phone?: string; email?: string }>({});
     const [touched, setTouched] = useState<{ [k: string]: boolean }>({});
 
     // Remove initial load of all clients for scalability
@@ -72,6 +73,14 @@ import Ionicons from "react-native-vector-icons/Ionicons";
         if (key === "phone") {
         if (!value || !String(value).trim()) return "Phone is required";
         if (!/^\d{4}-\d{4}$/.test(String(value))) return "Phone must be 0000-0000";
+        return undefined;
+        }
+        if (key === "email") {
+        if (!value) return undefined; // not required
+        // simple email regex
+        const v = String(value).trim();
+        const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRe.test(v)) return "Invalid email address";
         return undefined;
         }
         return undefined;
@@ -111,10 +120,11 @@ import Ionicons from "react-native-vector-icons/Ionicons";
         const fErr = validateField("firstName", client.firstName);
         const lErr = validateField("lastName", client.lastName);
         const pErr = validateField("phone", client.phone);
-        setErrors({ firstName: fErr, lastName: lErr, phone: pErr });
-        setTouched({ firstName: true, lastName: true, phone: true });
+        const eErr = validateField("email", client.email);
+        setErrors({ firstName: fErr, lastName: lErr, phone: pErr, email: eErr });
+        setTouched({ firstName: true, lastName: true, phone: true, email: !!client.email });
 
-        if (fErr || lErr || pErr) {
+        if (fErr || lErr || pErr || eErr) {
         Alert.alert("Validation", "Please fix the required fields.");
         return;
         }
@@ -125,10 +135,14 @@ import Ionicons from "react-native-vector-icons/Ionicons";
             await clientsService.update(client.id, client);
             Alert.alert("Success", "Client updated.");
         } else {
-            const created = await clientsService.create(client);
-            setClient(created);
+            await clientsService.create(client);
             Alert.alert("Success", "Client created.");
         }
+        // Clear the form after a successful save
+        setClient(empty);
+        setSelectedId(undefined);
+        setErrors({});
+        setTouched({});
         if (modalVisible) {
             const list = await clientsService.find();
             setClients(list);
@@ -198,6 +212,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
         firstName: validateField("firstName", c.firstName),
         lastName: validateField("lastName", c.lastName),
         phone: validateField("phone", c.phone),
+        email: validateField("email", c.email),
         });
         setTouched({});
     };
@@ -295,6 +310,30 @@ import Ionicons from "react-native-vector-icons/Ionicons";
                     />
                     {touched.phone && errors.phone ? (
                     <Text style={[styles.fieldError, { color: theme.colors.error ?? "#DC2626" }]}>{errors.phone}</Text>
+                    ) : null}
+                </View>
+
+                {/* Email (optional) */}
+                <View style={styles.row}>
+                    <Text style={[styles.label, { color: theme.colors.textPrimary }]}>Email</Text>
+                    <TextInput
+                    value={client.email}
+                    onChangeText={(t) => setField("email", t)}
+                    onBlur={() => onBlurField("email")}
+                    style={[
+                        styles.input,
+                        {
+                        backgroundColor: theme.colors.primaryInput,
+                        color: theme.colors.primaryTextInput,
+                        borderColor: touched.email && errors.email ? "#DC2626" : "#E5E7EB",
+                        },
+                    ]}
+                    placeholder="email@example.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    />
+                    {touched.email && errors.email ? (
+                    <Text style={[styles.fieldError, { color: theme.colors.error ?? "#DC2626" }]}>{errors.email}</Text>
                     ) : null}
                 </View>
 
@@ -443,7 +482,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 
     const styles = StyleSheet.create({
     flex: { flex: 1 },
-    scrollContainer: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 0, paddingRight: 15 },
+    scrollContainer: { alignItems: "center", paddingTop: 18 },
     wrapper: { width: "100%", alignItems: "center" },
     card: {
         width: "100%",

@@ -3,6 +3,7 @@ export interface Client {
     firstName: string;
     lastName: string;
     phone: string; // formatted "0000-0000"
+    email?: string;
     address?: string;
     birthday?: string; // ISO date
     preferences?: string;

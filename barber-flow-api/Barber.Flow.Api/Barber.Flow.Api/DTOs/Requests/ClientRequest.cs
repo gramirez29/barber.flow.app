@@ -4,6 +4,7 @@ public record ClientRequest(
     string FirstName,
     string LastName,
     string Phone,
+    string? Email,
     string? Address,
     DateTime? Birthday,
     string? Preferences,

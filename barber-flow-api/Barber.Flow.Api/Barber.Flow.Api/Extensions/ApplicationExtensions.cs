@@ -8,7 +8,9 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using Barber.Flow.Application.Services.Clients;
+using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Infrastructure.Services.InMemory;
+using Barber.Flow.Application.Services.Users;
 
 namespace Barber.Flow.Api.Extensions;
 
@@ -35,6 +37,12 @@ public static class ApplicationExtensions
 
         services.AddScoped<IClientService, ClientService>();
         services.AddSingleton<IClientRepository, InMemoryClientRepository>();
+        
+        services.AddScoped<IBarberService, BarberService>();
+        services.AddSingleton<IBarberRepository, InMemoryBarberRepository>();
+
+        services.AddScoped<IUserService, UserService>();
+        services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 
         // services.AddSwaggerDocumentation(configuration);
 
