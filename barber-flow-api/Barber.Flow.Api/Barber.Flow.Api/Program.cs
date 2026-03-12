@@ -19,7 +19,8 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();  // ← Now build after all services are registered
 
 // Configure middleware pipeline
-if (app.Environment.IsDevelopment())
+// Enable Swagger in development and production (for Railway)
+if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
