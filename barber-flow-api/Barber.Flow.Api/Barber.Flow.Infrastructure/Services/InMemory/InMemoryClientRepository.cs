@@ -11,10 +11,10 @@ public class InMemoryClientRepository : IClientRepository
         public InMemoryClientRepository()
     {
         // Seed some mock clients
-        var client1 = new Client { FirstName = "Juan", LastName = "Perez", Phone = "8888-0000", Address = "Av Central 123", PaymentMethod = "Cash", Active = true };
-        var client2 = new Client { FirstName = "Maria", LastName = "Gomez", Phone = "7777-1111", Address = "Calle 45", PaymentMethod = "Sinpe Movil", Active = true };
-        var client3 = new Client { FirstName = "Carlos", LastName = "Lopez", Phone = "6666-2222", Address = "Calle 67", PaymentMethod = "Credit Card", Active = true };
-        var client4 = new Client { FirstName = "Guillermo", LastName = "Ramirez", Phone = "7018-9220", Address = "Caballo Blanco", PaymentMethod = "Sinpe Movil", Active = true };
+        var client1 = new Client { FirstName = "Juan", LastName = "Perez", Phone = "8888-0000", Email = "juan.perez@example.com", Address = "Av Central 123", PaymentMethod = "Cash", Active = true };
+        var client2 = new Client { FirstName = "Maria", LastName = "Gomez", Phone = "7777-1111", Email = "maria.gomez@example.com", Address = "Calle 45", PaymentMethod = "Sinpe Movil", Active = true };
+        var client3 = new Client { FirstName = "Carlos", LastName = "Lopez", Phone = "6666-2222", Email = "carlos.lopez@example.com", Address = "Calle 67", PaymentMethod = "Credit Card", Active = true };
+        var client4 = new Client { FirstName = "Guillermo", LastName = "Ramirez", Phone = "7018-9220", Email = "guillermo.ramirez@example.com", Address = "Caballo Blanco", PaymentMethod = "Sinpe Movil", Active = true };
 
         _store[client1.Id] = client1;
         _store[client2.Id] = client2;
@@ -38,6 +38,7 @@ public class InMemoryClientRepository : IClientRepository
         existing.FirstName = client.FirstName;
         existing.LastName = client.LastName;
         existing.Phone = client.Phone;
+        existing.Email = client.Email;
         existing.Address = client.Address;
         existing.Birthday = client.Birthday;
         existing.Preferences = client.Preferences;

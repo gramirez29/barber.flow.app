@@ -2,4 +2,11 @@
 
 public interface IUserRepository
 {
+        Task<Entities.User> CreateAsync(Entities.User user, CancellationToken cancellation = default);
+    
+        Task<Entities.User?> UpdateAsync(string id, Entities.User user, CancellationToken cancellation = default);
+    
+        Task<bool> DeleteAsync(string id, CancellationToken cancellation = default);
+    
+        Task<Entities.User?> GetAuthenticationUserAsync(string userName, string password, CancellationToken cancellation = default);
 }

@@ -31,4 +31,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapAuthApi();
 app.MapClientsApi();
+app.MapBarbersApi();
+app.MapUsersApi();
 app.Run();
