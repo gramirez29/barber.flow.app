@@ -4,7 +4,8 @@ import { BASE_URL } from "../../config";
 export type ApiFetchOptions = Omit<RequestInit, "body" | "headers"> & { json?: any; headers?: Record<string, string> };
 
     export async function apiFetch(path: string, opts: ApiFetchOptions = {}) {
-    const token = useAuthStore.getState().token;
+    const user = useAuthStore.getState().user;
+    const token = user?.token;
     const headers: Record<string, string> = { ...(opts.headers || {}) };
 
     if (opts.json !== undefined) {

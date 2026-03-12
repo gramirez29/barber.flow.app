@@ -40,6 +40,7 @@ src/
 │ ├── NotificationScreen.tsx
 │ └── SettingsScreen.tsx
 ├── services/ # API calls
+│  └── apis/ # API service functions
 ├── store/ # Global Zustand stores
 ├── theme/ # Theme system
 └── types/ # TypeScript types 

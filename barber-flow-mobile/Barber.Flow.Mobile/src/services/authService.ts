@@ -1,12 +1,14 @@
-// const BASE_URL = __DEV__ ? 'https://localhost:7016' : 'https://barberflowapp-develop.up.railway.app/'; // Android emulator uses 10.0.2.2 for localhost
-const BASE_URL = 'https://barberflowapp-develop.up.railway.app';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { ApplicationUser } from '../types/applicationUser';
+import { BASE_URL } from '../config';
 
 export const authService = {
-  login: async (userOrEmail: string, password: string) => {
-    const res = await fetch(`${BASE_URL}/api/auth/login`, {
+  login: async (userName: string, password: string): Promise<ApplicationUser> => {
+    const url = `${BASE_URL}/api/users/authentication/`;
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userOrEmail, password }),
+      body: JSON.stringify({ userName, password }),
     });
 
     if (!res.ok) {
@@ -14,8 +16,15 @@ export const authService = {
       throw new Error(body?.message ?? 'Login failed');
     }
 
-    const data = await res.json();
-    // expected shape { username, token }
-    return { username: data.username, token: data.token };
+    const data: ApplicationUser = await res.json();
+    await AsyncStorage.setItem('applicationUser', JSON.stringify(data));
+    return data;
+  },
+  getStoredUser: async (): Promise<ApplicationUser | null> => {
+    const json = await AsyncStorage.getItem('applicationUser');
+    return json ? JSON.parse(json) : null;
+  },
+  clearStoredUser: async () => {
+    await AsyncStorage.removeItem('applicationUser');
   },
 };

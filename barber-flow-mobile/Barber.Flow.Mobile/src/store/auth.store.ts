@@ -1,15 +1,14 @@
 import { create } from "zustand";
+import type { ApplicationUser } from '../types/applicationUser';
 
 type AuthState = {
-  username: string | null;
-  token: string | null;
-  setAuth: (username: string, token: string) => void;
-  clearAuth: () => void;
+  user: ApplicationUser | null;
+  setUser: (user: ApplicationUser) => void;
+  clearUser: () => void;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
-  username: null,
-  token: null,
-  setAuth: (username, token) => set({ username, token }),
-  clearAuth: () => set({ username: null, token: null }),
+  user: null,
+  setUser: (user) => set({ user }),
+  clearUser: () => set({ user: null }),
 }));

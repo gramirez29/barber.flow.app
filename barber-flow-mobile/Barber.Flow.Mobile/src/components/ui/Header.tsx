@@ -9,6 +9,7 @@ import {
 import { useAppTheme } from "../../theme/ThemeContext";
 import { useNotification } from "../../context/NotificationContext";
 import { useAuthStore } from '../../store/auth.store';
+import { authService } from '../../services/authService';
 
 interface HeaderProps {
     title: string;
@@ -20,8 +21,8 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
     const { toggleTheme, theme } = useAppTheme();
     const isDarkMode = theme.mode === "dark";
     const { clientNotifications } = useNotification();
-    const username = useAuthStore((s) => s.username);
-    const clearAuth = useAuthStore((s) => s.clearAuth);
+    const user = useAuthStore((s) => s.user);
+    const clearUser = useAuthStore((s) => s.clearUser);
 
     const handleLogout = () => {
         Alert.alert(
@@ -32,8 +33,9 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
                 {
                     text: "Sign out",
                     style: "destructive",
-                    onPress: () => {
-                        clearAuth();
+                    onPress: async () => {
+                        clearUser();
+                        await authService.clearStoredUser();
                     },
                 },
             ],
@@ -72,7 +74,7 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
             {title}
         </Text>
 
-        {username ? <Text style={{ color: theme.colors.textPrimary, marginLeft: 8 }}>{username}</Text> : <View style={{ width: 24 }} />}
+        {user?.userName ? <Text style={{ color: theme.colors.textPrimary, marginLeft: 8 }}>{user.userName}</Text> : <View style={{ width: 24 }} />}
 
         {/* Notification button or placeholder */}
         {onBellPress ? (

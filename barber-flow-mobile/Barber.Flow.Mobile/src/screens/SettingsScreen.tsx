@@ -21,8 +21,8 @@ export const SettingsScreen = () => {
   const [phone, setPhone] = useState("");
 
   // Admin-only users management
-  const username = useAuthStore((s) => s.username);
-  const isAdmin = username === ADMIN_USERNAME;
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === 'Admin';
 
   const [userName, setUserName] = useState("");
   const [userPhone, setUserPhone] = useState("");
@@ -203,53 +203,40 @@ export const SettingsScreen = () => {
                     <SettingSection title="Application Users">
                       <View style={[styles.card, { backgroundColor: theme.colors.surface ?? '#fff' }]}> 
                         <Text style={{ fontWeight: '600', marginBottom: 8 }}>Manage Application Users</Text>
-
-                        <Text style={{ marginTop: 6 }}>Barber ID (auto)</Text>
-                        <TextInput value={barberId} editable={false} style={[styles.input, { backgroundColor: '#eee' }]} />
-
-                        <Text style={{ marginTop: 6 }}>Name</Text>
-                        <TextInput value={userName} onChangeText={setUserName} style={styles.input} placeholder="Full name" />
-
-                        <Text style={{ marginTop: 6 }}>Phone</Text>
-                        <TextInput value={userPhone} onChangeText={setUserPhone} style={styles.input} placeholder="Phone" keyboardType="phone-pad" />
-
-                        <Text style={{ marginTop: 6 }}>Email</Text>
-                        <TextInput value={userEmail} onChangeText={setUserEmail} style={styles.input} placeholder="email@example.com" keyboardType="email-address" autoCapitalize="none" />
-
-                        <Text style={{ marginTop: 6 }}>Barber Name</Text>
-                        <TextInput value={barberName} onChangeText={setBarberName} style={styles.input} placeholder="Barber name" />
-
-                        <Text style={{ marginTop: 6 }}>Barber Phone</Text>
-                        <TextInput value={barberPhone} onChangeText={setBarberPhone} style={styles.input} placeholder="Barber phone" keyboardType="phone-pad" />
-
-                        <Text style={{ marginTop: 6 }}>Address (optional)</Text>
-                        <TextInput value={barberAddress} onChangeText={setBarberAddress} style={styles.input} placeholder="Address (optional)" />
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                          <View style={{ alignItems: 'center', flex: 1 }}>
-                            <Pressable onPress={handleSaveBarber} style={[styles.actionButton, { backgroundColor: theme.colors.primary, width: '90%' }]}>
-                              <Ionicons name="save" size={20} color="#fff" />
-                            </Pressable>
-                            <Text style={styles.actionLabel}>Save</Text>
-                          </View>
-                          <View style={{ alignItems: 'center', flex: 1 }}>
-                            <Pressable onPress={handleSearchBarber} style={[styles.actionButton, { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, width: '90%' }]}>
-                              <Ionicons name="search" size={20} color={theme.colors.textPrimary} />
-                            </Pressable>
-                            <Text style={styles.actionLabel}>Search</Text>
-                          </View>
-                          <View style={{ alignItems: 'center', flex: 1 }}>
-                            <Pressable onPress={handleCancelBarber} style={[styles.actionButton, { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, width: '90%' }]}>
-                              <Ionicons name="close" size={20} color={theme.colors.textPrimary} />
-                            </Pressable>
-                            <Text style={styles.actionLabel}>Cancel</Text>
-                          </View>
-                          <View style={{ alignItems: 'center', flex: 1 }}>
-                            <Pressable onPress={handleDeleteBarber} style={[styles.actionButton, { backgroundColor: theme.colors.error, width: '90%' }]}>
-                              <Ionicons name="trash" size={20} color="#fff" />
-                            </Pressable>
-                            <Text style={styles.actionLabel}>Delete</Text>
-                          </View>
+                        <SettingItem label="Barber ID" icon="key-outline" customContent={
+                          <TextInput value={barberId} editable={false} style={[styles.inputInline, { backgroundColor: '#eee' }]} />
+                        } />
+                        <SettingItem label="Name" icon="person-outline" customContent={
+                          <TextInput value={userName} onChangeText={setUserName} style={styles.inputInline} placeholder="Full name" />
+                        } />
+                        <SettingItem label="Phone" icon="call-outline" customContent={
+                          <TextInput value={userPhone} onChangeText={setUserPhone} style={styles.inputInline} placeholder="Phone" keyboardType="phone-pad" />
+                        } />
+                        <SettingItem label="Email" icon="mail-outline" customContent={
+                          <TextInput value={userEmail} onChangeText={setUserEmail} style={styles.inputInline} placeholder="email@example.com" keyboardType="email-address" autoCapitalize="none" />
+                        } />
+                        <SettingItem label="Barber Name" icon="cut-outline" customContent={
+                          <TextInput value={barberName} onChangeText={setBarberName} style={styles.inputInline} placeholder="Barber name" />
+                        } />
+                        <SettingItem label="Barber Phone" icon="call-outline" customContent={
+                          <TextInput value={barberPhone} onChangeText={setBarberPhone} style={styles.inputInline} placeholder="Barber phone" keyboardType="phone-pad" />
+                        } />
+                        <SettingItem label="Address (optional)" icon="location-outline" customContent={
+                          <TextInput value={barberAddress} onChangeText={setBarberAddress} style={styles.inputInline} placeholder="Address (optional)" />
+                        } />
+                        <View style={styles.buttonRow}>
+                          <Pressable onPress={handleSaveBarber} style={[styles.actionButton, { backgroundColor: theme.colors.primary, flex: 1, marginHorizontal: 4 }]}>
+                            <Ionicons name="save" size={20} color="#fff" />
+                          </Pressable>
+                          <Pressable onPress={handleSearchBarber} style={[styles.actionButton, { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, flex: 1, marginHorizontal: 4 }]}>
+                            <Ionicons name="search" size={20} color={theme.colors.textPrimary} />
+                          </Pressable>
+                          <Pressable onPress={handleCancelBarber} style={[styles.actionButton, { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, flex: 1, marginHorizontal: 4 }]}>
+                            <Ionicons name="close" size={20} color={theme.colors.textPrimary} />
+                          </Pressable>
+                          <Pressable onPress={handleDeleteBarber} style={[styles.actionButton, { backgroundColor: theme.colors.error, flex: 1, marginHorizontal: 4 }]}>
+                            <Ionicons name="trash" size={20} color="#fff" />
+                          </Pressable>
                         </View>
                       </View>
                     </SettingSection>
@@ -295,6 +282,23 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     fontSize: 16,
+  },
+  inputInline: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    fontSize: 15,
+    minWidth: 120,
+    flex: 1,
+    alignSelf: 'center',
+    marginLeft: 8,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 4,
   },
   row: {
     flexDirection: "row",
