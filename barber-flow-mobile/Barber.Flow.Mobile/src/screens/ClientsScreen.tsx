@@ -1,4 +1,4 @@
-    import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
         View,
         Text,
@@ -27,9 +27,11 @@ import Ionicons from "react-native-vector-icons/Ionicons";
     const PAYMENT_METHODS = ["None", "Sinpe Movil", "Transfer", "Cash"] as const;
 
     const formatPhone = (raw: string) => {
-    const digits = raw.replace(/\D+/g, "").slice(0, 8);
-    if (digits.length <= 4) return digits;
-    return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+        const digits = raw.replace(/\D+/g, "").slice(0, 8);
+        if (digits.length <= 4) {
+            return digits;
+        }
+        return `${digits.slice(0, 4)}-${digits.slice(4)}`;
     };
 
     export const ClientsScreen: React.FC = () => {
@@ -63,25 +65,42 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 
     const validateField = (key: keyof Client, value: any) => {
         if (key === "firstName") {
-        if (!value || !String(value).trim()) return "First name is required";
-        return undefined;
+            if (!value || !String(value).trim()) {
+                return "First name is required";
+            }
+            return undefined;
         }
+
         if (key === "lastName") {
-        if (!value || !String(value).trim()) return "Last name is required";
-        return undefined;
+            if (!value || !String(value).trim()) {
+                return "Last name is required";
+            }
+            return undefined;
         }
+
         if (key === "phone") {
-        if (!value || !String(value).trim()) return "Phone is required";
-        if (!/^\d{4}-\d{4}$/.test(String(value))) return "Phone must be 0000-0000";
-        return undefined;
+            if (!value || !String(value).trim()) {
+                return "Phone is required";
+            }
+            if (!/^\d{4}-\d{4}$/.test(String(value))) {
+                return "Phone must be 0000-0000";
+            }
+            return undefined;
         }
+
         if (key === "email") {
-        if (!value) return undefined; // not required
-        // simple email regex
-        const v = String(value).trim();
-        const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRe.test(v)) return "Invalid email address";
-        return undefined;
+            if (!value) {
+                return undefined; // not required
+            }
+
+            // simple email regex
+            const trimmedValue = String(value).trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!emailRegex.test(trimmedValue)) {
+                return "Invalid email address";
+            }
+            return undefined;
         }
         return undefined;
     };
@@ -117,45 +136,50 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 
     const handleSave = async () => {
         // final validation before submit
-        const fErr = validateField("firstName", client.firstName);
-        const lErr = validateField("lastName", client.lastName);
-        const pErr = validateField("phone", client.phone);
-        const eErr = validateField("email", client.email);
-        setErrors({ firstName: fErr, lastName: lErr, phone: pErr, email: eErr });
+        const firstNameError = validateField("firstName", client.firstName);
+        const lastNameError = validateField("lastName", client.lastName);
+        const phoneError = validateField("phone", client.phone);
+        const emailError = validateField("email", client.email);
+        setErrors({ firstName: firstNameError, lastName: lastNameError, phone: phoneError, email: emailError });
         setTouched({ firstName: true, lastName: true, phone: true, email: !!client.email });
 
-        if (fErr || lErr || pErr || eErr) {
-        Alert.alert("Validation", "Please fix the required fields.");
-        return;
+        if (firstNameError || lastNameError || phoneError || emailError) {
+            Alert.alert("Validation", "Please fix the required fields.");
+            return;
         }
 
         setLoading(true);
+
         try {
-        if (client.id) {
-            await clientsService.update(client.id, client);
-            Alert.alert("Success", "Client updated.");
-        } else {
-            await clientsService.create(client);
-            Alert.alert("Success", "Client created.");
-        }
-        // Clear the form after a successful save
-        setClient(empty);
-        setSelectedId(undefined);
-        setErrors({});
-        setTouched({});
-        if (modalVisible) {
-            const list = await clientsService.find();
-            setClients(list);
-        }
+            if (client.id) {
+                await clientsService.update(client.id, client);
+                Alert.alert("Success", "Client updated.");
+            } else {
+                await clientsService.create(client);
+                Alert.alert("Success", "Client created.");
+            }
+
+            // Clear the form after a successful save
+            setClient(empty);
+            setSelectedId(undefined);
+            setErrors({});
+            setTouched({});
+
+            if (modalVisible) {
+                const list = await clientsService.find();
+                setClients(list);
+            }
         } catch (err: any) {
-        Alert.alert("Error", err?.message ?? "Save failed");
+            Alert.alert("Error", err?.message ?? "Save failed");
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!client.id) return Alert.alert("Info", "No client selected to remove.");
+        if (!client.id) {
+            return Alert.alert("Info", "No client selected to remove.");
+        }
         Alert.alert("Confirm", "Remove client?", [
         { text: "Cancel", style: "cancel" },
         {
@@ -169,8 +193,8 @@ import Ionicons from "react-native-vector-icons/Ionicons";
                 setSelectedId(undefined);
                 Alert.alert("Removed", "Client removed successfully.");
                 if (modalVisible) {
-                const list = await clientsService.find();
-                setClients(list);
+                    const list = await clientsService.find();
+                    setClients(list);
                 }
             } catch (err: any) {
                 Alert.alert("Error", err?.message ?? "Remove failed");
@@ -203,16 +227,16 @@ import Ionicons from "react-native-vector-icons/Ionicons";
         }
     };
 
-    const selectClient = (c: Client) => {
-        setClient(c);
-        setSelectedId(c.id);
+    const selectClient = (client: Client) => {
+        setClient(client);
+        setSelectedId(client.id);
         setModalVisible(false);
         // reset validation for the loaded client
         setErrors({
-        firstName: validateField("firstName", c.firstName),
-        lastName: validateField("lastName", c.lastName),
-        phone: validateField("phone", c.phone),
-        email: validateField("email", c.email),
+        firstName: validateField("firstName", client.firstName),
+        lastName: validateField("lastName", client.lastName),
+        phone: validateField("phone", client.phone),
+        email: validateField("email", client.email),
         });
         setTouched({});
     };

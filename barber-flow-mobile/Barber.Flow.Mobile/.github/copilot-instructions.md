@@ -157,6 +157,7 @@ Barber.Flow.Api/
 - ❌ Ignore TypeScript errors or use `any`
 - ❌ Store sensitive data in AsyncStorage without encryption
 - ❌ Forget to handle loading and error states
+- ❌ Use one single letter variable names like `v` or `d` (use descriptive names)
 
 ### Backend - NEVER
 - ❌ Put business logic in controllers
@@ -166,6 +167,7 @@ Barber.Flow.Api/
 - ❌ Use synchronous methods when async is available
 - ❌ Swallow exceptions without logging
 - ❌ Commit secrets to GitHub (use GitHub Secrets + Railway env vars)
+- ❌ Use one single letter variable names like `v` or `d` (use descriptive names)
 
 ## ✅ QUALITY STANDARDS
 

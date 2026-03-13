@@ -201,7 +201,7 @@ export const SettingsScreen = () => {
 
                   {isAdmin ? (
                     <SettingSection title="Application Users">
-                      <View style={[styles.card, { backgroundColor: theme.colors.surface ?? '#fff' }]}> 
+                      <View style={[styles.card, { backgroundColor: theme.colors.surface ?? '#fff', marginBottom: 0, }]}> 
                         <Text style={{ fontWeight: '600', marginBottom: 8 }}>Manage Application Users</Text>
                         <SettingItem label="Barber ID" icon="key-outline" customContent={
                           <TextInput value={barberId} editable={false} style={[styles.inputInline, { backgroundColor: '#eee' }]} />
@@ -221,8 +221,8 @@ export const SettingsScreen = () => {
                         <SettingItem label="Barber Phone" icon="call-outline" customContent={
                           <TextInput value={barberPhone} onChangeText={setBarberPhone} style={styles.inputInline} placeholder="Barber phone" keyboardType="phone-pad" />
                         } />
-                        <SettingItem label="Address (optional)" icon="location-outline" customContent={
-                          <TextInput value={barberAddress} onChangeText={setBarberAddress} style={styles.inputInline} placeholder="Address (optional)" />
+                        <SettingItem label="Address" icon="location-outline" customContent={
+                          <TextInput value={barberAddress} onChangeText={setBarberAddress} style={styles.inputInline} placeholder="Address" />
                         } />
                         <View style={styles.buttonRow}>
                           <Pressable onPress={handleSaveBarber} style={[styles.actionButton, { backgroundColor: theme.colors.primary, flex: 1, marginHorizontal: 4 }]}>
