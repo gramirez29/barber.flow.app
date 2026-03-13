@@ -24,6 +24,7 @@ import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
+
     const PAYMENT_METHODS = ["None", "Sinpe Movil", "Transfer", "Cash"] as const;
 
     const formatPhone = (raw: string) => {

@@ -54,6 +54,9 @@ export const DayAppointments = ({ date }: Props) => {
         date={date}
         editingAppointment={editingAppointment}
         onClose={() => setModalVisible(false)}
+        onSave={appointment => {
+          // handle saving the appointment here
+        }}
       />
     </View>
   );
