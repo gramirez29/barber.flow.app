@@ -113,10 +113,10 @@ import Ionicons from "react-native-vector-icons/Ionicons";
         setErrors((e) => ({ ...e, [k]: err }));
     };
 
-    const onBlurField = (k: keyof Client) => {
-        setTouched((t) => ({ ...t, [k]: true }));
-        const err = validateField(k, client[k]);
-        setErrors((e) => ({ ...e, [k]: err }));
+    const onBlurField = (key: keyof Client) => {
+        setTouched((t) => ({ ...t, [key]: true }));
+        const err = validateField(key, client[key]);
+        setErrors((e) => ({ ...e, [key]: err }));
     };
 
     const isFormValid =
