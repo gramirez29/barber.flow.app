@@ -128,8 +128,10 @@ import Ionicons from "react-native-vector-icons/Ionicons";
         const current = client.birthday ? new Date(client.birthday) : new Date();
         DateTimePickerAndroid.open({
         value: current,
-        onChange: (_ev, d) => {
-            if (d) setField("birthday", d.toISOString());
+        onChange: (_ev, date) => {
+            if (date){
+                setField("birthday", date.toISOString());
+            }
         },
         mode: "date",
         });
@@ -234,10 +236,10 @@ import Ionicons from "react-native-vector-icons/Ionicons";
         setModalVisible(false);
         // reset validation for the loaded client
         setErrors({
-        firstName: validateField("firstName", client.firstName),
-        lastName: validateField("lastName", client.lastName),
-        phone: validateField("phone", client.phone),
-        email: validateField("email", client.email),
+            firstName: validateField("firstName", client.firstName),
+            lastName: validateField("lastName", client.lastName),
+            phone: validateField("phone", client.phone),
+            email: validateField("email", client.email),
         });
         setTouched({});
     };

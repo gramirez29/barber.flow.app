@@ -10,6 +10,7 @@ import { AppointmentModal } from "../components/calendar/AppointmentModal";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Platform } from "react-native";
+import { useNavigation, DrawerActions } from "@react-navigation/core";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 
@@ -108,11 +109,14 @@ export const CalendarScreen: React.FC = () => {
     setModalVisible(false);
   };
 
+    const navigation = useNavigation();
+
   return (
     <ScreenLayout
       title="Calendario"
       backgroundColor={theme.colors.background}
       center
+      onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
     >
       <KeyboardAwareScrollView
         style={{ flex: 1 }}
