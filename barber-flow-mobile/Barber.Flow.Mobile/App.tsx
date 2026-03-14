@@ -4,6 +4,7 @@ import 'react-native-gesture-handler';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider, useAppTheme } from './src/theme/ThemeContext';
 import { NotificationProvider } from './src/context/NotificationContext';
+import { Provider as PaperProvider, MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 
 function Main() {
   const { theme } = useAppTheme();
@@ -24,7 +25,9 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <Main />
+      <PaperProvider>
+        <Main />
+      </PaperProvider>
     </ThemeProvider>
   );
 }
