@@ -1,5 +1,6 @@
 
 
+/// Formats a phone number by removing non-digit characters and inserting a hyphen after the first four digits.
 export const formatPhoneNumber = (phone: string) => {
     const digits = phone.replace(/\D+/g, "").slice(0, 8);
 
