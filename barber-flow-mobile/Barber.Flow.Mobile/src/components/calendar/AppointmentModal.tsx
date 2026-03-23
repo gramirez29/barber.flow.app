@@ -3,6 +3,7 @@ import { View, StyleSheet, Alert } from "react-native";
 import { Modal, Portal, Text, TextInput, Button } from "react-native-paper";
 import { Appointment } from "../../features/appointments/appointments.types";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { formatPhoneNumber } from "../../utils/formatUtil";
 
 interface Props {
   visible: boolean;
@@ -76,9 +77,11 @@ export const AppointmentModal: React.FC<Props> = ({
         <TextInput
           label="Teléfono"
           value={phone}
-          onChangeText={setPhone}
+          onChangeText={(phone) => setPhone(formatPhoneNumber(phone))}
           style={styles.input}
           keyboardType="phone-pad"
+          placeholder="0000-0000"
+          maxLength={9}
         />
         <TextInput
           label="Hora"

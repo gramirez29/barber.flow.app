@@ -17,36 +17,26 @@ You are a **Senior Full Stack Developer** specializing in React Native (Expo) an
 ### 📁 Frontend Structure (ALWAYS RESPECT!)
 
 src/
-├── components/
-│ ├── calendar/ # Calendar-specific components
-│ ├── settings/ # Settings components
-│ └── ui/ # Reusable base components (AnimatedTabIcon, Header, ScreenTitle)
-│ ├── AlertBox.tsx
-│ ├── Button.tsx
-│ ├── Card.tsx
-│ └── ScreenLayout.tsx # Base layout wrapper for all screens
-├── context/
-│ └── NotificationContext.tsx
-├── features/ # Feature-based organization
-│ └── appointments/
-│ ├── appointment.store.ts
-│ └── appointment.types.ts
-├── navigation/
-│ ├── AppNavigator.tsx
-│ └── DrawerNavigation.tsx
-├── screens/
-│ ├── CalendarScreen.tsx
-│ ├── CreateAppointmentScreen.tsx
-│ ├── NotificationScreen.tsx
-│ └── SettingsScreen.tsx
-├── services/ # API calls
-│  └── apis/ # API service functions
-├── store/ # Global Zustand stores
-├── theme/ # Theme system
-└── types/ # TypeScript types 
-├── fonts.ts
-├── ThemeContext.tsx
-└── themes.ts
+├── components/           # Reusable components
+│   ├── calendar/        # Calendar-specific components
+│   ├── settings/        # Settings components
+│   └── ui/              # Base UI components (Button, Card, etc.)
+├── context/             # React Contexts
+│   └── NotificationContext.tsx
+├── features/            # Feature-based organization
+│   ├── appointments/    # Appointments feature (store + types)
+│   └── clients/         # Clients feature (store + types)
+├── navigation/          # Navigation configuration
+├── screens/             # App screens
+├── services/            # API calls and external services
+├── store/               # Global Zustand stores
+│   └── auth.store.ts    # Authentication store
+├── theme/               # Theme system
+│   ├── fonts.ts
+│   ├── ThemeContext.tsx
+│   └── themes.ts
+├── types/               # Global TypeScript types
+└── utils/               # Utility functions
 
 
 ### 🎨 Theme System (CRITICAL)

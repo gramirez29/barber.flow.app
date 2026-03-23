@@ -23,17 +23,10 @@ import type { Client } from "../types/clients";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { formatPhoneNumber } from "../utils/formatUtil";
 
 
     const PAYMENT_METHODS = ["None", "Sinpe Movil", "Transfer", "Cash"] as const;
-
-    const formatPhone = (raw: string) => {
-        const digits = raw.replace(/\D+/g, "").slice(0, 8);
-        if (digits.length <= 4) {
-            return digits;
-        }
-        return `${digits.slice(0, 4)}-${digits.slice(4)}`;
-    };
 
     export const ClientsScreen: React.FC = () => {
     const { theme } = useAppTheme();
@@ -320,20 +313,20 @@ import Ionicons from "react-native-vector-icons/Ionicons";
                 <View style={styles.row}>
                     <Text style={[styles.label, { color: theme.colors.textPrimary }]}>* Phone</Text>
                     <TextInput
-                    value={client.phone}
-                    onChangeText={(t) => setField("phone", formatPhone(t))}
-                    onBlur={() => onBlurField("phone")}
-                    style={[
-                        styles.input,
-                        {
-                        backgroundColor: theme.colors.primaryInput,
-                        color: theme.colors.primaryTextInput,
-                        borderColor: touched.phone && errors.phone ? "#DC2626" : "#E5E7EB",
-                        },
-                    ]}
-                    placeholder="0000-0000"
-                    keyboardType="phone-pad"
-                    maxLength={9}
+                        value={client.phone}
+                        onChangeText={(phone) => setField("phone", formatPhoneNumber(phone))}
+                        onBlur={() => onBlurField("phone")}
+                        style={[
+                            styles.input,
+                            {
+                            backgroundColor: theme.colors.primaryInput,
+                            color: theme.colors.primaryTextInput,
+                            borderColor: touched.phone && errors.phone ? "#DC2626" : "#E5E7EB",
+                            },
+                        ]}
+                        placeholder="0000-0000"
+                        keyboardType="phone-pad"
+                        maxLength={9}
                     />
                     {touched.phone && errors.phone ? (
                     <Text style={[styles.fieldError, { color: theme.colors.error ?? "#DC2626" }]}>{errors.phone}</Text>
