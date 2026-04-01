@@ -28,10 +28,12 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 
 app.MapSampleApi();
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapAuthApi();
 app.MapClientsApi();
 app.MapBarbersApi();
+app.MapReportsApi();
 app.MapUsersApi();
 app.Run();

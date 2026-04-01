@@ -11,6 +11,7 @@ using Barber.Flow.Application.Services.Clients;
 using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Infrastructure.Services.InMemory;
 using Barber.Flow.Application.Services.Users;
+using Barber.Flow.Application.Services.Reports;
 
 namespace Barber.Flow.Api.Extensions;
 
@@ -43,6 +44,9 @@ public static class ApplicationExtensions
 
         services.AddScoped<IUserService, UserService>();
         services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+
+        services.AddScoped<IReportService, ReportService>();
+        services.AddSingleton<IReportRepository, InMemoryReportRepository>();
 
         // services.AddSwaggerDocumentation(configuration);
 

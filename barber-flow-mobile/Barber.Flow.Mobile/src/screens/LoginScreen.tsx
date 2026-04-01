@@ -13,6 +13,7 @@ import {
   Pressable,
   Dimensions,
   Keyboard as RNKeyboard,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../components/ScreenLayout';
@@ -72,9 +73,17 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   const ensureVisible = (ref: React.RefObject<RNTextInput | null>) => {
     const r = ref.current as any;
-    if (!r || !scrollRef.current) return;
+    if (!r || !scrollRef.current) {
+      return;
+    }
+    
     const measureFn = r.measureInWindow ?? r.measure;
-    if (typeof measureFn !== 'function') { scrollRef.current?.scrollTo({ y: scrollY + 160, animated: true }); return; }
+
+    if (typeof measureFn !== 'function') { 
+      scrollRef.current?.scrollTo({ y: scrollY + 160, animated: true });
+      return;
+    }
+
     (measureFn as any).call(r, (x: number, y: number, w: number, h: number) => {
       const windowHeight = Dimensions.get('window').height;
       const kbTop = windowHeight - keyboardHeight;
@@ -90,44 +99,123 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   const HEADER_HEIGHT = theme.layout.sizes.headerHeight ?? 64;
   const keyboardVerticalOffset = insets.top + HEADER_HEIGHT + 8;
+  const contentWidth = Math.min((theme.layout.sizes.maxContentWidth ?? 520) + 24, width - 24);
 
   return (
-    <ScreenLayout title="Login" center hideHeaderActions>
+    <ScreenLayout backgroundColor={theme.colors.background} hideHeaderActions>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={keyboardVerticalOffset} style={styles.container}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <ScrollView ref={scrollRef} contentContainerStyle={[styles.scrollContainer, { paddingBottom: Math.max(24, keyboardHeight + 24) }]} keyboardShouldPersistTaps="handled" onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)} scrollEventThrottle={16}>
-            <Image source={require('../../assets/images/login-temporal.jpg')} style={[styles.image, { width: Math.min(theme.layout.sizes.maxContentWidth, width * 0.78), height: theme.layout.sizes.imageBannerHeight }]} resizeMode="contain" />
-            <FormCard>
-              <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Welcome back</Text>
+            <View style={[styles.contentWrap, { maxWidth: contentWidth }]}> 
+              <View
+                style={[
+                  styles.heroPanel,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.border,
+                  },
+                  theme.layout.shadows.card,
+                ]}
+              >
+                <View style={styles.heroTopRow}>
+                  <View style={[styles.brandBadge, { backgroundColor: theme.mode === 'dark' ? 'rgba(96, 165, 250, 0.18)' : 'rgba(59, 130, 246, 0.12)' }]}>
+                    <Text style={[styles.brandBadgeText, { color: theme.colors.secondary }]}>Barber Flow</Text>
+                  </View>
+                  <View style={[styles.statusPill, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}> 
+                    <Text style={[styles.statusPillText, { color: theme.colors.textSecondary }]}>Secure access</Text>
+                  </View>
+                </View>
 
-              <RNTextInput
-                ref={emailRef as any}
-                placeholder="Username"
-                value={userName}
-                onChangeText={setUserName}
-                style={[styles.input, { backgroundColor: theme.colors.primaryInput, color: theme.colors.primaryTextInput }]}
-                autoCapitalize="none"
-                returnKeyType="next"
-                onFocus={() => ensureVisible(emailRef)}
-                onSubmitEditing={() => passwordRef.current?.focus()}
-              />
+                <Image source={require('../../assets/images/login-temporal.jpg')} style={[styles.image, { height: theme.layout.sizes.imageBannerHeight }]} resizeMode="contain" />
 
-              <PasswordInput
-                inputRef={passwordRef as any}
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                onFocusVisible={() => ensureVisible(passwordRef)}
-              />
+                <Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>Manage your barber workspace with confidence.</Text>
+                <Text style={[styles.heroBody, { color: theme.colors.textSecondary }]}>Sign in to access appointments, client records, notifications, and operational settings from one professional workspace.</Text>
 
-              {error ? <Text style={styles.error}>{error}</Text> : null}
+                <View style={styles.featureRow}>
+                  <View style={[styles.featureChip, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+                    <Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>Appointments</Text>
+                  </View>
+                  <View style={[styles.featureChip, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+                    <Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>Clients</Text>
+                  </View>
+                  <View style={[styles.featureChip, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+                    <Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>Notifications</Text>
+                  </View>
+                </View>
+              </View>
 
-              {loading ? <ActivityIndicator style={styles.loader} /> : (
-                <Pressable style={[styles.button, { backgroundColor: theme.colors.primary }]} onPress={submit}>
-                  <Text style={[styles.buttonText, { color: '#fff' }]}>Login</Text>
+              <FormCard style={styles.authCard}>
+                <Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>Welcome back</Text>
+                <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Sign in to continue</Text>
+                <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>Use your assigned username and password to open the mobile workspace.</Text>
+
+                <View style={styles.formGroup}>
+                  <Text style={[styles.label, { color: theme.colors.textSecondary }]}>Username</Text>
+                  <RNTextInput
+                    ref={emailRef as any}
+                    placeholder="Enter your username"
+                    placeholderTextColor={theme.colors.textSecondary}
+                    value={userName}
+                    onChangeText={setUserName}
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: theme.colors.primaryInput,
+                        borderColor: error ? theme.colors.error : theme.colors.border,
+                        color: theme.colors.textPrimary,
+                      },
+                    ]}
+                    autoCapitalize="none"
+                    returnKeyType="next"
+                    selectionColor={theme.colors.secondary}
+                    onFocus={() => ensureVisible(emailRef)}
+                    onSubmitEditing={() => passwordRef.current?.focus()}
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={[styles.label, { color: theme.colors.textSecondary }]}>Password</Text>
+                  <PasswordInput
+                    inputRef={passwordRef as any}
+                    placeholder="Enter your password"
+                    placeholderTextColor={theme.colors.textSecondary}
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocusVisible={() => ensureVisible(passwordRef)}
+                    onSubmitEditing={submit}
+                    returnKeyType="done"
+                    error={Boolean(error)}
+                  />
+                </View>
+
+                {error ? (
+                  <View style={[styles.errorCard, { backgroundColor: theme.mode === 'dark' ? 'rgba(248, 113, 113, 0.14)' : 'rgba(220, 38, 38, 0.08)', borderColor: theme.colors.error }]}> 
+                    <Text style={[styles.errorTitle, { color: theme.colors.error }]}>Authentication failed</Text>
+                    <Text style={[styles.error, { color: theme.colors.error }]}>{error}</Text>
+                  </View>
+                ) : null}
+
+                <Pressable
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor: theme.colors.primary,
+                      opacity: loading ? 0.82 : 1,
+                    },
+                  ]}
+                  onPress={submit}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={theme.mode === 'dark' ? '#0F172A' : '#FFFFFF'} />
+                  ) : (
+                    <Text style={[styles.buttonText, { color: theme.mode === 'dark' ? '#0F172A' : '#FFFFFF' }]}>Sign in</Text>
+                  )}
                 </Pressable>
-              )}
-            </FormCard>
+
+                <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>Your session is stored securely on this device after a successful login.</Text>
+              </FormCard>
+            </View>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -137,12 +225,31 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContainer: { flexGrow: 1, justifyContent: 'flex-start', alignItems: 'center', paddingVertical: 20, paddingHorizontal: 18 },
-  image: { marginBottom: 12, borderRadius: 12 },
-  title: { fontSize: 20, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#E5E7EB', paddingVertical: 14, paddingHorizontal: 14, borderRadius: 10, marginBottom: 14, fontSize: 16.5 },
-  error: { color: '#DC2626', marginBottom: 12, fontSize: 14 },
-  loader: { marginVertical: 8 },
-  button: { paddingVertical: 14, borderRadius: 10, alignItems: 'center', marginTop: 4 },
-  buttonText: { fontSize: 16, fontWeight: '600' },
+  scrollContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20, paddingHorizontal: 18 },
+  contentWrap: { width: '100%', gap: 18 },
+  heroPanel: { borderRadius: 24, borderWidth: 1, overflow: 'hidden', paddingHorizontal: 22, paddingVertical: 20 },
+  heroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
+  brandBadge: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999 },
+  brandBadgeText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
+  statusPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
+  statusPillText: { fontSize: 12, fontWeight: '600' },
+  image: { width: '100%', marginTop: 12, marginBottom: 6 },
+  heroTitle: { fontSize: 28, lineHeight: 34, fontWeight: '700', marginBottom: 10 },
+  heroBody: { fontSize: 15, lineHeight: 22, marginBottom: 16 },
+  featureRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  featureChip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
+  featureChipText: { fontSize: 12, fontWeight: '600' },
+  authCard: { paddingVertical: 22 },
+  eyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 8, textTransform: 'uppercase' },
+  title: { fontSize: 24, fontWeight: '700', marginBottom: 8 },
+  subtitle: { fontSize: 14, lineHeight: 21, marginBottom: 20 },
+  formGroup: { marginBottom: 14 },
+  label: { fontSize: 12, fontWeight: '700', letterSpacing: 0.6, marginBottom: 8, textTransform: 'uppercase' },
+  input: { borderWidth: 1, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 12, fontSize: 16 },
+  errorCard: { borderWidth: 1, borderRadius: 16, marginBottom: 14, paddingHorizontal: 14, paddingVertical: 12 },
+  errorTitle: { fontSize: 13, fontWeight: '700', marginBottom: 4, textTransform: 'uppercase' },
+  error: { fontSize: 14, lineHeight: 20 },
+  button: { minHeight: 52, paddingVertical: 14, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+  buttonText: { fontSize: 16, fontWeight: '700' },
+  helperText: { fontSize: 13, lineHeight: 18, marginTop: 14, textAlign: 'center' },
 });

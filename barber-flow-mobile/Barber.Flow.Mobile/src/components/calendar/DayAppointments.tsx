@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Button } from "react-native";
 import { useAppointmentStore } from "../../features/appointments/appointment.store";
 import { AppointmentModal } from "./AppointmentModal";
-import { Appointment } from "../../features/appointments/appointments.types";
+import { Appointment, AppointmentDraft } from "../../features/appointments/appointments.types";
 
 interface Props {
   date: string;
 }
 
 export const DayAppointments = ({ date }: Props) => {
-  const { appointments } = useAppointmentStore();
+  const { appointments, addAppointment, updateAppointment } = useAppointmentStore();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
@@ -54,8 +54,15 @@ export const DayAppointments = ({ date }: Props) => {
         date={date}
         editingAppointment={editingAppointment}
         onClose={() => setModalVisible(false)}
-        onSave={appointment => {
-          // handle saving the appointment here
+        onSave={(appointment: AppointmentDraft) => {
+          if (editingAppointment) {
+            updateAppointment(editingAppointment.id, appointment);
+          } else {
+            addAppointment(appointment);
+          }
+
+          setEditingAppointment(null);
+          setModalVisible(false);
         }}
       />
     </View>

@@ -4,12 +4,11 @@ import {
     View,
     StyleSheet,
     Text,
-    Alert,
 } from "react-native";
 import { useAppTheme } from "../../theme/ThemeContext";
 import { useNotification } from "../../context/NotificationContext";
 import { useAuthStore } from '../../store/auth.store';
-import { authService } from '../../services/authService';
+import { ScreenTitle } from "./ScreenTitle";
 
 interface HeaderProps {
     title: string;
@@ -18,147 +17,154 @@ interface HeaderProps {
 }
 
 export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
-    const { toggleTheme, theme } = useAppTheme();
-    const isDarkMode = theme.mode === "dark";
-    const { clientNotifications } = useNotification();
+    const { theme } = useAppTheme();
+    const { unreadCount } = useNotification();
     const user = useAuthStore((s) => s.user);
-    const clearUser = useAuthStore((s) => s.clearUser);
-
-    const handleLogout = () => {
-        Alert.alert(
-            "Sign out",
-            "Are you sure you want to sign out?",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Sign out",
-                    style: "destructive",
-                    onPress: async () => {
-                        clearUser();
-                        await authService.clearStoredUser();
-                    },
-                },
-            ],
-            { cancelable: true }
-        );
-    };
+    const identity = user?.name ?? user?.userName ?? "Guest";
+    const roleLabel = user?.role ?? "Workspace";
+    const initials = identity
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? "")
+        .join("") || "BF";
 
     return (
     <View
         style={[
-        styles.container,
+        styles.shell,
             {
             backgroundColor: theme.colors.surface,
             borderBottomColor: theme.colors.border,
             },
+            theme.layout.shadows.card,
         ]}
     >
-        {/* Left: menu button or placeholder to preserve centering */}
-        {onMenuPress ? (
-            <TouchableOpacity
-                onPress={onMenuPress}
-                onLongPress={handleLogout}
-                style={ styles.iconButton }
-                activeOpacity={ 0.7 }
-                accessibilityLabel="Menu"
-                accessibilityHint="Tap to open menu. Long press to sign out."
-            >
-                <Ionicons name="menu" size={22} color={theme.colors.textPrimary} />
-            </TouchableOpacity>
-        ) : (
-            <View style={styles.iconPlaceholder} />
-        )}
+        <View style={styles.container}>
+            {onMenuPress ? (
+                <TouchableOpacity
+                    onPress={onMenuPress}
+                    style={[styles.iconButton, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
+                    activeOpacity={0.8}
+                    accessibilityLabel="Open menu"
+                >
+                    <Ionicons name="menu" size={22} color={theme.colors.textPrimary} />
+                </TouchableOpacity>
+            ) : (
+                <View style={styles.iconPlaceholder} />
+            )}
 
-        {/* Title */}
-        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
-            {title}
+            <View style={styles.titleWrap}>
+                <ScreenTitle
+                    eyebrow="Barber Flow"
+                    size="sm"
+                    subtitle={roleLabel}
+                    title={title}
+                />
+            </View>
+
+            <View style={styles.actionsWrap}>
+                {onBellPress ? (
+                    <TouchableOpacity
+                        style={[styles.notificationButton, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
+                        onPress={onBellPress}
+                        activeOpacity={0.8}
+                        accessibilityLabel="Open notifications"
+                    >
+                        <Ionicons name="notifications-outline" size={20} color={theme.colors.textPrimary} />
+                        {unreadCount > 0 ? (
+                            <View style={[styles.badge, { backgroundColor: theme.colors.notificationBadge }]}>
+                                <Text style={styles.badgeText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+                            </View>
+                        ) : null}
+                    </TouchableOpacity>
+                ) : null}
+
+                <View style={[styles.avatarWrap, { backgroundColor: theme.colors.primary }]}>
+                    <Text style={[styles.avatarText, { color: theme.mode === "dark" ? "#0F172A" : "#FFFFFF" }]}>{initials}</Text>
+                </View>
+            </View>
+        </View>
+
+        <Text style={[styles.identityText, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+            Signed in as {identity}
         </Text>
-
-        {user?.userName ? <Text style={{ color: theme.colors.textPrimary, marginLeft: 8 }}>{user.userName}</Text> : <View style={{ width: 24 }} />}
-
-        {/* Notification button or placeholder */}
-        {onBellPress ? (
-            <TouchableOpacity style={ styles.bellContainer } onPress={onBellPress} >
-                <Ionicons name="notifications-outline" size={22} color={theme.colors.textPrimary} />
-                {
-                    clientNotifications > 0 && (
-                        <View style={ styles.badge }>
-                            <Text style={ styles.badgeText }>{ clientNotifications > 9 ? "9+" : clientNotifications }</Text>
-                        </View>
-                    )
-                }
-            </TouchableOpacity>
-        ) : (
-            <View style={{ width: 24 }} />
-        )}
-
-        <View style={{ width: 8 }} />
     </View>
     );
 };
 
 const styles = StyleSheet.create({
-    wrapper: {
-        borderBottomWidth: 0.5,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 4,
+    shell: {
+        borderBottomWidth: 1,
+        paddingBottom: 12,
+        paddingHorizontal: 16,
+        paddingTop: 10,
     },
     container: {
-        height: 64,
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 16,
+        gap: 14,
     },
-    bellContainer: {
-        width: 24,
-        alignItems: "center",
+    titleWrap: {
+        flex: 1,
         justifyContent: "center",
     },
     badge: {
         position: "absolute",
-        top: -4,
-        right: -6,
-        backgroundColor: "#FF0000",
+        top: -5,
+        right: -5,
         borderRadius: 10,
-        minWidth: 16,
-        height: 16,
+        minWidth: 18,
+        height: 18,
         justifyContent: "center",
         alignItems: "center",
-        paddingHorizontal: 3,
+        paddingHorizontal: 4,
     },
     badgeText: {
         fontSize: 10,
         color: "#FFFFFF",
+        fontWeight: "700",
     },
     iconButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+        borderWidth: 1,
         justifyContent: "center",
         alignItems: "center",
     },
     iconPlaceholder: {
+        width: 46,
+        height: 46,
+    },
+    actionsWrap: {
+        alignItems: "center",
+        flexDirection: "row",
+        gap: 10,
+    },
+    notificationButton: {
         width: 44,
         height: 44,
-    },
-    title: {
-        flex: 1,
-        textAlign: "center",
-        fontSize: 18,
-        fontWeight: "600",
-        letterSpacing: 0.3,
-    },
-    side: {
-        width: 60,
-        alignItems: "flex-start",
-    },
-    rightSection: {
-        width: 80,
-        flexDirection: "row",
+        borderRadius: 22,
+        borderWidth: 1,
         alignItems: "center",
-        justifyContent: "flex-end",
+        justifyContent: "center",
+    },
+    avatarWrap: {
+        alignItems: "center",
+        borderRadius: 20,
+        height: 40,
+        justifyContent: "center",
+        width: 40,
+    },
+    avatarText: {
+        fontSize: 13,
+        fontWeight: "700",
+    },
+    identityText: {
+        fontSize: 12,
+        marginLeft: 60,
+        marginTop: 8,
     },
 });

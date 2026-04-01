@@ -1,328 +1,434 @@
+import React, { useEffect, useState } from "react";
+import { Alert, Platform, StyleSheet, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { Button, SegmentedButtons, Text } from "react-native-paper";
+import { ReportCalculationSettingsForm } from "../components/settings/ReportCalculationSettingsForm";
 import { ScreenLayout } from "../components/ScreenLayout";
-import { Alert, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Pressable, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
-import { useAppTheme } from "../theme/ThemeContext";
+import { ManageApplicationUsersForm } from "../components/settings/ManageApplicationUsersForm";
 import { SettingItem } from "../components/settings/SettingItem";
 import { SettingSection } from "../components/settings/SettingSection";
 import { useNotification } from "../context/NotificationContext";
-import { useState, useEffect } from "react";
-import { apiFetch } from '../services/apis/apiClient';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useAuthStore } from '../store/auth.store';
-import { ADMIN_USERNAME } from '../config';
+import { useReportCalculationSettingsForm } from "../features/settings/reportCalculationsForm";
+import {
+  mapBarberResponseToForm,
+  useApplicationUsersForm,
+} from "../features/settings/settingsForm";
+import { settingsService } from "../services/apis/settingsService";
+import { useAuthStore } from "../store/auth.store";
+import { useAppTheme } from "../theme/ThemeContext";
+import { FormCard } from "../components/ui/FormCard";
+import {
+  DEFAULT_REPORT_CALCULATION_SETTINGS,
+  type BarberApiResponse,
+  type ThemeMode,
+} from "../types/settings";
+
+const APP_VERSION = "1.0.0";
+const DEVELOPER_NAME = "Guillermo Ramirez";
 
 export const SettingsScreen = () => {
+  const user = useAuthStore((state) => state.user);
+  const isAdmin = user?.role === "Admin";
+  const { notificationsEnabled, setNotificationsEnabled, unreadCount } = useNotification();
+  const { resolvedThemeMode, setThemeMode, theme, themeMode } = useAppTheme();
+  const {
+    errors,
+    isFormValid,
+    loadValues,
+    mode,
+    onBlurField,
+    resetValues,
+    setField,
+    touched,
+    validateBeforeSubmit,
+    values,
+  } = useApplicationUsersForm();
 
-  const { clientNotifications, setClientNotifications } = useNotification();
-  const { toggleTheme, theme } = useAppTheme();
-  const isDarkMode = theme.mode === "dark";
+  const [applicationUserLoading, setApplicationUserLoading] = useState(false);
+  const [applicationUserResults, setApplicationUserResults] = useState<BarberApiResponse[]>([]);
+  const [reportSettingsLoading, setReportSettingsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    errors: reportSettingErrors,
+    loadValues: loadReportSettingValues,
+    onBlurField: onBlurReportSettingField,
+    resetValues: resetReportSettingValues,
+    setField: setReportSettingField,
+    touched: reportSettingTouched,
+    validateBeforeSubmit: validateReportSettingsBeforeSubmit,
+    values: reportSettingValues,
+  } = useReportCalculationSettingsForm();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-
-  // Admin-only users management
-  const user = useAuthStore((s) => s.user);
-  const isAdmin = user?.role === 'Admin';
-
-  const [userName, setUserName] = useState("");
-  const [userPhone, setUserPhone] = useState("");
-  const [userEmail, setUserEmail] = useState("");
-  const [barberName, setBarberName] = useState("");
-  const [barberPhone, setBarberPhone] = useState("");
-  const [barberAddress, setBarberAddress] = useState("");
-  const [barberId, setBarberId] = useState<string | undefined>(undefined);
-
-  const [errors, setErrors] = useState<{[k:string]: string | undefined}>({});
+  const loadNextBarberId = async () => {
+    const nextBarberId = await settingsService.getNextBarberId();
+    resetValues(nextBarberId);
+  };
 
   useEffect(() => {
-    // initialize barber id when admin opens screen
-    if (isAdmin && !barberId) {
-      (async () => {
-        const next = await getNextBarberId();
-        setBarberId(next);
-      })();
+    if (!isAdmin) {
+      return;
     }
+
+    void loadNextBarberId();
   }, [isAdmin]);
 
-  async function getNextBarberId() {
-    try {
-      const res = await apiFetch('/api/barbers/nextId', { method: 'GET' });
-      return res?.nextId ?? 'CRB-0000';
-    } catch (e) {
-      return 'CRB-0000';
-    }
-  }
+  useEffect(() => {
+    let mounted = true;
 
-  function validateEmail(v?: string) {
-    if (!v) return 'Email is required';
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(v) ? undefined : 'Invalid email';
-  }
+    const loadReportSettings = async () => {
+      const settings = await settingsService.getReportCalculationSettings();
 
-  function validateRequired(v?: string) {
-    if (!v || !String(v).trim()) return 'Required';
-    return undefined;
-  }
-
-  async function handleSaveBarber() {
-    // validate fields (address optional)
-    const e1 = validateRequired(userName);
-    const e2 = validateRequired(userPhone);
-    const e3 = validateEmail(userEmail);
-    const e4 = validateRequired(barberName);
-    const e5 = validateRequired(barberPhone);
-    setErrors({ userName: e1, userPhone: e2, userEmail: e3, barberName: e4, barberPhone: e5 });
-    if (e1 || e2 || e3 || e4 || e5) return Alert.alert('Validation', 'Please fix the required fields');
-
-    try {
-      const payload = { UserName: userName, UserPhone: userPhone, UserEmail: userEmail, BarberName: barberName, BarberPhone: barberPhone, Address: barberAddress };
-      const created = await apiFetch('/api/barbers/create', { method: 'POST', json: payload });
-      Alert.alert('Saved', `Barber ${created?.id ?? created?.Id} saved`);
-      const next = await getNextBarberId();
-      setBarberId(next);
-      setUserName(''); setUserPhone(''); setUserEmail(''); setBarberName(''); setBarberPhone(''); setBarberAddress('');
-      setErrors({});
-    } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Save failed');
-    }
-  }
-
-  async function handleSearchBarber() {
-    try {
-      let found: any = null;
-      if (barberId) {
-        const res = await apiFetch(`/api/barbers/getById/${barberId}`, { method: 'GET' });
-        found = res;
-      } else if (userEmail) {
-        const res = await apiFetch(`/api/barbers/search?query=${encodeURIComponent(userEmail)}`, { method: 'GET' });
-        found = Array.isArray(res) && res.length ? res[0] : null;
-      } else if (userPhone) {
-        const res = await apiFetch(`/api/barbers/search?query=${encodeURIComponent(userPhone)}`, { method: 'GET' });
-        found = Array.isArray(res) && res.length ? res[0] : null;
+      if (!mounted) {
+        return;
       }
-      if (!found) return Alert.alert('Not found', 'No barber found');
-      setUserName(found.userName ?? found.UserName ?? ''); setUserPhone(found.userPhone ?? found.UserPhone ?? ''); setUserEmail(found.userEmail ?? found.UserEmail ?? '');
-      setBarberName(found.barberName ?? found.BarberName ?? ''); setBarberPhone(found.barberPhone ?? found.BarberPhone ?? ''); setBarberAddress(found.barberAddress ?? found.Address ?? ''); setBarberId(found.id ?? found.Id ?? undefined);
-    } catch (err: any) { Alert.alert('Error', err?.message ?? 'Search failed'); }
-  }
 
-  async function handleDeleteBarber() {
-    if (!barberId) return Alert.alert('Info','No barber selected');
+      loadReportSettingValues(settings);
+      setReportSettingsLoading(false);
+    };
+
+    void loadReportSettings();
+
+    return () => {
+      mounted = false;
+    };
+  }, [loadReportSettingValues]);
+
+  const handleThemeModeChange = async (value: string) => {
+    await setThemeMode(value as ThemeMode);
+  };
+
+  const handleApplicationUserSubmit = async () => {
+    const nextErrors = validateBeforeSubmit();
+
+    if (
+      nextErrors.userName ||
+      nextErrors.userPhone ||
+      nextErrors.userEmail ||
+      nextErrors.barberName ||
+      nextErrors.barberPhone
+    ) {
+      Alert.alert("Validation", "Please fix the required fields.");
+      return;
+    }
+
+    setApplicationUserLoading(true);
+
     try {
-      await apiFetch(`/api/barbers/delete/${barberId}`, { method: 'DELETE' });
-      Alert.alert('Deleted', `Barber ${barberId} removed`);
-      const next = await getNextBarberId(); setBarberId(next);
-      setUserName(''); setUserPhone(''); setUserEmail(''); setBarberName(''); setBarberPhone(''); setBarberAddress('');
-    } catch (err: any) { Alert.alert('Error', err?.message ?? 'Delete failed'); }
-  }
+      if (mode === "edit" && values.barberId) {
+        const updated = await settingsService.updateApplicationUser(values.barberId, values);
+        Alert.alert("Updated", `Application user ${updated.id} updated successfully.`);
+        loadValues(mapBarberResponseToForm(updated), "edit");
+      } else {
+        const created = await settingsService.createApplicationUser(values);
+        Alert.alert("Saved", `Application user ${created.id} created successfully.`);
+        await loadNextBarberId();
+      }
 
-  function handleCancelBarber() {
-    setUserName(''); setUserPhone(''); setUserEmail(''); setBarberName(''); setBarberPhone(''); setBarberAddress('');
-  }
+      setApplicationUserResults([]);
+      setSearchQuery("");
+    } catch (error: any) {
+      Alert.alert("Error", error?.message ?? "Save failed");
+    } finally {
+      setApplicationUserLoading(false);
+    }
+  };
 
-  // Fake function to display an Alert, replace with component
-  function OnPressLabel() : void {
+  const handleApplicationUserSearch = async () => {
+    const query = searchQuery.trim() || (mode === "edit" ? values.barberId?.trim() : "");
 
-    Alert.alert('Mensaje de alerta de prueba', 'Esto mostrará algo importante', [
+    if (!query) {
+      Alert.alert("Search", "Enter a Barber ID, email, or phone to search.");
+      return;
+    }
+
+    setApplicationUserLoading(true);
+
+    try {
+      if (/^CRB-/i.test(query)) {
+        const found = await settingsService.getApplicationUserById(query);
+        setApplicationUserResults([found]);
+        loadValues(mapBarberResponseToForm(found), "edit");
+      } else {
+        const results = await settingsService.findApplicationUsers(query);
+        setApplicationUserResults(results);
+
+        if (results.length === 1) {
+          loadValues(mapBarberResponseToForm(results[0]), "edit");
+        } else if (results.length === 0) {
+          Alert.alert("Not found", "No application user found for that search.");
+        }
+      }
+    } catch (error: any) {
+      Alert.alert("Error", error?.message ?? "Search failed");
+    } finally {
+      setApplicationUserLoading(false);
+    }
+  };
+
+  const handleApplicationUserDelete = async () => {
+    if (!values.barberId || mode !== "edit") {
+      Alert.alert("Info", "No application user selected.");
+      return;
+    }
+
+    const barberId = values.barberId;
+
+    Alert.alert("Confirm", `Remove ${barberId}?`, [
+      { text: "Cancel", style: "cancel" },
       {
-        text: 'Preguntar luego',
-        onPress: () => console.log('Ask me later pressed'),
+        onPress: async () => {
+          setApplicationUserLoading(true);
+
+          try {
+            await settingsService.deleteApplicationUser(barberId);
+            Alert.alert("Deleted", `Application user ${barberId} removed successfully.`);
+            await loadNextBarberId();
+            setApplicationUserResults([]);
+            setSearchQuery("");
+          } catch (error: any) {
+            Alert.alert("Error", error?.message ?? "Delete failed");
+          } finally {
+            setApplicationUserLoading(false);
+          }
+        },
+        style: "destructive",
+        text: "Delete",
       },
-      {
-        text: 'Cancelar',
-        onPress: () => console.log('Cancel Pressed'),
-        style: 'cancel',
-      },
-      {text: 'OK', onPress: () => console.log('OK Pressed')},
     ]);
-  }
+  };
 
-    return (
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.background }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-          <ScreenLayout title="Settings" backgroundColor={theme.colors.background} center>
-                  <ScrollView contentContainerStyle={styles.container}>
+  const handleResetApplicationUser = async () => {
+    await loadNextBarberId();
+    setApplicationUserResults([]);
+    setSearchQuery("");
+  };
 
-                    <Image source={{ uri: "https://i.pravatar.cc/160?img=12" }} style={styles.avatar} />
+  const handleSelectApplicationUserResult = (result: BarberApiResponse) => {
+    loadValues(mapBarberResponseToForm(result), "edit");
+    setApplicationUserResults([result]);
+  };
 
-                    <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-                      Settings Screen - Notifications: {clientNotifications}
-                    </Text>
+  const handleSaveReportSettings = async () => {
+    const nextErrors = validateReportSettingsBeforeSubmit();
 
-                    <SettingSection title="Datos Personales">
-                      <SettingItem label="Editar Perfil" icon="person-outline" />
-                      <SettingItem label="Nombre de usuario" icon="person-circle-outline" />
-                    </SettingSection>
+    if (nextErrors.commissionPercentage || nextErrors.fixedDailyExpense) {
+      Alert.alert("Validation", "Please review the daily report calculation values.");
+      return;
+    }
 
-                    <SettingSection title="Fake Section">
-                      <SettingItem label="Etiqueta ejemplo 1" icon="airplane-outline" value={true} onPress={OnPressLabel}/>
-                      <SettingItem label="Etiqueta ejemplo 2" icon="alarm-outline"/>
-                      <SettingItem label="Etiqueta ejemplo 3" icon="add-circle-outline"/>
-                      <SettingItem label="Etiqueta ejemplo 4" icon="bag-remove-outline"/>
-                    </SettingSection>
+    await settingsService.setReportCalculationSettings(reportSettingValues);
+    Alert.alert("Saved", "Daily report calculations updated successfully.");
+  };
 
-                    <SettingSection title="Preferencias">
-                      <SettingItem 
-                        label="Modo Oscuro"
-                        icon={ isDarkMode ? "moon" : "sunny" }
-                        value={ isDarkMode }
-                        onToggle={ toggleTheme }
-                        />
-                      <SettingItem
-                        label="Notificaciones"
-                        icon="notifications-outline"
-                        value={clientNotifications > 0} // ver como manejar esto
-                        onToggle={() => {}}
-                    />
-                      </SettingSection>
+  const handleResetReportSettings = async () => {
+    resetReportSettingValues(DEFAULT_REPORT_CALCULATION_SETTINGS);
+    await settingsService.setReportCalculationSettings(DEFAULT_REPORT_CALCULATION_SETTINGS);
+    Alert.alert("Reset", "Daily report calculations were reset to defaults.");
+  };
 
-                  <SettingSection title="ACERCA DE">
-                    <SettingItem label="Versión -> 0.0.0.0" icon="information-circle-outline" />
-                    <SettingItem label="Desarrollado por Guillermo Ramirez" icon="code-outline" />
-                  </SettingSection>
+  return (
+    <ScreenLayout title="Settings" backgroundColor={theme.colors.background}>
+      <KeyboardAwareScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.scrollContent}
+        enableOnAndroid
+        keyboardOpeningTime={0}
+        extraScrollHeight={Platform.OS === "android" ? 120 : 20}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <FormCard style={styles.heroCard}>
+          <Text style={[styles.heroEyebrow, { color: theme.colors.textSecondary }]}>Workspace settings</Text>
+          <Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>Settings & Preferences</Text>
+          <Text style={[styles.heroSubtitle, { color: theme.colors.textSecondary }]}> 
+            Configure application preferences, manage admin-only application users, and keep the experience aligned with your workflow.
+          </Text>
 
-                  <TextInput
-                    placeholder="Nombre Completo"
-                    style={[ styles.input, { backgroundColor: theme.colors.primaryInput, color: theme.colors.primaryTextInput } ]}
-                    placeholderTextColor="#888"
-                    value={name}
-                    onChangeText={setName}
-                    
-                  />
+          <View style={styles.heroActions}>
+            <Button mode="contained" onPress={() => void setThemeMode("system")}>Follow system</Button>
+            <Button mode="text" onPress={() => void setThemeMode(resolvedThemeMode === "dark" ? "light" : "dark")}>Quick toggle</Button>
+          </View>
+        </FormCard>
 
-                  <TextInput
-                    placeholder="Telefono"
-                    placeholderTextColor="#888"
-                    keyboardType="phone-pad"
-                    style={[ styles.input, { backgroundColor: theme.colors.primaryInput, color: theme.colors.primaryTextInput } ]}
-                    value={phone}
-                    onChangeText={setPhone}
-                  />
+        <SettingSection title="Preferencias">
+          <View style={styles.preferenceBlock}>
+            <Text style={[styles.preferenceTitle, { color: theme.colors.textPrimary }]}>Dark Mode</Text>
+            <Text style={[styles.preferenceBody, { color: theme.colors.textSecondary }]}> 
+              Choose a manual theme or let the app follow system preferences across the full experience.
+            </Text>
+            <SegmentedButtons
+              density="small"
+              onValueChange={handleThemeModeChange}
+              style={styles.segmentedButtons}
+              value={themeMode}
+              buttons={[
+                { label: "System", value: "system" },
+                { label: "Light", value: "light" },
+                { label: "Dark", value: "dark" },
+              ]}
+            />
+          </View>
 
-                  {isAdmin ? (
-                    <SettingSection title="Application Users">
-                      <View style={[styles.card, { backgroundColor: theme.colors.surface ?? '#fff', marginBottom: 0, }]}> 
-                        <Text style={{ fontWeight: '600', marginBottom: 8 }}>Manage Application Users</Text>
-                        <SettingItem label="Barber ID" icon="key-outline" customContent={
-                          <TextInput value={barberId} editable={false} style={[styles.inputInline, { backgroundColor: '#eee' }]} />
-                        } />
-                        <SettingItem label="Name" icon="person-outline" customContent={
-                          <TextInput value={userName} onChangeText={setUserName} style={styles.inputInline} placeholder="Full name" />
-                        } />
-                        <SettingItem label="Phone" icon="call-outline" customContent={
-                          <TextInput value={userPhone} onChangeText={setUserPhone} style={styles.inputInline} placeholder="Phone" keyboardType="phone-pad" />
-                        } />
-                        <SettingItem label="Email" icon="mail-outline" customContent={
-                          <TextInput value={userEmail} onChangeText={setUserEmail} style={styles.inputInline} placeholder="email@example.com" keyboardType="email-address" autoCapitalize="none" />
-                        } />
-                        <SettingItem label="Barber Name" icon="cut-outline" customContent={
-                          <TextInput value={barberName} onChangeText={setBarberName} style={styles.inputInline} placeholder="Barber name" />
-                        } />
-                        <SettingItem label="Barber Phone" icon="call-outline" customContent={
-                          <TextInput value={barberPhone} onChangeText={setBarberPhone} style={styles.inputInline} placeholder="Barber phone" keyboardType="phone-pad" />
-                        } />
-                        <SettingItem label="Address" icon="location-outline" customContent={
-                          <TextInput value={barberAddress} onChangeText={setBarberAddress} style={styles.inputInline} placeholder="Address" />
-                        } />
-                        <View style={styles.buttonRow}>
-                          <Pressable onPress={handleSaveBarber} style={[styles.actionButton, { backgroundColor: theme.colors.primary, flex: 1, marginHorizontal: 4 }]}>
-                            <Ionicons name="save" size={20} color="#fff" />
-                          </Pressable>
-                          <Pressable onPress={handleSearchBarber} style={[styles.actionButton, { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, flex: 1, marginHorizontal: 4 }]}>
-                            <Ionicons name="search" size={20} color={theme.colors.textPrimary} />
-                          </Pressable>
-                          <Pressable onPress={handleCancelBarber} style={[styles.actionButton, { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, flex: 1, marginHorizontal: 4 }]}>
-                            <Ionicons name="close" size={20} color={theme.colors.textPrimary} />
-                          </Pressable>
-                          <Pressable onPress={handleDeleteBarber} style={[styles.actionButton, { backgroundColor: theme.colors.error, flex: 1, marginHorizontal: 4 }]}>
-                            <Ionicons name="trash" size={20} color="#fff" />
-                          </Pressable>
-                        </View>
-                      </View>
-                    </SettingSection>
-                  ) : null}
+          <SettingItem
+            icon="notifications-outline"
+            label={`Notifications (${unreadCount})`}
+            onToggle={() => void setNotificationsEnabled(!notificationsEnabled)}
+            value={notificationsEnabled}
+          />
+        </SettingSection>
 
+        <SettingSection title="Daily Report Calculations">
+          <ReportCalculationSettingsForm
+            errors={reportSettingErrors}
+            loading={reportSettingsLoading}
+            onBlurField={onBlurReportSettingField}
+            onFieldChange={setReportSettingField}
+            onReset={() => void handleResetReportSettings()}
+            onSave={() => void handleSaveReportSettings()}
+            touched={reportSettingTouched}
+            values={reportSettingValues}
+          />
+        </SettingSection>
 
-              </ScrollView>
-          </ScreenLayout>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-      
-    );
+        {isAdmin ? (
+          <SettingSection title="Manage Application Users">
+            <ManageApplicationUsersForm
+              errors={errors}
+              isFormValid={isFormValid}
+              loading={applicationUserLoading}
+              mode={mode}
+              onBlurField={onBlurField}
+              onDelete={handleApplicationUserDelete}
+              onFieldChange={setField}
+              onReset={() => void handleResetApplicationUser()}
+              onSearch={() => void handleApplicationUserSearch()}
+              onSearchQueryChange={setSearchQuery}
+              onSelectResult={handleSelectApplicationUserResult}
+              onSubmit={() => void handleApplicationUserSubmit()}
+              searchQuery={searchQuery}
+              searchResults={applicationUserResults}
+              touched={touched}
+              values={values}
+            />
+          </SettingSection>
+        ) : null}
+
+        <FormCard style={styles.aboutCard}>
+          <Text style={[styles.aboutEyebrow, { color: theme.colors.textSecondary }]}>Acerca de</Text>
+          <Text style={[styles.aboutTitle, { color: theme.colors.textPrimary }]}>Barber Flow Mobile</Text>
+          <Text style={[styles.aboutSubtitle, { color: theme.colors.textSecondary }]}> 
+            Application information and development credits presented with the same polished card treatment as the rest of the settings workspace.
+          </Text>
+
+          <View
+            style={[
+              styles.aboutInfoRow,
+              {
+                borderBottomColor: theme.colors.border,
+              },
+            ]}
+          >
+            <View>
+              <Text style={[styles.aboutLabel, { color: theme.colors.textSecondary }]}>Version</Text>
+              <Text style={[styles.aboutValue, { color: theme.colors.textPrimary }]}>{APP_VERSION}</Text>
+            </View>
+          </View>
+
+          <View style={styles.aboutInfoRow}>
+            <View>
+              <Text style={[styles.aboutLabel, { color: theme.colors.textSecondary }]}>Developer</Text>
+              <Text style={[styles.aboutValue, { color: theme.colors.textPrimary }]}>{DEVELOPER_NAME}</Text>
+            </View>
+          </View>
+        </FormCard>
+      </KeyboardAwareScrollView>
+    </ScreenLayout>
+  );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    paddingBottom: 40,
+  flex: {
+    flex: 1,
   },
-  card: {
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 5,
+  scrollContent: {
+    paddingBottom: 32,
+    paddingTop: 18,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 14,
-  },
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    alignSelf: "center",
+  heroCard: {
     marginBottom: 16,
   },
-  input: {
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
+  heroEyebrow: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  heroActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 18,
+  },
+  preferenceBlock: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  preferenceTitle: {
     fontSize: 16,
-  },
-  inputInline: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    fontSize: 15,
-    minWidth: 120,
-    flex: 1,
-    alignSelf: 'center',
-    marginLeft: 8,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
+    fontWeight: "700",
     marginBottom: 4,
   },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 10,
+  preferenceBody: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
   },
-  label: {
+  segmentedButtons: {
+    marginBottom: 8,
+  },
+  aboutCard: {
+    marginTop: 8,
+  },
+  aboutEyebrow: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+  aboutTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  aboutSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  aboutInfoRow: {
+    borderBottomWidth: 1,
+    paddingVertical: 14,
+  },
+  aboutLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+  aboutValue: {
     fontSize: 16,
-  },
-  reset: {
-    color: "#4A90E2",
     fontWeight: "600",
   },
-  actionButton: {
-    padding: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 40,
-  },
-  actionLabel: {
-    marginTop: 6,
-    fontSize: 12,
-    textAlign: 'center'
-  }
 });
