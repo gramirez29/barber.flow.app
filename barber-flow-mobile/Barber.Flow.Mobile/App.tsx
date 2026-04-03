@@ -4,30 +4,30 @@ import 'react-native-gesture-handler';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider, useAppTheme } from './src/theme/ThemeContext';
 import { NotificationProvider } from './src/context/NotificationContext';
-import { Provider as PaperProvider, MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
+import { Provider as PaperProvider } from 'react-native-paper';
+import { createNavigationTheme, createPaperTheme } from './src/theme/themes';
 
 function Main() {
   const { theme } = useAppTheme();
+  const paperTheme = createPaperTheme(theme);
+  const navigationTheme = createNavigationTheme(theme);
 
   return (
-    <NavigationContainer>
-      <NotificationProvider>
+    <PaperProvider theme={paperTheme}>
+      <NavigationContainer theme={navigationTheme}>
+        <NotificationProvider>
         <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
         <RootNavigator />
-      </NotificationProvider>
-    </NavigationContainer>
+        </NotificationProvider>
+      </NavigationContainer>
+    </PaperProvider>
   );
 }
 
 export default function App() {
-
-  console.log('APP RELOADED', new Date().toISOString());
-
   return (
     <ThemeProvider>
-      <PaperProvider>
         <Main />
-      </PaperProvider>
     </ThemeProvider>
   );
 }

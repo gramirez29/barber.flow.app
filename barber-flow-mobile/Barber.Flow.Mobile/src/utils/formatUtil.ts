@@ -10,3 +10,18 @@ export const formatPhoneNumber = (phone: string) => {
 
     return `${digits.slice(0, 4)}-${digits.slice(4)}`;
 }
+
+export const validateEmail = (email?: string) => {
+    if (!email) {
+        return 'Email is required';
+    }
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email) ? undefined : 'Invalid email';
+}
+
+export const validateRequiredField = (field?: string) => {
+    if (!field || !String(field).trim()) {
+        return 'Required';
+    }
+    return undefined;
+}

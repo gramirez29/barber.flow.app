@@ -27,7 +27,7 @@ export const SettingItem = ({
 }: SettingItemProps) => {
     const { theme } = useAppTheme();
     return (
-        <TouchableOpacity activeOpacity={onPress ? 0.6 : 1} onPress={onPress} style={[styles.row, !isLast && styles.divider]}>
+        <TouchableOpacity activeOpacity={onPress ? 0.6 : 1} onPress={onPress} style={[styles.row, !isLast && [styles.divider, { borderBottomColor: theme.colors.border }]]}>
             <View style={styles.left}>
                 <Ionicons name={icon} size={20} style={[{ color: theme.colors.textSecondary }]} />
                 <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{label}</Text>
@@ -63,6 +63,5 @@ const styles = StyleSheet.create({
     },
     divider: {
         borderBottomWidth: 1,
-        borderBottomColor: "#F3F4F6",
     },
 });

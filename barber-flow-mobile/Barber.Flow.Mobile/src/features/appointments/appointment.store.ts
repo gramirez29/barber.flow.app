@@ -1,32 +1,95 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
-import { Appointment } from "./appointments.types";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { Appointment, AppointmentDraft } from "./appointments.types";
 
 interface AppointmentState {
   appointments: Appointment[];
-  addAppointment: (appointment: Appointment) => void;
+  addAppointment: (appointment: AppointmentDraft) => Appointment;
+  getCompletedAppointmentsByDate: (date: string) => Appointment[];
   moveAppointment: (id: string, newDate: string) => void;
-  updateAppointment: (appointment: Appointment) => void;
+  updateAppointment: (id: string, appointment: AppointmentDraft) => void;
+  removeAppointment: (id: string) => void;
+  getAppointmentsByDate: (date: string) => Appointment[];
 }
 
-export const useAppointmentStore = create<AppointmentState>((set) => ({
-  appointments: [],
+const sortAppointments = (appointments: Appointment[]) =>
+  [...appointments].sort((left, right) => {
+    if (left.date === right.date) {
+      return left.time.localeCompare(right.time);
+    }
 
-  addAppointment: (appointment) =>
-    set((state) => ({
-      appointments: [...state.appointments, appointment],
-    })),
+    return left.date.localeCompare(right.date);
+  });
 
-  moveAppointment: (id, newDate) =>
-    set((state) => ({
-      appointments: state.appointments.map((a) =>
-        a.id === id ? { ...a, date: newDate } : a,
-      ),
-    })),
+const createAppointmentId = () =>
+  `appointment-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-  updateAppointment: (appointment) =>
-    set((state) => ({
-      appointments: state.appointments.map((a) => 
-        a.id === appointment.id ? appointment : a
-      ),
-    })),
-}));
+export const useAppointmentStore = create<AppointmentState>()(
+  persist(
+    (set, get) => ({
+      appointments: [],
+
+      addAppointment: (appointment) => {
+        const nextAppointment: Appointment = {
+          ...appointment,
+          id: createAppointmentId(),
+          status: appointment.status ?? "scheduled",
+        };
+
+        set((state) => ({
+          appointments: sortAppointments([...state.appointments, nextAppointment]),
+        }));
+
+        return nextAppointment;
+      },
+
+      moveAppointment: (id, newDate) =>
+        set((state) => ({
+          appointments: sortAppointments(
+            state.appointments.map((appointment) =>
+              appointment.id === id ? { ...appointment, date: newDate } : appointment,
+            ),
+          ),
+        })),
+
+      updateAppointment: (id, appointment) =>
+        set((state) => ({
+          appointments: sortAppointments(
+            state.appointments.map((currentAppointment) =>
+              currentAppointment.id === id
+                ? {
+                    ...currentAppointment,
+                    ...appointment,
+                    status: appointment.status ?? currentAppointment.status,
+                  }
+                : currentAppointment,
+            ),
+          ),
+        })),
+
+      removeAppointment: (id) =>
+        set((state) => ({
+          appointments: state.appointments.filter(
+            (appointment) => appointment.id !== id,
+          ),
+        })),
+
+      getAppointmentsByDate: (date) =>
+        get().appointments.filter((appointment) => appointment.date === date),
+
+      getCompletedAppointmentsByDate: (date) =>
+        get().appointments.filter(
+          (appointment) =>
+            appointment.date === date && appointment.status === "completed",
+        ),
+    }),
+    {
+      name: "barber-flow-appointments",
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        appointments: state.appointments,
+      }),
+    },
+  ),
+);

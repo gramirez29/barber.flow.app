@@ -1,8 +1,9 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View } from 'react-native';
 import { CalendarScreen } from '../screens/CalendarScreen';
-import { CreateAppointmentScreen } from '../screens/CreateAppointmentScreen';
+import { DailyReportScreen } from '../screens/DailyReportScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { ClientsScreen } from '../screens/ClientsScreen';
 import { NotificationScreen } from '../screens/NotificationScreen';
@@ -12,69 +13,107 @@ import { useNotification } from '../context/NotificationContext';
 
 
 export type AppTabParamList = {
-  Calendar: undefined;
+  Calendar:
+    | {
+        date?: string;
+        initialView?: "month" | "week" | "day";
+        source?: "notification";
+      }
+    | undefined;
   Clients: undefined;
-  CreateAppointment: undefined;
+  DailyReport: undefined;
   SettingsScreen: undefined;
   NotificationScreen: undefined;
 };
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 
+const TAB_METADATA: Record<keyof AppTabParamList, {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}> = {
+  Calendar: {
+    label: 'Agenda',
+    icon: 'calendar-outline',
+  },
+  Clients: {
+    label: 'Clientes',
+    icon: 'people-outline',
+  },
+  DailyReport: {
+    label: 'Cierre',
+    icon: 'bar-chart-outline',
+  },
+  NotificationScreen: {
+    label: 'Alertas',
+    icon: 'notifications-outline',
+  },
+  SettingsScreen: {
+    label: 'Ajustes',
+    icon: 'settings-outline',
+  },
+};
+
 export const AppNavigator = () => {
 
   const { theme } = useAppTheme();
-  const { clientNotifications } = useNotification();
+  const { unreadCount } = useNotification();
+  const isDarkMode = theme.mode === 'dark';
+  const activeIconBackground = isDarkMode
+    ? 'rgba(96, 165, 250, 0.18)'
+    : 'rgba(59, 130, 246, 0.12)';
+  const activeIconBorder = isDarkMode
+    ? 'rgba(96, 165, 250, 0.32)'
+    : 'rgba(59, 130, 246, 0.2)';
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
-          height: 70,
-          paddingBottom: 10,
-          paddingTop: 8,
+          height: 74,
+          paddingBottom: theme.layout.spacing.sm,
+          paddingTop: theme.layout.spacing.sm,
           borderTopWidth: 0.5,
           borderTopColor: theme.colors.border,
-
-          // sombra superior
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 6,
-          elevation: 15,
+          ...theme.layout.shadows.card,
+        },
+        tabBarItemStyle: {
+          paddingHorizontal: theme.layout.spacing.xs,
         },
         tabBarActiveTintColor: theme.colors.tabActive,
         tabBarInactiveTintColor: theme.colors.tabInactive,
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontFamily: fonts.medium,
           fontWeight: "500",
+          marginTop: theme.layout.spacing.xs,
+          marginBottom: 0,
+          letterSpacing: 0.15,
+        },
+        tabBarIconStyle: {
+          marginBottom: 0,
         },
         tabBarIcon: ({ focused, color }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
-
-          switch (route.name) {
-            case "Calendar":
-              iconName = "calendar-outline";
-              break;
-            case "Clients":
-              iconName = "people-outline";
-              break;
-            case "CreateAppointment":
-              iconName = "add-circle-outline";
-              break;
-            case "NotificationScreen":
-              iconName = "notifications-outline";
-              break;
-            case "SettingsScreen":
-              iconName = "settings-outline";
-              break;
-          }
+          const metadata = TAB_METADATA[route.name];
 
           return (
-            <Ionicons name={iconName!} size={focused ? 26 : 20} color={color} />
+            <View
+              style={[
+                styles.iconShell,
+                {
+                  borderRadius: theme.layout.radius.md + 2,
+                },
+                focused && {
+                  backgroundColor: activeIconBackground,
+                  borderColor: activeIconBorder,
+                },
+              ]}
+            >
+              <Ionicons name={metadata.icon} size={22} color={color} />
+            </View>
           );
         },
       })}
@@ -83,39 +122,55 @@ export const AppNavigator = () => {
         name="Calendar"
         component={CalendarScreen}
         options={{
-          title: "Calendar",
+          title: TAB_METADATA.Calendar.label,
         }}
       />
       <Tab.Screen
         name="Clients"
         component={ClientsScreen}
-        options={{ title: "Clientes" }}
+        options={{ title: TAB_METADATA.Clients.label }}
       />
       <Tab.Screen
-        name="CreateAppointment"
-        component={CreateAppointmentScreen}
-        options={{ title: "Citas" }}
+        name="DailyReport"
+        component={DailyReportScreen}
+        options={{ title: TAB_METADATA.DailyReport.label }}
       />
       <Tab.Screen
         name="NotificationScreen"
         component={NotificationScreen}
         options={{
-          title: "Notific.",
+          title: TAB_METADATA.NotificationScreen.label,
           tabBarBadge:
-            clientNotifications > 0 ? clientNotifications : undefined,
+            unreadCount > 0 ? unreadCount : undefined,
           tabBarBadgeStyle: {
             backgroundColor: theme.colors.notificationBadge,
             color: theme.colors.surface,
             fontSize: 11,
             fontWeight: "600",
+            minWidth: 18,
+            height: 18,
+            lineHeight: 18,
+            top: 6,
+            right: 10,
           },
         }}
       />
       <Tab.Screen
         name="SettingsScreen"
         component={SettingsScreen}
-        options={{ title: "Config." }}
+        options={{ title: TAB_METADATA.SettingsScreen.label }}
       />
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  iconShell: {
+    alignItems: 'center',
+    borderColor: 'transparent',
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    width: 44,
+  },
+});

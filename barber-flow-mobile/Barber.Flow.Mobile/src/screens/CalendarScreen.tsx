@@ -1,215 +1,512 @@
-import React, { useState } from "react";
-import { View, StyleSheet, Dimensions } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
-import { Button, ToggleButton, Text } from "react-native-paper";
-import { useAppointmentStore } from "../features/appointments/appointment.store";
-import { format } from "date-fns";
-import { useAppTheme } from "../theme/ThemeContext";
-import { Appointment } from "../features/appointments/appointments.types";
+import {
+  Button,
+  Card,
+  Divider,
+  Text,
+  ToggleButton,
+} from "react-native-paper";
+import { addDays, format, startOfWeek } from "date-fns";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { DrawerActions } from "@react-navigation/core";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { AppointmentCard } from "../components/calendar/AppointmentCard";
 import { AppointmentModal } from "../components/calendar/AppointmentModal";
 import { ScreenLayout } from "../components/ScreenLayout";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { Platform } from "react-native";
-import { useNavigation, DrawerActions } from "@react-navigation/core";
+import { useAppointmentStore } from "../features/appointments/appointment.store";
+import {
+  Appointment,
+  AppointmentDraft,
+} from "../features/appointments/appointments.types";
+import { useAppTheme } from "../theme/ThemeContext";
+import type { RouteProp } from "@react-navigation/native";
+import type { AppTabParamList } from "../navigation/AppNavigator";
 
-const SCREEN_HEIGHT = Dimensions.get("window").height;
-
-LocaleConfig.locales["es"] = {
+LocaleConfig.locales.es = {
   monthNames: [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
   ],
   monthNamesShort: [
-    "Ene", "Feb", "Mar", "Abr", "May", "Jun",
-    "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"
+    "Ene",
+    "Feb",
+    "Mar",
+    "Abr",
+    "May",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dic",
   ],
   dayNames: [
-    "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
+    "Domingo",
+    "Lunes",
+    "Martes",
+    "Miercoles",
+    "Jueves",
+    "Viernes",
+    "Sabado",
   ],
-  dayNamesShort: [
-    "Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"
-  ],
-  today: "Hoy"
+  dayNamesShort: ["D", "L", "M", "M", "J", "V", "S"],
+  today: "Hoy",
 };
 LocaleConfig.defaultLocale = "es";
 
 type ViewMode = "month" | "week" | "day";
 
-export const CalendarScreen: React.FC = () => {
-  const { appointments } = useAppointmentStore();
-  const { theme } = useAppTheme();
+const DATE_FORMAT = "yyyy-MM-dd";
 
-  const [viewMode, setViewMode] = useState<ViewMode>("month");
-  const [selectedDate, setSelectedDate] = useState(
-    format(new Date(), "yyyy-MM-dd"),
+const toDate = (dateString: string) => new Date(`${dateString}T12:00:00`);
+
+const getWeekDates = (dateString: string) => {
+  const startDate = startOfWeek(toDate(dateString), { weekStartsOn: 1 });
+
+  return Array.from({ length: 7 }, (_, index) =>
+    format(addDays(startDate, index), DATE_FORMAT),
   );
+};
+
+const formatLongDate = (dateString: string) =>
+  new Intl.DateTimeFormat("es-CR", {
+    weekday: "short",
+    month: "long",
+    day: "numeric",
+  }).format(toDate(dateString));
+
+const formatWeekday = (dateString: string) =>
+  new Intl.DateTimeFormat("es-CR", {
+    weekday: "narrow",
+  }).format(toDate(dateString));
+
+const formatDayNumber = (dateString: string) =>
+  new Intl.DateTimeFormat("es-CR", {
+    day: "numeric",
+  }).format(toDate(dateString));
+
+export const CalendarScreen: React.FC = () => {
+  const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList, "Calendar">>();
+  const route = useRoute<RouteProp<AppTabParamList, "Calendar">>();
+  const { theme } = useAppTheme();
+  const {
+    appointments,
+    addAppointment,
+    getAppointmentsByDate,
+    updateAppointment,
+  } = useAppointmentStore();
+
+  const today = format(new Date(), DATE_FORMAT);
+  const [viewMode, setViewMode] = useState<ViewMode>("month");
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [visibleMonth, setVisibleMonth] = useState(today);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingAppointment, setEditingAppointment] =
     useState<Appointment | null>(null);
 
-  // Mark days with appointments
-  const markedDates = appointments.reduce(
-    (acc, app) => {
-      acc[app.date] = {
-        marked: true,
-        dotColor: theme.colors.primary,
-        customStyles: {
-          container: {
-            backgroundColor:
-              app.date === format(new Date(), "yyyy-MM-dd")
-                ? theme.colors.tabActive
-                : theme.colors.secondary,
-          },
-          text: {
-            color:
-              app.date === format(new Date(), "yyyy-MM-dd")
-                ? theme.colors.textPrimary
-                : theme.colors.textSecondary,
-            fontWeight:
-              app.date === format(new Date(), "yyyy-MM-dd") ? "bold" : "normal",
-          },
-        },
-      };
-      return acc;
-    },
-    {} as Record<string, any>,
-  );
+  useEffect(() => {
+    if (route.params?.source !== "notification") {
+      return;
+    }
 
-  // Add highlight for today if no appointment
-  const today = format(new Date(), "yyyy-MM-dd");
-  if (!markedDates[today]) {
-    markedDates[today] = {
+    if (route.params.date) {
+      setSelectedDate(route.params.date);
+      setVisibleMonth(route.params.date);
+    }
+
+    setViewMode(route.params.initialView ?? "day");
+
+    navigation.setParams?.({
+      date: undefined,
+      initialView: undefined,
+      source: undefined,
+    });
+  }, [navigation, route.params]);
+
+  const selectedAppointments = getAppointmentsByDate(selectedDate);
+  const weekDates = getWeekDates(selectedDate);
+  const weekAgenda = weekDates.map((date) => ({
+    date,
+    appointments: getAppointmentsByDate(date),
+  }));
+
+  const appointmentDates = new Set(appointments.map((appointment) => appointment.date));
+  const datesToRender = new Set([today, selectedDate, ...appointmentDates]);
+  const markedDates: Record<string, any> = {};
+
+  datesToRender.forEach((date) => {
+    const hasAppointments = appointmentDates.has(date);
+    const isSelected = date === selectedDate;
+    const isToday = date === today;
+
+    markedDates[date] = {
+      marked: hasAppointments,
+      dotColor: theme.colors.secondary,
       customStyles: {
-        container: { backgroundColor: theme.colors.tabActive },
-        text: { color: theme.colors.textPrimary, fontWeight: "bold" },
+        container: {
+          backgroundColor: isSelected
+            ? theme.colors.primary
+            : theme.colors.surface,
+          borderColor: isToday ? theme.colors.secondary : theme.colors.border,
+          borderRadius: 16,
+          borderWidth: isToday ? 1 : 0,
+        },
+        text: {
+          color: isSelected ? theme.colors.surface : theme.colors.textPrimary,
+          fontWeight: isSelected || isToday ? "700" : "500",
+        },
       },
     };
-  }
+  });
 
-  // Filter appointments for selected day
-  const dayAppointments = appointments.filter((a) => a.date === selectedDate);
-
-  // Navigation handlers
-  const handleMonthChange = (monthObj: { dateString: string }) => {
-    setSelectedDate(monthObj.dateString);
-  };
-
-  const handleDayPress = (dayObj: { dateString: string }) => {
-    setSelectedDate(dayObj.dateString);
-    setViewMode("day");
+  const openCreateModal = (date: string) => {
+    setSelectedDate(date);
+    setEditingAppointment(null);
     setModalVisible(true);
   };
 
-  const handleToday = () => {
-    setSelectedDate(today);
+  const handleSelectDay = (date: string) => {
+    setSelectedDate(date);
+    setEditingAppointment(null);
+    setViewMode("day");
   };
 
-  const handleSaveAppointment = (appointment: Appointment) => {
-    // Integrate with store logic here
+  const openEditModal = (appointment: Appointment) => {
+    setSelectedDate(appointment.date);
+    setEditingAppointment(appointment);
+    setModalVisible(true);
+  };
+
+  const handleSaveAppointment = (draft: AppointmentDraft) => {
+    if (editingAppointment) {
+      updateAppointment(editingAppointment.id, draft);
+    } else {
+      addAppointment(draft);
+    }
+
+    setEditingAppointment(null);
     setModalVisible(false);
   };
 
-    const navigation = useNavigation();
+  const renderAppointmentList = (
+    dayAppointments: Appointment[],
+    emptyMessage: string,
+  ) => {
+    if (dayAppointments.length === 0) {
+      return (
+        <View
+          style={[
+            styles.emptyState,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+            },
+          ]}
+        >
+          <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>Sin citas</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
+            {emptyMessage}
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.listContent}>
+        {dayAppointments.map((appointment) => (
+          <AppointmentCard
+            key={appointment.id}
+            appointment={appointment}
+            onPress={() => openEditModal(appointment)}
+          />
+        ))}
+      </View>
+    );
+  };
 
   return (
     <ScreenLayout
       title="Calendario"
       backgroundColor={theme.colors.background}
-      center
       onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
     >
       <KeyboardAwareScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1 }}
-        enableOnAndroid={true}
+        style={styles.flex}
+        contentContainerStyle={styles.scrollContent}
+        enableOnAndroid
         keyboardOpeningTime={0}
         extraScrollHeight={Platform.OS === "android" ? 120 : 20}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* View Selector */}
-        <View style={styles.header}>
-          <ToggleButton.Row
-            onValueChange={(value) => setViewMode(value as ViewMode)}
-            value={viewMode}
-          >
-            <ToggleButton icon="calendar-month" value="month" />
-            <ToggleButton icon="calendar-week" value="week" />
-            <ToggleButton icon="calendar-today" value="day" />
-          </ToggleButton.Row>
-          <Button mode="outlined" onPress={handleToday} style={styles.todayBtn}>
-            Hoy
-          </Button>
-        </View>
+        <Card
+          style={[
+            styles.summaryCard,
+            theme.layout.shadows.card,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+            },
+          ]}
+          mode="contained"
+        >
+          <Card.Content>
+            <View style={styles.summaryTopRow}>
+              <View style={styles.summaryTextBlock}>
+                <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>
+                  Fecha seleccionada
+                </Text>
+                <Text style={[styles.summaryDate, { color: theme.colors.textPrimary }]}>
+                  {formatLongDate(selectedDate)}
+                </Text>
+                <Text style={[styles.summaryCount, { color: theme.colors.textSecondary }]}>
+                  {selectedAppointments.length} cita
+                  {selectedAppointments.length === 1 ? "" : "s"} para este dia
+                </Text>
+              </View>
 
-        {/* Calendar */}
-        {viewMode === "month" && (
-          <Calendar
-            current={selectedDate}
-            markingType={"custom"}
-            markedDates={markedDates}
-            onDayPress={handleDayPress}
-            onMonthChange={handleMonthChange}
-            theme={
+              <View style={styles.summaryActions}>
+                <Button mode="contained" onPress={() => openCreateModal(selectedDate)}>
+                  Nueva cita
+                </Button>
+                <Button mode="text" onPress={() => setSelectedDate(today)}>
+                  Hoy
+                </Button>
+              </View>
+            </View>
+
+            <ToggleButton.Row
+              onValueChange={(value) => setViewMode(value as ViewMode)}
+              value={viewMode}
+              style={styles.toggleRow}
+            >
+              <ToggleButton icon="calendar-month" value="month" />
+              <ToggleButton icon="calendar-week" value="week" />
+              <ToggleButton icon="calendar-today" value="day" />
+            </ToggleButton.Row>
+          </Card.Content>
+        </Card>
+
+        {viewMode === "month" ? (
+          <Card
+            style={[
+              styles.calendarCard,
+              theme.layout.shadows.card,
               {
-                backgroundColor: theme.colors.background,
-                calendarBackground: theme.colors.background,
-                textSectionTitleColor: theme.colors.textSecondary,
-                selectedDayBackgroundColor: theme.colors.tabActive,
-                todayTextColor: theme.colors.tabActive,
-                dayTextColor: theme.colors.textPrimary,
-                dotColor: theme.colors.primary,
-                arrowColor: theme.colors.primary,
-                "stylesheet.calendar.main": {
-                  dayContainer: {
-                    borderColor: "#D1D3D4",
-                    borderWidth: 1,
-                    flex: 1,
-                  },
-                  week: {
-                    marginTop: 0,
-                    marginBottom: 0,
-                    flexDirection: "row",
-                  },
-                },
-              } as any
-            }
-            style={{ flex: 1, minHeight: SCREEN_HEIGHT * 0.6 }}
-          />
-        )}
-
-        {/* Week View */}
-        {viewMode === "week" && (
-          <View style={styles.weekView}>
-            <Text style={styles.weekLabel}>Semana de {selectedDate}</Text>
-            {/* Render week grid and appointments here */}
-          </View>
-        )}
-
-        {/* Day View */}
-        {viewMode === "day" && (
-          <View style={styles.dayView}>
-            <Text style={styles.dayLabel}>Citas para {selectedDate}</Text>
-            {dayAppointments.length === 0 ? (
-              <Text style={styles.empty}>No hay citas</Text>
-            ) : (
-              dayAppointments.map((app) => (
-                <View key={app.id} style={styles.appointmentCard}>
-                  <Text style={styles.time}>{app.time}</Text>
-                  <Text style={styles.name}>{app.clientName}</Text>
-                  <Text style={styles.phone}>{app.phone}</Text>
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+            mode="contained"
+          >
+            <Card.Content>
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+                    Vista mensual
+                  </Text>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+                    {formatLongDate(visibleMonth)}
+                  </Text>
                 </View>
-              ))
-            )}
-          </View>
-        )}
+                <Button mode="text" onPress={() => openCreateModal(selectedDate)}>
+                  Agendar
+                </Button>
+              </View>
 
-        {/* Appointment Modal */}
+              <Calendar
+                current={selectedDate}
+                markingType="custom"
+                markedDates={markedDates}
+                onDayPress={(day) => handleSelectDay(day.dateString)}
+                onDayLongPress={(day) => openCreateModal(day.dateString)}
+                onMonthChange={(month) => setVisibleMonth(month.dateString)}
+                theme={{
+                  backgroundColor: theme.colors.surface,
+                  calendarBackground: theme.colors.surface,
+                  dayTextColor: theme.colors.textPrimary,
+                  monthTextColor: theme.colors.textPrimary,
+                  textDisabledColor: theme.colors.textSecondary,
+                  todayTextColor: theme.colors.secondary,
+                  arrowColor: theme.colors.primary,
+                  textSectionTitleColor: theme.colors.textSecondary,
+                }}
+                style={styles.calendar}
+              />
+
+              <Text style={[styles.calendarHint, { color: theme.colors.textSecondary }]}>
+                Toca un dia para ver sus citas. Manten presionado para crear una nueva cita.
+              </Text>
+
+              <Divider style={styles.divider} />
+
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+                    Agenda del dia
+                  </Text>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+                    {formatLongDate(selectedDate)}
+                  </Text>
+                </View>
+              </View>
+
+              {renderAppointmentList(
+                selectedAppointments,
+                "Selecciona un dia del calendario para ver sus citas o mantenlo presionado para crear una reserva nueva.",
+              )}
+            </Card.Content>
+          </Card>
+        ) : null}
+
+        {viewMode === "week" ? (
+          <Card
+            style={[
+              styles.calendarCard,
+              theme.layout.shadows.card,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+            mode="contained"
+          >
+            <Card.Content>
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+                    Vista semanal
+                  </Text>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+                    Semana de {formatLongDate(selectedDate)}
+                  </Text>
+                </View>
+                <Button mode="text" onPress={() => openCreateModal(selectedDate)}>
+                  Agendar
+                </Button>
+              </View>
+
+              <View style={styles.weekRow}>
+                {weekAgenda.map(({ date, appointments: dayAppointments }) => {
+                  const isSelected = date === selectedDate;
+
+                  return (
+                    <Pressable
+                      key={date}
+                      onPress={() => setSelectedDate(date)}
+                      style={[
+                        styles.weekDayChip,
+                        {
+                          backgroundColor: isSelected
+                            ? theme.colors.primary
+                            : theme.colors.background,
+                          borderColor: theme.colors.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: isSelected
+                            ? theme.colors.surface
+                            : theme.colors.textSecondary,
+                          fontSize: 12,
+                        }}
+                      >
+                        {formatWeekday(date)}
+                      </Text>
+                      <Text
+                        style={{
+                          color: isSelected
+                            ? theme.colors.surface
+                            : theme.colors.textPrimary,
+                          fontSize: 18,
+                          fontWeight: "700",
+                        }}
+                      >
+                        {formatDayNumber(date)}
+                      </Text>
+                      <Text
+                        style={{
+                          color: isSelected
+                            ? theme.colors.surface
+                            : theme.colors.textSecondary,
+                          fontSize: 11,
+                        }}
+                      >
+                        {dayAppointments.length} cita{dayAppointments.length === 1 ? "" : "s"}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <Divider style={styles.divider} />
+
+              {renderAppointmentList(
+                selectedAppointments,
+                "Selecciona un dia de la semana y usa Agendar para crear la cita.",
+              )}
+            </Card.Content>
+          </Card>
+        ) : null}
+
+        {viewMode === "day" ? (
+          <Card
+            style={[
+              styles.calendarCard,
+              theme.layout.shadows.card,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+            mode="contained"
+          >
+            <Card.Content>
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+                    Vista diaria
+                  </Text>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+                    {formatLongDate(selectedDate)}
+                  </Text>
+                </View>
+                <Button mode="contained" onPress={() => openCreateModal(selectedDate)}>
+                  Nueva cita
+                </Button>
+              </View>
+
+              {renderAppointmentList(
+                selectedAppointments,
+                "Todavia no hay reservas para este dia.",
+              )}
+            </Card.Content>
+          </Card>
+        ) : null}
+
         <AppointmentModal
           visible={modalVisible}
           date={selectedDate}
           editingAppointment={editingAppointment}
-          onClose={() => setModalVisible(false)}
+          onClose={() => {
+            setEditingAppointment(null);
+            setModalVisible(false);
+          }}
           onSave={handleSaveAppointment}
         />
       </KeyboardAwareScrollView>
@@ -218,36 +515,111 @@ export const CalendarScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f7fa" },
-  header: {
+  flex: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 32,
+    gap: 16,
+  },
+  summaryCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  summaryTopRow: {
+    gap: 16,
+  },
+  summaryTextBlock: {
+    gap: 6,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  summaryDate: {
+    fontSize: 28,
+    fontWeight: "700",
+    textTransform: "capitalize",
+  },
+  summaryCount: {
+    fontSize: 14,
+  },
+  summaryActions: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderColor: "#D1D3D4",
+    gap: 8,
+    flexWrap: "wrap",
   },
-  todayBtn: { marginLeft: 8 },
-  weekView: { flex: 1, padding: 16 },
-  weekLabel: { fontSize: 18, fontWeight: "bold", marginBottom: 12 },
-  dayView: { flex: 1, padding: 16 },
-  dayLabel: { fontSize: 18, fontWeight: "bold", marginBottom: 12 },
-  empty: { textAlign: "center", marginTop: 40, color: "#777" },
-  appointmentCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
+  toggleRow: {
+    marginTop: 16,
+  },
+  calendarCard: {
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: "#D1D3D4",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 3,
   },
-  time: { fontSize: 16, fontWeight: "700", color: "#222" },
-  name: { fontSize: 15, fontWeight: "600", color: "#111" },
-  phone: { fontSize: 13, color: "#666", marginTop: 2 },
+  calendar: {
+    marginTop: 8,
+  },
+  calendarHint: {
+    fontSize: 13,
+    marginTop: 12,
+  },
+  sectionHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginTop: 4,
+    textTransform: "capitalize",
+  },
+  divider: {
+    marginVertical: 20,
+  },
+  weekRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 16,
+  },
+  weekDayChip: {
+    alignItems: "center",
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 4,
+    minWidth: 74,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  listContent: {
+    marginTop: 16,
+  },
+  emptyState: {
+    alignItems: "center",
+    borderRadius: 20,
+    borderWidth: 1,
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: "center",
+  },
 });

@@ -1,3 +1,9 @@
+import {
+  DefaultTheme as NavigationDefaultTheme,
+  DarkTheme as NavigationDarkTheme,
+} from "@react-navigation/native";
+import { MD3DarkTheme, MD3LightTheme } from "react-native-paper";
+
 export const lightTheme = {
   mode: 'light',
   colors: {
@@ -79,3 +85,41 @@ export const darkTheme = {
 };
 
 export type AppTheme = typeof lightTheme;
+
+export const createPaperTheme = (theme: AppTheme) => {
+  const baseTheme = theme.mode === "dark" ? MD3DarkTheme : MD3LightTheme;
+
+  return {
+    ...baseTheme,
+    colors: {
+      ...baseTheme.colors,
+      background: theme.colors.background,
+      error: theme.colors.error,
+      onBackground: theme.colors.textPrimary,
+      onPrimary: theme.mode === "dark" ? "#0F172A" : "#FFFFFF",
+      onSurface: theme.colors.textPrimary,
+      outline: theme.colors.border,
+      primary: theme.colors.primary,
+      secondary: theme.colors.secondary,
+      surface: theme.colors.surface,
+    },
+    roundness: theme.layout.radius.md,
+  };
+};
+
+export const createNavigationTheme = (theme: AppTheme) => {
+  const baseTheme = theme.mode === "dark" ? NavigationDarkTheme : NavigationDefaultTheme;
+
+  return {
+    ...baseTheme,
+    colors: {
+      ...baseTheme.colors,
+      background: theme.colors.background,
+      border: theme.colors.border,
+      card: theme.colors.surface,
+      notification: theme.colors.notificationBadge,
+      primary: theme.colors.primary,
+      text: theme.colors.textPrimary,
+    },
+  };
+};

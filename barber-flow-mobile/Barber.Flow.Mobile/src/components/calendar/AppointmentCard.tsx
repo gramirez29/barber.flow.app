@@ -9,10 +9,14 @@ import { Appointment } from "../../features/appointments/appointments.types";
     }
 
     export const AppointmentCard: React.FC<Props> = ({ appointment, onPress }) => (
-    <Card style={styles.card} onPress={onPress}>
-        <Card.Title title={appointment.clientName} subtitle={appointment.time} />
+    <Card style={styles.card} onPress={onPress} mode="contained">
+        <Card.Title
+        title={appointment.clientName}
+        subtitle={appointment.serviceName ? `${appointment.time} • ${appointment.serviceName}` : appointment.time}
+        />
         <Card.Content>
-        <Text>Phone: {appointment.phone}</Text>
+        <Text>Teléfono: {appointment.phone}</Text>
+        {appointment.notes ? <Text style={styles.notes}>{appointment.notes}</Text> : null}
         </Card.Content>
     </Card>
     );
@@ -22,5 +26,8 @@ import { Appointment } from "../../features/appointments/appointments.types";
         marginBottom: 12,
         borderRadius: 12,
         elevation: 3,
+    },
+    notes: {
+        marginTop: 8,
     },
     });
