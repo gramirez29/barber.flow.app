@@ -5,7 +5,7 @@ import React, {
     useMemo,
     useState,
 } from "react";
-import { Appearance, ColorSchemeName } from "react-native";
+import { Appearance } from "react-native";
 import { settingsService } from "../services/apis/settingsService";
 import { lightTheme, darkTheme, AppTheme } from "./themes";
 import type { ThemeMode } from "../types/settings";

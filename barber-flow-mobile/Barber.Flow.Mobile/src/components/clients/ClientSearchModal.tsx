@@ -15,6 +15,7 @@ import {
   openClientMessagePicker,
   openClientPhoneCall,
 } from "../../utils/contactActions";
+import { useTranslation } from "../../context/LanguageContext";
 
 interface ClientSearchModalProps {
   clients: Client[];
@@ -38,6 +39,25 @@ export const ClientSearchModal: React.FC<ClientSearchModalProps> = ({
   onSelectClient,
 }) => {
   const { theme } = useAppTheme();
+  const { translateText } = useTranslation();
+  const contactActionLabels = {
+    callUnavailableMessage: translateText("contactActions.callUnavailableMessage"),
+    callUnavailableOpen: translateText("contactActions.callUnavailableOpen"),
+    callUnavailableTitle: translateText("contactActions.callUnavailableTitle"),
+    cancel: translateText("common.cancel"),
+    chooseContactMethod: translateText("contactActions.chooseContactMethod"),
+    hello: translateText("contactActions.hello"),
+    helloName: translateText("contactActions.helloName", { name: "%{name}" }),
+    sendMessage: translateText("contactActions.sendMessage"),
+    smsLabel: "SMS",
+    smsUnavailableMessage: translateText("contactActions.smsUnavailableMessage"),
+    smsUnavailableOpen: translateText("contactActions.smsUnavailableOpen"),
+    smsUnavailableTitle: translateText("contactActions.smsUnavailableTitle"),
+    whatsappLabel: "WhatsApp",
+    whatsappUnavailableMessage: translateText("contactActions.whatsappUnavailableMessage"),
+    whatsappUnavailableOpen: translateText("contactActions.whatsappUnavailableOpen"),
+    whatsappUnavailableTitle: translateText("contactActions.whatsappUnavailableTitle"),
+  };
 
   return (
     <Portal>
@@ -54,23 +74,23 @@ export const ClientSearchModal: React.FC<ClientSearchModalProps> = ({
       >
         <View style={styles.header}>
           <View style={styles.headerTextWrap}>
-            <Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>Find client</Text>
-            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Search saved clients</Text>
-            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>Search by name, phone, or any available client detail.</Text>
+            <Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>{translateText("clients.searchModal.eyebrow")}</Text>
+            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{translateText("clients.searchModal.title")}</Text>
+            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{translateText("clients.searchModal.subtitle")}</Text>
           </View>
-          <Button mode="text" onPress={onClose}>Close</Button>
+          <Button mode="text" onPress={onClose}>{translateText("common.close")}</Button>
         </View>
 
         <View style={styles.searchRow}>
           <Searchbar
-            placeholder="Search clients"
+            placeholder={translateText("clients.searchModal.placeholder")}
             value={search}
             onChangeText={onSearchChange}
             onSubmitEditing={onApplyFilter}
             style={styles.searchbar}
           />
           <Button mode="contained" onPress={onApplyFilter} loading={loading} disabled={loading}>
-            Search
+            {translateText("common.search")}
           </Button>
         </View>
 
@@ -114,18 +134,18 @@ export const ClientSearchModal: React.FC<ClientSearchModalProps> = ({
                     contentStyle={styles.actionButtonContent}
                     icon="phone-outline"
                     mode="text"
-                    onPress={() => void openClientPhoneCall(item.phone)}
+                    onPress={() => void openClientPhoneCall(item.phone, contactActionLabels)}
                   >
-                    Call
+                    {translateText("common.call")}
                   </Button>
                   <Button
                     compact
                     contentStyle={styles.actionButtonContent}
                     icon="message-text-outline"
                     mode="text"
-                    onPress={() => openClientMessagePicker(item.phone, fullName)}
+                    onPress={() => openClientMessagePicker(item.phone, contactActionLabels, fullName)}
                   >
-                    Message
+                    {translateText("clients.searchModal.message")}
                   </Button>
                   <Button
                     compact
@@ -133,7 +153,7 @@ export const ClientSearchModal: React.FC<ClientSearchModalProps> = ({
                     mode="contained"
                     onPress={() => onSelectClient(item)}
                   >
-                    Select
+                    {translateText("clients.searchModal.select")}
                   </Button>
                 </View>
               </View>
@@ -144,8 +164,8 @@ export const ClientSearchModal: React.FC<ClientSearchModalProps> = ({
           ItemSeparatorComponent={() => <Divider style={styles.hiddenDivider} />}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>No clients found</Text>
-              <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>Use the search field to find existing clients without loading the full directory.</Text>
+              <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>{translateText("clients.searchModal.emptyTitle")}</Text>
+              <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>{translateText("clients.searchModal.emptyBody")}</Text>
             </View>
           }
           onRefresh={onApplyFilter}

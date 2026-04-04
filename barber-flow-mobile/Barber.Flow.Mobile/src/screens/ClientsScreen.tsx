@@ -8,17 +8,22 @@ import { ClientForm } from "../components/clients/ClientForm";
 import { ClientSearchModal } from "../components/clients/ClientSearchModal";
 import { FormCard } from "../components/ui/FormCard";
 import {
-    createEmptyClient,
     useClientForm,
 } from "../features/clients/clientForm";
+import { useTranslation } from "../context/LanguageContext";
 import { clientsService } from "../services/clientService";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { Client } from "../types/clients";
 import { formatPhoneNumber } from "../utils/formatUtil";
+import { DrawerActions, useNavigation } from "@react-navigation/native";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { AppTabParamList } from "../navigation/AppNavigator";
 
 export const ClientsScreen: React.FC = () => {
+    const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList, "Calendar">>();
     const { theme } = useAppTheme();
+    const { translateText } = useTranslation();
     const insets = useSafeAreaInsets();
     const {
         client,
@@ -63,7 +68,7 @@ export const ClientsScreen: React.FC = () => {
         const nextErrors = validateBeforeSubmit();
 
         if (nextErrors.firstName || nextErrors.lastName || nextErrors.phone || nextErrors.email) {
-            Alert.alert("Validation", "Please fix the required fields.");
+            Alert.alert(translateText("common.save"), translateText("clients.alerts.validation"));
             return;
         }
 
@@ -72,10 +77,10 @@ export const ClientsScreen: React.FC = () => {
         try {
             if (client.id) {
                 await clientsService.update(client.id, client);
-                Alert.alert("Success", "Client updated.");
+                Alert.alert(translateText("common.update"), translateText("clients.alerts.clientUpdated"));
             } else {
                 await clientsService.create(client);
-                Alert.alert("Success", "Client created.");
+                Alert.alert(translateText("common.create"), translateText("clients.alerts.clientCreated"));
             }
 
             if (modalVisible && search.trim()) {
@@ -85,7 +90,7 @@ export const ClientsScreen: React.FC = () => {
 
             resetForm();
         } catch (error: any) {
-            Alert.alert("Error", error?.message ?? "Save failed");
+            Alert.alert(translateText("common.save"), error?.message ?? translateText("clients.alerts.saveFailed"));
         } finally {
             setLoading(false);
         }
@@ -93,21 +98,21 @@ export const ClientsScreen: React.FC = () => {
 
     const handleDelete = async () => {
         if (!client.id) {
-            Alert.alert("Info", "No client selected to remove.");
+            Alert.alert(translateText("common.delete"), translateText("clients.alerts.noClientSelected"));
             return;
         }
 
         const clientId = client.id;
 
-        Alert.alert("Confirm", "Remove client?", [
-            { text: "Cancel", style: "cancel" },
+        Alert.alert(translateText("common.delete"), translateText("clients.alerts.removeClientMessage"), [
+            { text: translateText("common.cancel"), style: "cancel" },
             {
                 onPress: async () => {
                     setLoading(true);
 
                     try {
                         await clientsService.delete(clientId);
-                        Alert.alert("Removed", "Client removed successfully.");
+                        Alert.alert(translateText("common.delete"), translateText("clients.alerts.clientRemoved"));
 
                         if (modalVisible && search.trim()) {
                             const list = await clientsService.find(search);
@@ -116,13 +121,13 @@ export const ClientsScreen: React.FC = () => {
 
                         resetForm();
                     } catch (error: any) {
-                        Alert.alert("Error", error?.message ?? "Remove failed");
+                        Alert.alert(translateText("common.delete"), error?.message ?? translateText("clients.alerts.removeFailed"));
                     } finally {
                         setLoading(false);
                     }
                 },
                 style: "destructive",
-                text: "Remove",
+                text: translateText("common.delete"),
             },
         ]);
     };
@@ -134,7 +139,7 @@ export const ClientsScreen: React.FC = () => {
             const list = await clientsService.find(search);
             setClients(list ?? []);
         } catch (error: any) {
-            Alert.alert("Error", error?.message ?? "Search failed");
+            Alert.alert(translateText("common.search"), error?.message ?? translateText("clients.alerts.searchFailed"));
         } finally {
             setLoading(false);
         }
@@ -145,10 +150,18 @@ export const ClientsScreen: React.FC = () => {
         setModalVisible(false);
     };
 
-    const fullName = `${client.firstName} ${client.lastName}`.trim() || "Client management";
+    const fullName = `${client.firstName} ${client.lastName}`.trim()
+        || translateText("clients.screen.noClientSelectedTitle");
 
+    // Drawer is added in the ClientsScreen to allow quick access to other sections of the app
+    // while managing clients, as this screen is likely to involve multiple interactions and
+    // users may want to switch contexts without going back to the main menu.
+    // TODO: Verify functioanlity
     return (
-        <ScreenLayout title="Clientes" backgroundColor={theme.colors.background}>
+        <ScreenLayout
+            title={translateText("clients.screen.title")}
+            backgroundColor={theme.colors.background}
+            onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
             <KeyboardAwareScrollView
                 style={styles.flex}
                 contentContainerStyle={[
@@ -165,14 +178,14 @@ export const ClientsScreen: React.FC = () => {
             >
                 <View style={styles.contentWrap}>
                     <FormCard style={styles.summaryCard}>
-                        <Text style={[styles.summaryEyebrow, { color: theme.colors.textSecondary }]}>Client workspace</Text>
+                        <Text style={[styles.summaryEyebrow, { color: theme.colors.textSecondary }]}>{translateText("clients.screen.heroEyebrow")}</Text>
                         <Text style={[styles.summaryTitle, { color: theme.colors.textPrimary }]}>
                             {fullName}
                         </Text>
                         <Text style={[styles.summaryBody, { color: theme.colors.textSecondary }]}> 
                             {client.id
-                                ? "Update contact details, preferences, and account status for the selected client."
-                                : "Create a polished client profile with contact details, preferences, and account status."}
+                                ? translateText("clients.screen.existingClientBody")
+                                : translateText("clients.screen.newClientBody")}
                         </Text>
 
                         <View style={styles.summaryActions}>
@@ -182,13 +195,15 @@ export const ClientsScreen: React.FC = () => {
                                 disabled={!isFormValid || loading}
                                 loading={loading}
                             >
-                                {client.id ? "Save changes" : "Create client"}
+                                {client.id
+                                    ? translateText("clients.buttons.saveChanges")
+                                    : translateText("clients.buttons.createClient")}
                             </Button>
                             <Button mode="outlined" onPress={resetForm} disabled={loading}>
-                                Reset form
+                                {translateText("clients.buttons.resetForm")}
                             </Button>
                             <Button mode="text" onPress={() => setModalVisible(true)} disabled={loading}>
-                                Find client
+                                {translateText("clients.buttons.findClient")}
                             </Button>
                             <Button
                                 mode="text"
@@ -196,7 +211,7 @@ export const ClientsScreen: React.FC = () => {
                                 disabled={!client.id || loading}
                                 textColor={client.id ? theme.colors.error : theme.colors.textSecondary}
                             >
-                                Delete
+                                {translateText("clients.buttons.delete")}
                             </Button>
                         </View>
                     </FormCard>

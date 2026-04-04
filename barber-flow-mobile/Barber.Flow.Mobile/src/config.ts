@@ -4,7 +4,7 @@
     // - Fallback to the development URL. Replace placeholders as needed.
     let expoExtra: any = undefined;
     try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+         
         const Constants = require("expo-constants");
         expoExtra = Constants?.expoConfig?.extra ?? Constants?.manifest?.extra;
     } catch {

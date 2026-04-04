@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Button } from "re
 import { useAppointmentStore } from "../../features/appointments/appointment.store";
 import { AppointmentModal } from "./AppointmentModal";
 import { Appointment, AppointmentDraft } from "../../features/appointments/appointments.types";
+import { useTranslation } from "../../context/LanguageContext";
 
 interface Props {
   date: string;
@@ -10,6 +11,7 @@ interface Props {
 
 export const DayAppointments = ({ date }: Props) => {
   const { appointments, addAppointment, updateAppointment } = useAppointmentStore();
+  const { translateText } = useTranslation();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
@@ -29,12 +31,12 @@ export const DayAppointments = ({ date }: Props) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Citas para {date}</Text>
-        <Button title="Nueva Cita" onPress={openNew} />
+        <Text style={styles.title}>{`${translateText("calendar.agendaDay")}: ${date}`}</Text>
+        <Button title={translateText("calendar.newAppointment")} onPress={openNew} />
       </View>
 
       {dayAppointments.length === 0 ? (
-        <Text style={styles.empty}>No hay citas</Text>
+        <Text style={styles.empty}>{translateText("calendar.emptyTitle")}</Text>
       ) : (
         <ScrollView>
           {dayAppointments.map(app => (

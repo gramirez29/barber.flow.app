@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/auth.store";
 import { authService } from "../../services/authService";
 import { useAppTheme } from "../../theme/ThemeContext";
+import { useTranslation } from "../../context/LanguageContext";
 import { ScreenTitle } from "./ScreenTitle";
 const pkg = require("../../../package.json");
 
@@ -28,8 +29,9 @@ export const AppDrawerContent = (props: any) => {
   const clearUser = useAuthStore((s) => s.clearUser);
   const user = useAuthStore((s) => s.user);
   const { theme } = useAppTheme();
+  const { translateText } = useTranslation();
 
-  const name = user?.name ?? "Guest";
+  const name = user?.name ?? translateText("header.guest");
   const email = user?.email ?? "";
   const userName = user?.userName ?? "";
   const role = user?.role ?? "";
@@ -38,10 +40,10 @@ export const AppDrawerContent = (props: any) => {
   const initials = getInitials(identity);
 
   const handleLogout = () => {
-    Alert.alert("Sign out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(translateText("drawer.logoutTitle"), translateText("drawer.logoutMessage"), [
+      { text: translateText("drawer.cancel"), style: "cancel" },
       {
-        text: "Sign out",
+        text: translateText("drawer.logout"),
         style: "destructive",
         onPress: async () => {
           props.navigation.closeDrawer();
@@ -59,8 +61,8 @@ export const AppDrawerContent = (props: any) => {
 
   const openHelp = () => {
     Alert.alert(
-      "Help",
-      "For help, contact support or check the documentation.",
+      translateText("drawer.helpTitle"),
+      translateText("drawer.helpMessage"),
     );
   };
 
@@ -178,9 +180,9 @@ export const AppDrawerContent = (props: any) => {
 
           <View style={styles.userInfo}>
             <ScreenTitle
-              eyebrow="Studio access"
+              eyebrow={translateText("drawer.studioAccess")}
               size="sm"
-              subtitle={email || userName || "No account metadata available"}
+              subtitle={email || userName || translateText("drawer.noAccountMetadata")}
               title={identity}
             />
             {role ? (
@@ -191,32 +193,32 @@ export const AppDrawerContent = (props: any) => {
           </View>
         </View>
 
-        <Text style={[styles.heroBody, { color: theme.colors.textSecondary }]}>Use the drawer to reach settings, support, and account-level actions from one clean workspace surface.</Text>
+        <Text style={[styles.heroBody, { color: theme.colors.textSecondary }]}>{translateText("drawer.heroBody")}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>Workspace</Text>
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>{translateText("drawer.workspace")}</Text>
         {renderAction({
-          description: "Theme, notifications, and app preferences",
+          description: translateText("drawer.settingsDescription"),
           icon: "settings-outline",
-          label: "Settings",
+          label: translateText("drawer.settings"),
           onPress: goToSettings,
         })}
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>Support</Text>
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>{translateText("drawer.support")}</Text>
         {renderAction({
-          description: "Get help and usage guidance",
+          description: translateText("drawer.helpDescription"),
           icon: "help-circle-outline",
-          label: "Help",
+          label: translateText("drawer.help"),
           onPress: openHelp,
         })}
         {renderAction({
-          description: "Close the current session on this device",
+          description: translateText("drawer.logoutDescription"),
           destructive: true,
           icon: "log-out-outline",
-          label: "Logout",
+          label: translateText("drawer.logout"),
           onPress: handleLogout,
         })}
       </View>

@@ -24,11 +24,13 @@ import { useWindowDimensions } from 'react-native';
 import { PasswordInput } from '../components/ui/PasswordInput';
 import { FormCard } from '../components/ui/FormCard';
 import { useAppTheme } from '../theme/ThemeContext';
+import { useTranslation } from '../context/LanguageContext';
 
 type Props = NativeStackScreenProps<any, any>;
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useAppTheme();
+  const { translateText } = useTranslation();
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const submit = async () => {
     setError(null);
     if (!userName.trim() || !password) {
-      setError('Please provide both username and password.');
+      setError(translateText('login.validation'));
       return;
     }
     setLoading(true);
@@ -122,38 +124,38 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                     <Text style={[styles.brandBadgeText, { color: theme.colors.secondary }]}>Barber Flow</Text>
                   </View>
                   <View style={[styles.statusPill, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}> 
-                    <Text style={[styles.statusPillText, { color: theme.colors.textSecondary }]}>Secure access</Text>
+                    <Text style={[styles.statusPillText, { color: theme.colors.textSecondary }]}>{translateText('login.secureAccess')}</Text>
                   </View>
                 </View>
 
                 <Image source={require('../../assets/images/login-temporal.jpg')} style={[styles.image, { height: theme.layout.sizes.imageBannerHeight }]} resizeMode="contain" />
 
-                <Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>Manage your barber workspace with confidence.</Text>
-                <Text style={[styles.heroBody, { color: theme.colors.textSecondary }]}>Sign in to access appointments, client records, notifications, and operational settings from one professional workspace.</Text>
+                <Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>{translateText('login.heroTitle')}</Text>
+                <Text style={[styles.heroBody, { color: theme.colors.textSecondary }]}>{translateText('login.heroBody')}</Text>
 
                 <View style={styles.featureRow}>
                   <View style={[styles.featureChip, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-                    <Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>Appointments</Text>
+                    <Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>{translateText('login.appointments')}</Text>
                   </View>
                   <View style={[styles.featureChip, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-                    <Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>Clients</Text>
+                    <Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>{translateText('login.clients')}</Text>
                   </View>
                   <View style={[styles.featureChip, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-                    <Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>Notifications</Text>
+                    <Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>{translateText('login.notifications')}</Text>
                   </View>
                 </View>
               </View>
 
               <FormCard style={styles.authCard}>
-                <Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>Welcome back</Text>
-                <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Sign in to continue</Text>
-                <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>Use your assigned username and password to open the mobile workspace.</Text>
+                <Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>{translateText('login.welcomeBack')}</Text>
+                <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{translateText('login.signInToContinue')}</Text>
+                <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{translateText('login.subtitle')}</Text>
 
                 <View style={styles.formGroup}>
-                  <Text style={[styles.label, { color: theme.colors.textSecondary }]}>Username</Text>
+                  <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{translateText('login.username')}</Text>
                   <RNTextInput
                     ref={emailRef as any}
-                    placeholder="Enter your username"
+                    placeholder={translateText('login.enterUsername')}
                     placeholderTextColor={theme.colors.textSecondary}
                     value={userName}
                     onChangeText={setUserName}
@@ -174,10 +176,10 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={[styles.label, { color: theme.colors.textSecondary }]}>Password</Text>
+                  <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{translateText('login.password')}</Text>
                   <PasswordInput
                     inputRef={passwordRef as any}
-                    placeholder="Enter your password"
+                    placeholder={translateText('login.enterPassword')}
                     placeholderTextColor={theme.colors.textSecondary}
                     value={password}
                     onChangeText={setPassword}
@@ -190,7 +192,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
                 {error ? (
                   <View style={[styles.errorCard, { backgroundColor: theme.mode === 'dark' ? 'rgba(248, 113, 113, 0.14)' : 'rgba(220, 38, 38, 0.08)', borderColor: theme.colors.error }]}> 
-                    <Text style={[styles.errorTitle, { color: theme.colors.error }]}>Authentication failed</Text>
+                    <Text style={[styles.errorTitle, { color: theme.colors.error }]}>{translateText('login.authFailed')}</Text>
                     <Text style={[styles.error, { color: theme.colors.error }]}>{error}</Text>
                   </View>
                 ) : null}
@@ -209,11 +211,11 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                   {loading ? (
                     <ActivityIndicator color={theme.mode === 'dark' ? '#0F172A' : '#FFFFFF'} />
                   ) : (
-                    <Text style={[styles.buttonText, { color: theme.mode === 'dark' ? '#0F172A' : '#FFFFFF' }]}>Sign in</Text>
+                    <Text style={[styles.buttonText, { color: theme.mode === 'dark' ? '#0F172A' : '#FFFFFF' }]}>{translateText('login.signIn')}</Text>
                   )}
                 </Pressable>
 
-                <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>Your session is stored securely on this device after a successful login.</Text>
+                <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>{translateText('login.helperText')}</Text>
               </FormCard>
             </View>
           </ScrollView>

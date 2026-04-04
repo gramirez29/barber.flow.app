@@ -5,6 +5,25 @@ import {
   Platform,
 } from "react-native";
 
+type ContactActionLabels = {
+  callUnavailableMessage: string;
+  callUnavailableOpen: string;
+  callUnavailableTitle: string;
+  cancel: string;
+  chooseContactMethod: string;
+  hello: string;
+  helloName: string;
+  sendMessage: string;
+  smsLabel: string;
+  smsUnavailableMessage: string;
+  smsUnavailableOpen: string;
+  smsUnavailableTitle: string;
+  whatsappLabel: string;
+  whatsappUnavailableMessage: string;
+  whatsappUnavailableOpen: string;
+  whatsappUnavailableTitle: string;
+};
+
 const DEFAULT_COUNTRY_CODE = "506";
 
 const sanitizePhoneNumber = (phone: string) => phone.replace(/\D+/g, "");
@@ -14,12 +33,12 @@ const buildSmsUrl = (phone: string, message: string) => {
   return `sms:${phone}${separator}body=${encodeURIComponent(message)}`;
 };
 
-const buildMessage = (clientName?: string) => {
+const buildMessage = (labels: ContactActionLabels, clientName?: string) => {
   if (!clientName) {
-    return "Hello";
+    return labels.hello;
   }
 
-  return `Hello ${clientName}`;
+  return labels.helloName.replace("%{name}", clientName);
 };
 
 const buildWhatsAppPhoneNumber = (phone: string) => {
@@ -47,84 +66,99 @@ const openUrl = async (
   await Linking.openURL(url);
 };
 
-export const openClientPhoneCall = async (phone: string) => {
+export const openClientPhoneCall = async (
+  phone: string,
+  labels: ContactActionLabels,
+) => {
   const digits = sanitizePhoneNumber(phone);
 
   if (!digits) {
-    Alert.alert("Call unavailable", "This client does not have a valid phone number.");
+    Alert.alert(labels.callUnavailableTitle, labels.callUnavailableMessage);
     return;
   }
 
   try {
     await openUrl(
       `tel:${digits}`,
-      "Call unavailable",
-      "Your device could not open the phone dialer.",
+      labels.callUnavailableTitle,
+      labels.callUnavailableOpen,
     );
   } catch {
-    Alert.alert("Call unavailable", "Your device could not open the phone dialer.");
+    Alert.alert(labels.callUnavailableTitle, labels.callUnavailableOpen);
   }
 };
 
-const openClientSms = async (phone: string, clientName?: string) => {
+const openClientSms = async (
+  phone: string,
+  labels: ContactActionLabels,
+  clientName?: string,
+) => {
   const digits = sanitizePhoneNumber(phone);
 
   if (!digits) {
-    Alert.alert("SMS unavailable", "This client does not have a valid phone number.");
+    Alert.alert(labels.smsUnavailableTitle, labels.smsUnavailableMessage);
     return;
   }
 
   try {
     await openUrl(
-      buildSmsUrl(digits, buildMessage(clientName)),
-      "SMS unavailable",
-      "Your device could not open the SMS app.",
+      buildSmsUrl(digits, buildMessage(labels, clientName)),
+      labels.smsUnavailableTitle,
+      labels.smsUnavailableOpen,
     );
   } catch {
-    Alert.alert("SMS unavailable", "Your device could not open the SMS app.");
+    Alert.alert(labels.smsUnavailableTitle, labels.smsUnavailableOpen);
   }
 };
 
-const openClientWhatsApp = async (phone: string, clientName?: string) => {
+const openClientWhatsApp = async (
+  phone: string,
+  labels: ContactActionLabels,
+  clientName?: string,
+) => {
   const whatsappPhone = buildWhatsAppPhoneNumber(phone);
 
   if (!whatsappPhone) {
-    Alert.alert("WhatsApp unavailable", "This client does not have a valid phone number.");
+    Alert.alert(labels.whatsappUnavailableTitle, labels.whatsappUnavailableMessage);
     return;
   }
 
-  const url = `whatsapp://send?phone=${whatsappPhone}&text=${encodeURIComponent(buildMessage(clientName))}`;
+  const url = `whatsapp://send?phone=${whatsappPhone}&text=${encodeURIComponent(buildMessage(labels, clientName))}`;
 
   try {
     await openUrl(
       url,
-      "WhatsApp unavailable",
-      "WhatsApp is not installed or could not be opened on this device.",
+      labels.whatsappUnavailableTitle,
+      labels.whatsappUnavailableOpen,
     );
   } catch {
     Alert.alert(
-      "WhatsApp unavailable",
-      "WhatsApp is not installed or could not be opened on this device.",
+      labels.whatsappUnavailableTitle,
+      labels.whatsappUnavailableOpen,
     );
   }
 };
 
-export const openClientMessagePicker = (phone: string, clientName?: string) => {
+export const openClientMessagePicker = (
+  phone: string,
+  labels: ContactActionLabels,
+  clientName?: string,
+) => {
   if (Platform.OS === "ios") {
     ActionSheetIOS.showActionSheetWithOptions(
       {
         cancelButtonIndex: 0,
-        message: "Choose how to contact this client.",
-        options: ["Cancel", "WhatsApp", "SMS"],
-        title: "Send message",
+        message: labels.chooseContactMethod,
+        options: [labels.cancel, labels.whatsappLabel, labels.smsLabel],
+        title: labels.sendMessage,
       },
       (buttonIndex) => {
         if (buttonIndex === 1) {
-          void openClientWhatsApp(phone, clientName);
+          void openClientWhatsApp(phone, labels, clientName);
         }
 
         if (buttonIndex === 2) {
-          void openClientSms(phone, clientName);
+          void openClientSms(phone, labels, clientName);
         }
       },
     );
@@ -132,22 +166,22 @@ export const openClientMessagePicker = (phone: string, clientName?: string) => {
     return;
   }
 
-  Alert.alert("Send message", "Choose how to contact this client.", [
+  Alert.alert(labels.sendMessage, labels.chooseContactMethod, [
     {
       style: "cancel",
-      text: "Cancel",
+      text: labels.cancel,
     },
     {
       onPress: () => {
-        void openClientWhatsApp(phone, clientName);
+        void openClientWhatsApp(phone, labels, clientName);
       },
-      text: "WhatsApp",
+      text: labels.whatsappLabel,
     },
     {
       onPress: () => {
-        void openClientSms(phone, clientName);
+        void openClientSms(phone, labels, clientName);
       },
-      text: "SMS",
+      text: labels.smsLabel,
     },
   ]);
 };

@@ -1,13 +1,11 @@
 import type { Appointment, AppointmentPaymentMethod } from "../appointments/appointments.types";
 import {
-  APPOINTMENT_PAYMENT_METHOD_LABELS,
   APPOINTMENT_PAYMENT_METHOD_OPTIONS,
 } from "../appointments/appointments.types";
 import type { ReportCalculationSettings } from "../../types/settings";
 
 export interface DailyReportPaymentBreakdown {
   appointmentCount: number;
-  label: string;
   paymentMethod: AppointmentPaymentMethod;
   total: number;
 }
@@ -47,7 +45,6 @@ export const calculateDailyReportSummary = (
 
     return {
       appointmentCount: paymentMethodAppointments.length,
-      label: APPOINTMENT_PAYMENT_METHOD_LABELS[paymentMethod],
       paymentMethod,
       total: paymentMethodAppointments.reduce(
         (total, appointment) => total + (appointment.servicePrice ?? 0),

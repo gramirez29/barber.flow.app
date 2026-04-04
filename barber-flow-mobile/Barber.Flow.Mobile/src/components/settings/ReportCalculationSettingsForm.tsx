@@ -5,6 +5,7 @@ import type {
   ReportCalculationSettingErrors,
   ReportCalculationSettingTouched,
 } from "../../features/settings/reportCalculationsForm";
+import { useTranslation } from "../../context/LanguageContext";
 import { useAppTheme } from "../../theme/ThemeContext";
 import type { ReportCalculationSettings } from "../../types/settings";
 
@@ -33,17 +34,18 @@ export const ReportCalculationSettingsForm = ({
   values,
 }: ReportCalculationSettingsFormProps) => {
   const { theme } = useAppTheme();
+  const { translateText } = useTranslation();
 
   return (
     <View style={styles.container}>
       <View style={styles.copyBlock}>
-        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Daily closure formula</Text>
-        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>Net profit is calculated as gross revenue minus barber commission and fixed daily expense.</Text>
+        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{translateText("settings.reportCalculationForm.title")}</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{translateText("settings.reportCalculationForm.subtitle")}</Text>
       </View>
 
       <View style={styles.formGroup}>
         <TextInput
-          label="Barber commission percentage"
+          label={translateText("settings.reportCalculationForm.commissionPercentage")}
           value={String(values.commissionPercentage)}
           onChangeText={(value) =>
             onFieldChange(
@@ -59,13 +61,13 @@ export const ReportCalculationSettingsForm = ({
           disabled={loading}
         />
         <HelperText type="error" visible={Boolean(touched.commissionPercentage && errors.commissionPercentage)}>
-          {errors.commissionPercentage}
+          {errors.commissionPercentage ? translateText(errors.commissionPercentage) : undefined}
         </HelperText>
       </View>
 
       <View style={styles.formGroup}>
         <TextInput
-          label="Fixed daily expense"
+          label={translateText("settings.reportCalculationForm.fixedDailyExpense")}
           value={String(values.fixedDailyExpense)}
           onChangeText={(value) =>
             onFieldChange(
@@ -81,16 +83,16 @@ export const ReportCalculationSettingsForm = ({
           disabled={loading}
         />
         <HelperText type="error" visible={Boolean(touched.fixedDailyExpense && errors.fixedDailyExpense)}>
-          {errors.fixedDailyExpense}
+          {errors.fixedDailyExpense ? translateText(errors.fixedDailyExpense) : undefined}
         </HelperText>
       </View>
 
       <View style={styles.actions}>
         <Button mode="outlined" onPress={onReset} disabled={loading}>
-          Reset
+          {translateText("common.reset")}
         </Button>
         <Button mode="contained" onPress={onSave} disabled={loading}>
-          Save
+          {translateText("common.save")}
         </Button>
       </View>
     </View>

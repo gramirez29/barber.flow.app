@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import 'react-native-gesture-handler';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider, useAppTheme } from './src/theme/ThemeContext';
+import { LanguageProvider } from './src/context/LanguageContext';
 import { NotificationProvider } from './src/context/NotificationContext';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { createNavigationTheme, createPaperTheme } from './src/theme/themes';
@@ -27,7 +28,9 @@ function Main() {
 export default function App() {
   return (
     <ThemeProvider>
+      <LanguageProvider>
         <Main />
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

@@ -36,13 +36,13 @@ export const validateReportCalculationField = (
   if (key === "commissionPercentage") {
     return validateRangeValue(value, 0, 100)
       ? undefined
-      : "Commission percentage must be between 0 and 100.";
+      : "validation.commissionPercentageRange";
   }
 
   if (key === "fixedDailyExpense") {
     return validateRangeValue(value, 0)
       ? undefined
-      : "Fixed daily expense must be 0 or greater.";
+      : "validation.fixedDailyExpenseRange";
   }
 
   return undefined;

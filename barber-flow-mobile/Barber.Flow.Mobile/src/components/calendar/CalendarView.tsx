@@ -14,7 +14,7 @@ type ViewMode = "month" | "week" | "day";
 
     export const CalendarView: React.FC<Props> = ({
     appointments,
-    viewMode,
+    viewMode: _viewMode,
     onAppointmentPress,
     }) => (
     <ScrollView style={styles.calendarView}>

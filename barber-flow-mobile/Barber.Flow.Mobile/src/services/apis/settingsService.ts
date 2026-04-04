@@ -4,6 +4,8 @@ import type {
   ApplicationUserSettingsForm,
   BarberApiRequest,
   BarberApiResponse,
+  Language,
+  LanguageSource,
   ReportCalculationSettings,
   SettingsPreferences,
   ThemeMode,
@@ -38,6 +40,8 @@ const mapBarberResponse = (response: any): BarberApiResponse => ({
 const normalizePreferences = (
   preferences: SettingsPreferences | null,
 ): SettingsPreferences => ({
+  language: preferences?.language ?? "es",
+  languageSource: preferences?.languageSource ?? "system",
   notificationsEnabled: preferences?.notificationsEnabled ?? true,
   reportCalculations: {
     ...DEFAULT_REPORT_CALCULATION_SETTINGS,
@@ -97,12 +101,23 @@ export const settingsService = {
     return normalizePreferences(preferences).reportCalculations ?? DEFAULT_REPORT_CALCULATION_SETTINGS;
   },
 
+  async setLanguagePreference(language: Language, languageSource: LanguageSource) {
+    const current = normalizePreferences(await settingsService.getStoredPreferences());
+    const next: SettingsPreferences = {
+      ...current,
+      language,
+      languageSource,
+    };
+
+    await AsyncStorage.setItem(SETTINGS_PREFERENCES_KEY, JSON.stringify(next));
+    return next;
+  },
+
   async setNotificationsEnabled(notificationsEnabled: boolean) {
     const current = normalizePreferences(await settingsService.getStoredPreferences());
     const next: SettingsPreferences = {
+      ...current,
       notificationsEnabled,
-      reportCalculations: current.reportCalculations,
-      themeMode: current.themeMode,
     };
 
     await AsyncStorage.setItem(SETTINGS_PREFERENCES_KEY, JSON.stringify(next));
@@ -112,8 +127,7 @@ export const settingsService = {
   async setThemeMode(themeMode: ThemeMode) {
     const current = normalizePreferences(await settingsService.getStoredPreferences());
     const next: SettingsPreferences = {
-      notificationsEnabled: current.notificationsEnabled,
-      reportCalculations: current.reportCalculations,
+      ...current,
       themeMode,
     };
 
@@ -124,9 +138,8 @@ export const settingsService = {
   async setReportCalculationSettings(reportCalculations: ReportCalculationSettings) {
     const current = normalizePreferences(await settingsService.getStoredPreferences());
     const next: SettingsPreferences = {
-      notificationsEnabled: current.notificationsEnabled,
+      ...current,
       reportCalculations,
-      themeMode: current.themeMode,
     };
 
     await AsyncStorage.setItem(SETTINGS_PREFERENCES_KEY, JSON.stringify(next));

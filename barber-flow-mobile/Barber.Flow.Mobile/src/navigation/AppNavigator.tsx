@@ -10,6 +10,7 @@ import { NotificationScreen } from '../screens/NotificationScreen';
 import { fonts } from '../theme/fonts';
 import { useAppTheme } from '../theme/ThemeContext';
 import { useNotification } from '../context/NotificationContext';
+import { useTranslation } from '../context/LanguageContext';
 
 
 export type AppTabParamList = {
@@ -28,36 +29,36 @@ export type AppTabParamList = {
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 
-const TAB_METADATA: Record<keyof AppTabParamList, {
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}> = {
-  Calendar: {
-    label: 'Agenda',
-    icon: 'calendar-outline',
-  },
-  Clients: {
-    label: 'Clientes',
-    icon: 'people-outline',
-  },
-  DailyReport: {
-    label: 'Cierre',
-    icon: 'bar-chart-outline',
-  },
-  NotificationScreen: {
-    label: 'Alertas',
-    icon: 'notifications-outline',
-  },
-  SettingsScreen: {
-    label: 'Ajustes',
-    icon: 'settings-outline',
-  },
-};
-
 export const AppNavigator = () => {
 
   const { theme } = useAppTheme();
   const { unreadCount } = useNotification();
+  const { translateText } = useTranslation();
+  const tabMetadata: Record<keyof AppTabParamList, {
+    label: string;
+    icon: keyof typeof Ionicons.glyphMap;
+  }> = {
+    Calendar: {
+      label: translateText('navigation.calendar'),
+      icon: 'calendar-outline',
+    },
+    Clients: {
+      label: translateText('navigation.clients'),
+      icon: 'people-outline',
+    },
+    DailyReport: {
+      label: translateText('navigation.dailyReport'),
+      icon: 'bar-chart-outline',
+    },
+    NotificationScreen: {
+      label: translateText('navigation.alerts'),
+      icon: 'notifications-outline',
+    },
+    SettingsScreen: {
+      label: translateText('navigation.settings'),
+      icon: 'settings-outline',
+    },
+  };
   const isDarkMode = theme.mode === 'dark';
   const activeIconBackground = isDarkMode
     ? 'rgba(96, 165, 250, 0.18)'
@@ -97,7 +98,7 @@ export const AppNavigator = () => {
           marginBottom: 0,
         },
         tabBarIcon: ({ focused, color }) => {
-          const metadata = TAB_METADATA[route.name];
+          const metadata = tabMetadata[route.name];
 
           return (
             <View
@@ -122,24 +123,24 @@ export const AppNavigator = () => {
         name="Calendar"
         component={CalendarScreen}
         options={{
-          title: TAB_METADATA.Calendar.label,
+          title: tabMetadata.Calendar.label,
         }}
       />
       <Tab.Screen
         name="Clients"
         component={ClientsScreen}
-        options={{ title: TAB_METADATA.Clients.label }}
+        options={{ title: tabMetadata.Clients.label }}
       />
       <Tab.Screen
         name="DailyReport"
         component={DailyReportScreen}
-        options={{ title: TAB_METADATA.DailyReport.label }}
+        options={{ title: tabMetadata.DailyReport.label }}
       />
       <Tab.Screen
         name="NotificationScreen"
         component={NotificationScreen}
         options={{
-          title: TAB_METADATA.NotificationScreen.label,
+          title: tabMetadata.NotificationScreen.label,
           tabBarBadge:
             unreadCount > 0 ? unreadCount : undefined,
           tabBarBadgeStyle: {
@@ -158,7 +159,7 @@ export const AppNavigator = () => {
       <Tab.Screen
         name="SettingsScreen"
         component={SettingsScreen}
-        options={{ title: TAB_METADATA.SettingsScreen.label }}
+        options={{ title: tabMetadata.SettingsScreen.label }}
       />
     </Tab.Navigator>
   );

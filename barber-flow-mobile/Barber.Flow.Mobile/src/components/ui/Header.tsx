@@ -8,6 +8,7 @@ import {
 import { useAppTheme } from "../../theme/ThemeContext";
 import { useNotification } from "../../context/NotificationContext";
 import { useAuthStore } from '../../store/auth.store';
+import { useTranslation } from "../../context/LanguageContext";
 import { ScreenTitle } from "./ScreenTitle";
 
 interface HeaderProps {
@@ -19,9 +20,10 @@ interface HeaderProps {
 export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
     const { theme } = useAppTheme();
     const { unreadCount } = useNotification();
+    const { translateText } = useTranslation();
     const user = useAuthStore((s) => s.user);
-    const identity = user?.name ?? user?.userName ?? "Guest";
-    const roleLabel = user?.role ?? "Workspace";
+    const identity = user?.name ?? user?.userName ?? translateText("header.guest");
+    const roleLabel = user?.role ?? translateText("header.workspace");
     const initials = identity
         .trim()
         .split(/\s+/)
@@ -47,7 +49,7 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
                     onPress={onMenuPress}
                     style={[styles.iconButton, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
                     activeOpacity={0.8}
-                    accessibilityLabel="Open menu"
+                    accessibilityLabel={translateText("header.openMenu")}
                 >
                     <Ionicons name="menu" size={22} color={theme.colors.textPrimary} />
                 </TouchableOpacity>
@@ -70,7 +72,7 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
                         style={[styles.notificationButton, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
                         onPress={onBellPress}
                         activeOpacity={0.8}
-                        accessibilityLabel="Open notifications"
+                        accessibilityLabel={translateText("header.openNotifications")}
                     >
                         <Ionicons name="notifications-outline" size={20} color={theme.colors.textPrimary} />
                         {unreadCount > 0 ? (
@@ -88,7 +90,7 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
         </View>
 
         <Text style={[styles.identityText, { color: theme.colors.textSecondary }]} numberOfLines={1}>
-            Signed in as {identity}
+            {translateText("header.signedInAs", { identity })}
         </Text>
     </View>
     );

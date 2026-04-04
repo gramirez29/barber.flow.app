@@ -15,11 +15,13 @@ import {
 } from "../features/settings/settingsForm";
 import { settingsService } from "../services/apis/settingsService";
 import { useAuthStore } from "../store/auth.store";
+import { useLanguage, useTranslation } from "../context/LanguageContext";
 import { useAppTheme } from "../theme/ThemeContext";
 import { FormCard } from "../components/ui/FormCard";
 import {
   DEFAULT_REPORT_CALCULATION_SETTINGS,
   type BarberApiResponse,
+  type Language,
   type ThemeMode,
 } from "../types/settings";
 
@@ -31,6 +33,8 @@ export const SettingsScreen = () => {
   const isAdmin = user?.role === "Admin";
   const { notificationsEnabled, setNotificationsEnabled, unreadCount } = useNotification();
   const { resolvedThemeMode, setThemeMode, theme, themeMode } = useAppTheme();
+  const { isUsingSystemLanguage, language, resetToSystemLanguage, setLanguage, systemLanguage } = useLanguage();
+  const { translateText } = useTranslation();
   const {
     errors,
     isFormValid,
@@ -59,18 +63,8 @@ export const SettingsScreen = () => {
     values: reportSettingValues,
   } = useReportCalculationSettingsForm();
 
-  const loadNextBarberId = async () => {
-    const nextBarberId = await settingsService.getNextBarberId();
-    resetValues(nextBarberId);
-  };
-
-  useEffect(() => {
-    if (!isAdmin) {
-      return;
-    }
-
-    void loadNextBarberId();
-  }, [isAdmin]);
+  // Note: we no longer prefetch next barber id on mount. The id
+  // will be fetched exactly once immediately before creating a barber.
 
   useEffect(() => {
     let mounted = true;
@@ -97,6 +91,23 @@ export const SettingsScreen = () => {
     await setThemeMode(value as ThemeMode);
   };
 
+  const handleLanguageChange = async (value: string) => {
+    await setLanguage(value as Language);
+  };
+
+  const handleLanguageModeToggle = async () => {
+    if (isUsingSystemLanguage) {
+      await setLanguage(language);
+      return;
+    }
+
+    await resetToSystemLanguage();
+  };
+
+  const currentSystemLanguageLabel = systemLanguage === "es"
+    ? translateText("settings.preferencesPanel.spanish")
+    : translateText("settings.preferencesPanel.english");
+
   const handleApplicationUserSubmit = async () => {
     const nextErrors = validateBeforeSubmit();
 
@@ -107,7 +118,10 @@ export const SettingsScreen = () => {
       nextErrors.barberName ||
       nextErrors.barberPhone
     ) {
-      Alert.alert("Validation", "Please fix the required fields.");
+      Alert.alert(
+        translateText("common.save"),
+        translateText("settings.alerts.validation"),
+      );
       return;
     }
 
@@ -116,18 +130,33 @@ export const SettingsScreen = () => {
     try {
       if (mode === "edit" && values.barberId) {
         const updated = await settingsService.updateApplicationUser(values.barberId, values);
-        Alert.alert("Updated", `Application user ${updated.id} updated successfully.`);
+        Alert.alert(
+          translateText("common.update"),
+          translateText("settings.alerts.applicationUserUpdated", { id: updated.id }),
+        );
         loadValues(mapBarberResponseToForm(updated), "edit");
       } else {
-        const created = await settingsService.createApplicationUser(values);
-        Alert.alert("Saved", `Application user ${created.id} created successfully.`);
-        await loadNextBarberId();
+        // Fetch a one-time barber id immediately before creating so
+        // we don't prefetch on mount or after other actions.
+        const nextId = await settingsService.getNextBarberId();
+        setField("barberId", nextId);
+
+        const created = await settingsService.createApplicationUser({ ...values, barberId: nextId });
+        Alert.alert(
+          translateText("common.save"),
+          translateText("settings.alerts.applicationUserCreated", { id: created.id }),
+        );
+        // Clear the form after successful create; do not prefetch another id.
+        resetValues();
       }
 
       setApplicationUserResults([]);
       setSearchQuery("");
     } catch (error: any) {
-      Alert.alert("Error", error?.message ?? "Save failed");
+      Alert.alert(
+        translateText("common.delete"),
+        error?.message ?? translateText("settings.alerts.saveFailed"),
+      );
     } finally {
       setApplicationUserLoading(false);
     }
@@ -137,7 +166,10 @@ export const SettingsScreen = () => {
     const query = searchQuery.trim() || (mode === "edit" ? values.barberId?.trim() : "");
 
     if (!query) {
-      Alert.alert("Search", "Enter a Barber ID, email, or phone to search.");
+      Alert.alert(
+        translateText("common.search"),
+        translateText("settings.alerts.searchHint"),
+      );
       return;
     }
 
@@ -155,11 +187,17 @@ export const SettingsScreen = () => {
         if (results.length === 1) {
           loadValues(mapBarberResponseToForm(results[0]), "edit");
         } else if (results.length === 0) {
-          Alert.alert("Not found", "No application user found for that search.");
+          Alert.alert(
+            translateText("settings.alerts.searchFailed"),
+            translateText("settings.alerts.noApplicationUserSearchResult"),
+          );
         }
       }
     } catch (error: any) {
-      Alert.alert("Error", error?.message ?? "Search failed");
+      Alert.alert(
+        translateText("common.search"),
+        error?.message ?? translateText("settings.alerts.searchFailed"),
+      );
     } finally {
       setApplicationUserLoading(false);
     }
@@ -167,38 +205,48 @@ export const SettingsScreen = () => {
 
   const handleApplicationUserDelete = async () => {
     if (!values.barberId || mode !== "edit") {
-      Alert.alert("Info", "No application user selected.");
+      Alert.alert(
+        translateText("common.delete"),
+        translateText("settings.alerts.noApplicationUserSelected"),
+      );
       return;
     }
 
     const barberId = values.barberId;
 
-    Alert.alert("Confirm", `Remove ${barberId}?`, [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(translateText("common.delete"), translateText("settings.alerts.confirmDeleteUser", { id: barberId }), [
+      { text: translateText("common.cancel"), style: "cancel" },
       {
-        onPress: async () => {
+            onPress: async () => {
           setApplicationUserLoading(true);
 
           try {
             await settingsService.deleteApplicationUser(barberId);
-            Alert.alert("Deleted", `Application user ${barberId} removed successfully.`);
-            await loadNextBarberId();
+            Alert.alert(
+              translateText("common.delete"),
+              translateText("settings.alerts.applicationUserDeleted", { id: barberId }),
+            );
+                // Reset the form after delete; do not prefetch a new id.
+                resetValues();
             setApplicationUserResults([]);
             setSearchQuery("");
           } catch (error: any) {
-            Alert.alert("Error", error?.message ?? "Delete failed");
+            Alert.alert(
+              translateText("common.delete"),
+              error?.message ?? translateText("settings.alerts.deleteFailed"),
+            );
           } finally {
             setApplicationUserLoading(false);
           }
         },
         style: "destructive",
-        text: "Delete",
+        text: translateText("common.delete"),
       },
     ]);
   };
 
   const handleResetApplicationUser = async () => {
-    await loadNextBarberId();
+    resetValues();
     setApplicationUserResults([]);
     setSearchQuery("");
   };
@@ -212,22 +260,31 @@ export const SettingsScreen = () => {
     const nextErrors = validateReportSettingsBeforeSubmit();
 
     if (nextErrors.commissionPercentage || nextErrors.fixedDailyExpense) {
-      Alert.alert("Validation", "Please review the daily report calculation values.");
+      Alert.alert(
+        translateText("common.save"),
+        translateText("settings.alerts.reportValidation"),
+      );
       return;
     }
 
     await settingsService.setReportCalculationSettings(reportSettingValues);
-    Alert.alert("Saved", "Daily report calculations updated successfully.");
+    Alert.alert(
+      translateText("common.save"),
+      translateText("settings.alerts.dailyReportSaved"),
+    );
   };
 
   const handleResetReportSettings = async () => {
     resetReportSettingValues(DEFAULT_REPORT_CALCULATION_SETTINGS);
     await settingsService.setReportCalculationSettings(DEFAULT_REPORT_CALCULATION_SETTINGS);
-    Alert.alert("Reset", "Daily report calculations were reset to defaults.");
+    Alert.alert(
+      translateText("common.reset"),
+      translateText("settings.alerts.dailyReportReset"),
+    );
   };
 
   return (
-    <ScreenLayout title="Settings" backgroundColor={theme.colors.background}>
+    <ScreenLayout title={translateText("settings.title")} backgroundColor={theme.colors.background}>
       <KeyboardAwareScrollView
         style={styles.flex}
         contentContainerStyle={styles.scrollContent}
@@ -238,23 +295,23 @@ export const SettingsScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <FormCard style={styles.heroCard}>
-          <Text style={[styles.heroEyebrow, { color: theme.colors.textSecondary }]}>Workspace settings</Text>
-          <Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>Settings & Preferences</Text>
+          <Text style={[styles.heroEyebrow, { color: theme.colors.textSecondary }]}>{translateText("settings.workspaceSettings")}</Text>
+          <Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>{translateText("settings.settingsAndPreferences")}</Text>
           <Text style={[styles.heroSubtitle, { color: theme.colors.textSecondary }]}> 
-            Configure application preferences, manage admin-only application users, and keep the experience aligned with your workflow.
+            {translateText("settings.heroSubtitle")}
           </Text>
 
           <View style={styles.heroActions}>
-            <Button mode="contained" onPress={() => void setThemeMode("system")}>Follow system</Button>
-            <Button mode="text" onPress={() => void setThemeMode(resolvedThemeMode === "dark" ? "light" : "dark")}>Quick toggle</Button>
+            <Button mode="contained" onPress={() => void setThemeMode("system")}>{translateText("settings.followSystem")}</Button>
+            <Button mode="text" onPress={() => void setThemeMode(resolvedThemeMode === "dark" ? "light" : "dark")}>{translateText("settings.quickToggle")}</Button>
           </View>
         </FormCard>
 
-        <SettingSection title="Preferencias">
+        <SettingSection title={translateText("settings.preferences")}>
           <View style={styles.preferenceBlock}>
-            <Text style={[styles.preferenceTitle, { color: theme.colors.textPrimary }]}>Dark Mode</Text>
+            <Text style={[styles.preferenceTitle, { color: theme.colors.textPrimary }]}>{translateText("settings.preferencesPanel.darkModeTitle")}</Text>
             <Text style={[styles.preferenceBody, { color: theme.colors.textSecondary }]}> 
-              Choose a manual theme or let the app follow system preferences across the full experience.
+              {translateText("settings.preferencesPanel.darkModeBody")}
             </Text>
             <SegmentedButtons
               density="small"
@@ -262,22 +319,58 @@ export const SettingsScreen = () => {
               style={styles.segmentedButtons}
               value={themeMode}
               buttons={[
-                { label: "System", value: "system" },
-                { label: "Light", value: "light" },
-                { label: "Dark", value: "dark" },
+                { label: translateText("settings.preferencesPanel.system"), value: "system" },
+                { label: translateText("settings.preferencesPanel.light"), value: "light" },
+                { label: translateText("settings.preferencesPanel.dark"), value: "dark" },
+              ]}
+            />
+          </View>
+
+          <SettingItem
+            icon="language-outline"
+            label={translateText("settings.preferencesPanel.followDeviceLanguage")}
+            onToggle={() => void handleLanguageModeToggle()}
+            value={isUsingSystemLanguage}
+          />
+
+          <View style={styles.preferenceBlock}>
+            <Text style={[styles.preferenceTitle, { color: theme.colors.textPrimary }]}>{translateText("settings.preferencesPanel.languageTitle")}</Text>
+            <Text style={[styles.preferenceBody, { color: theme.colors.textSecondary }]}>
+              {isUsingSystemLanguage
+                ? translateText("settings.preferencesPanel.languageSystemBody", {
+                    language: currentSystemLanguageLabel,
+                  })
+                : translateText("settings.preferencesPanel.languageManualBody")}
+            </Text>
+            <SegmentedButtons
+              density="small"
+              onValueChange={handleLanguageChange}
+              style={styles.segmentedButtons}
+              value={language}
+              buttons={[
+                {
+                  disabled: isUsingSystemLanguage,
+                  label: translateText("settings.preferencesPanel.spanish"),
+                  value: "es",
+                },
+                {
+                  disabled: isUsingSystemLanguage,
+                  label: translateText("settings.preferencesPanel.english"),
+                  value: "en",
+                },
               ]}
             />
           </View>
 
           <SettingItem
             icon="notifications-outline"
-            label={`Notifications (${unreadCount})`}
+            label={translateText("settings.preferencesPanel.notifications", { count: unreadCount })}
             onToggle={() => void setNotificationsEnabled(!notificationsEnabled)}
             value={notificationsEnabled}
           />
         </SettingSection>
 
-        <SettingSection title="Daily Report Calculations">
+        <SettingSection title={translateText("settings.dailyReportCalculations")}>
           <ReportCalculationSettingsForm
             errors={reportSettingErrors}
             loading={reportSettingsLoading}
@@ -291,7 +384,7 @@ export const SettingsScreen = () => {
         </SettingSection>
 
         {isAdmin ? (
-          <SettingSection title="Manage Application Users">
+          <SettingSection title={translateText("settings.manageApplicationUsers")}>
             <ManageApplicationUsersForm
               errors={errors}
               isFormValid={isFormValid}
@@ -314,10 +407,10 @@ export const SettingsScreen = () => {
         ) : null}
 
         <FormCard style={styles.aboutCard}>
-          <Text style={[styles.aboutEyebrow, { color: theme.colors.textSecondary }]}>Acerca de</Text>
+          <Text style={[styles.aboutEyebrow, { color: theme.colors.textSecondary }]}>{translateText("settings.about")}</Text>
           <Text style={[styles.aboutTitle, { color: theme.colors.textPrimary }]}>Barber Flow Mobile</Text>
           <Text style={[styles.aboutSubtitle, { color: theme.colors.textSecondary }]}> 
-            Application information and development credits presented with the same polished card treatment as the rest of the settings workspace.
+            {translateText("settings.aboutSubtitle")}
           </Text>
 
           <View
@@ -329,14 +422,14 @@ export const SettingsScreen = () => {
             ]}
           >
             <View>
-              <Text style={[styles.aboutLabel, { color: theme.colors.textSecondary }]}>Version</Text>
+              <Text style={[styles.aboutLabel, { color: theme.colors.textSecondary }]}>{translateText("settings.version")}</Text>
               <Text style={[styles.aboutValue, { color: theme.colors.textPrimary }]}>{APP_VERSION}</Text>
             </View>
           </View>
 
           <View style={styles.aboutInfoRow}>
             <View>
-              <Text style={[styles.aboutLabel, { color: theme.colors.textSecondary }]}>Developer</Text>
+              <Text style={[styles.aboutLabel, { color: theme.colors.textSecondary }]}>{translateText("settings.developer")}</Text>
               <Text style={[styles.aboutValue, { color: theme.colors.textPrimary }]}>{DEVELOPER_NAME}</Text>
             </View>
           </View>

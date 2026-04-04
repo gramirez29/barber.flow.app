@@ -8,6 +8,22 @@ export const PAYMENT_METHODS = [
   "Cash",
 ] as const;
 
+export const getClientPaymentMethodLabel = (
+  paymentMethod: (typeof PAYMENT_METHODS)[number],
+  translateText: (key: string) => string,
+) => {
+  switch (paymentMethod) {
+    case "Cash":
+      return translateText("clients.paymentMethods.cash");
+    case "Sinpe Movil":
+      return translateText("clients.paymentMethods.sinpeMovil");
+    case "Transfer":
+      return translateText("clients.paymentMethods.transfer");
+    default:
+      return translateText("clients.paymentMethods.none");
+  }
+};
+
 export type ClientFormErrors = Partial<
   Record<"firstName" | "lastName" | "phone" | "email", string>
 >;
@@ -29,7 +45,7 @@ export const createEmptyClient = (): Client => ({
 export const validateClientField = (key: keyof Client, value: Client[keyof Client]) => {
   if (key === "firstName") {
     if (!value || !String(value).trim()) {
-      return "First name is required";
+      return "validation.nameRequired";
     }
 
     return undefined;
@@ -37,7 +53,7 @@ export const validateClientField = (key: keyof Client, value: Client[keyof Clien
 
   if (key === "lastName") {
     if (!value || !String(value).trim()) {
-      return "Last name is required";
+      return "validation.lastNameRequired";
     }
 
     return undefined;
@@ -45,11 +61,11 @@ export const validateClientField = (key: keyof Client, value: Client[keyof Clien
 
   if (key === "phone") {
     if (!value || !String(value).trim()) {
-      return "Phone is required";
+      return "validation.phoneRequired";
     }
 
     if (!/^\d{4}-\d{4}$/.test(String(value))) {
-      return "Phone must be 0000-0000";
+      return "validation.phoneFormat";
     }
 
     return undefined;
@@ -63,7 +79,7 @@ export const validateClientField = (key: keyof Client, value: Client[keyof Clien
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(String(value).trim())) {
-      return "Invalid email address";
+      return "validation.invalidEmail";
     }
 
     return undefined;

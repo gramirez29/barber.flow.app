@@ -4,12 +4,14 @@ import { Picker } from "@react-native-picker/picker";
 import { HelperText, Text, TextInput } from "react-native-paper";
 import { ClientAvatar } from "../ClientAvatar";
 import { FormCard } from "../ui/FormCard";
+import { useTranslation } from "../../context/LanguageContext";
 import { useAppTheme } from "../../theme/ThemeContext";
 import type { Client } from "../../types/clients";
 import {
   ClientFormErrors,
   ClientTouchedFields,
   PAYMENT_METHODS,
+  getClientPaymentMethodLabel,
 } from "../../features/clients/clientForm";
 
 interface ClientFormProps {
@@ -22,9 +24,12 @@ interface ClientFormProps {
   onOpenDatePicker: () => void;
 }
 
-const formatBirthday = (birthday?: string) => {
+const formatBirthday = (
+  translateText: (key: string) => string,
+  birthday?: string,
+) => {
   if (!birthday) {
-    return "Select date";
+    return translateText("clients.form.selectDate");
   }
 
   return new Date(birthday).toLocaleDateString();
@@ -40,8 +45,10 @@ export const ClientForm: React.FC<ClientFormProps> = ({
   onOpenDatePicker,
 }) => {
   const { theme } = useAppTheme();
+  const { translateText } = useTranslation();
   const isEditing = Boolean(client.id);
-  const fullName = `${client.firstName} ${client.lastName}`.trim() || "New client";
+  const fullName = `${client.firstName} ${client.lastName}`.trim()
+    || translateText("clients.form.createTitleFallback");
 
   return (
     <View style={styles.container}>
@@ -51,13 +58,15 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 
           <View style={styles.heroTextWrap}>
             <Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>
-              {isEditing ? "Client profile" : "Create client"}
+              {isEditing
+                ? translateText("clients.form.editEyebrow")
+                : translateText("clients.form.createEyebrow")}
             </Text>
             <Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>
               {fullName}
             </Text>
             <Text style={[styles.heroSubtitle, { color: theme.colors.textSecondary }]}>
-              {client.phone || "Add contact details and preferences to save this client."}
+              {client.phone || translateText("clients.form.createSubtitle")}
             </Text>
             <View style={styles.statusRow}>
               <View
@@ -69,11 +78,13 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                 ]}
               >
                 <Text style={[styles.statusPillText, { color: theme.colors.surface }]}> 
-                  {client.active ? "Active" : "Inactive"}
+                  {client.active
+                    ? translateText("clients.form.statusActive")
+                    : translateText("clients.form.statusInactive")}
                 </Text>
               </View>
               {client.id ? (
-                <Text style={[styles.helperLine, { color: theme.colors.textSecondary }]}>Editing existing client</Text>
+                <Text style={[styles.helperLine, { color: theme.colors.textSecondary }]}>{translateText("clients.form.editingExisting")}</Text>
               ) : null}
             </View>
           </View>
@@ -81,12 +92,12 @@ export const ClientForm: React.FC<ClientFormProps> = ({
       </FormCard>
 
       <FormCard>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Identity</Text>
-        <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>Required information to create or update a client profile.</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>{translateText("clients.form.identityTitle")}</Text>
+        <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>{translateText("clients.form.identitySubtitle")}</Text>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="First name *"
+            label={translateText("clients.form.firstName")}
             value={client.firstName}
             onChangeText={(value) => onFieldChange("firstName", value)}
             onBlur={() => onFieldBlur("firstName")}
@@ -96,13 +107,13 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             disabled={loading}
           />
           <HelperText type="error" visible={Boolean(touched.firstName && errors.firstName)}>
-            {errors.firstName}
+            {errors.firstName ? translateText(errors.firstName) : undefined}
           </HelperText>
         </View>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Last name *"
+            label={translateText("clients.form.lastName")}
             value={client.lastName}
             onChangeText={(value) => onFieldChange("lastName", value)}
             onBlur={() => onFieldBlur("lastName")}
@@ -111,13 +122,13 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             disabled={loading}
           />
           <HelperText type="error" visible={Boolean(touched.lastName && errors.lastName)}>
-            {errors.lastName}
+            {errors.lastName ? translateText(errors.lastName) : undefined}
           </HelperText>
         </View>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Phone *"
+            label={translateText("clients.form.phone")}
             value={client.phone}
             onChangeText={(value) => onFieldChange("phone", value)}
             onBlur={() => onFieldBlur("phone")}
@@ -129,13 +140,13 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             disabled={loading}
           />
           <HelperText type="error" visible={Boolean(touched.phone && errors.phone)}>
-            {errors.phone}
+            {errors.phone ? translateText(errors.phone) : undefined}
           </HelperText>
         </View>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Email"
+            label={translateText("clients.form.email")}
             value={client.email ?? ""}
             onChangeText={(value) => onFieldChange("email", value)}
             onBlur={() => onFieldBlur("email")}
@@ -146,18 +157,18 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             disabled={loading}
           />
           <HelperText type="error" visible={Boolean(touched.email && errors.email)}>
-            {errors.email}
+            {errors.email ? translateText(errors.email) : undefined}
           </HelperText>
         </View>
       </FormCard>
 
       <FormCard>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Profile details</Text>
-        <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>Optional information that helps personalize the experience.</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>{translateText("clients.form.profileDetailsTitle")}</Text>
+        <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>{translateText("clients.form.profileDetailsSubtitle")}</Text>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Address"
+            label={translateText("clients.form.address")}
             value={client.address ?? ""}
             onChangeText={(value) => onFieldChange("address", value)}
             mode="outlined"
@@ -177,16 +188,16 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             ]}
             disabled={loading}
           >
-            <Text style={[styles.dateLabel, { color: theme.colors.textSecondary }]}>Birthday</Text>
+            <Text style={[styles.dateLabel, { color: theme.colors.textSecondary }]}>{translateText("clients.form.birthday")}</Text>
             <Text style={[styles.dateValue, { color: theme.colors.textPrimary }]}>
-              {formatBirthday(client.birthday)}
+              {formatBirthday(translateText, client.birthday)}
             </Text>
           </Pressable>
         </View>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Preferences"
+            label={translateText("clients.form.preferences")}
             value={client.preferences ?? ""}
             onChangeText={(value) => onFieldChange("preferences", value)}
             mode="outlined"
@@ -198,11 +209,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({
       </FormCard>
 
       <FormCard>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Preferences</Text>
-        <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>Set payment preferences and active status.</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>{translateText("clients.form.preferencesTitle")}</Text>
+        <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>{translateText("clients.form.preferencesSubtitle")}</Text>
 
         <View style={styles.formGroup}>
-          <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>Payment method</Text>
+          <Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>{translateText("clients.form.paymentMethod")}</Text>
           <View
             style={[
               styles.pickerWrap,
@@ -218,7 +229,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               enabled={!loading}
             >
               {PAYMENT_METHODS.map((paymentMethod) => (
-                <Picker.Item key={paymentMethod} label={paymentMethod} value={paymentMethod} />
+                <Picker.Item
+                  key={paymentMethod}
+                  label={getClientPaymentMethodLabel(paymentMethod, translateText)}
+                  value={paymentMethod}
+                />
               ))}
             </Picker>
           </View>
@@ -233,8 +248,8 @@ export const ClientForm: React.FC<ClientFormProps> = ({
           ]}
         >
           <View style={styles.switchTextWrap}>
-            <Text style={[styles.switchTitle, { color: theme.colors.textPrimary }]}>Client active</Text>
-            <Text style={[styles.switchDescription, { color: theme.colors.textSecondary }]}>Use this to show whether the client profile is currently active.</Text>
+            <Text style={[styles.switchTitle, { color: theme.colors.textPrimary }]}>{translateText("clients.form.activeTitle")}</Text>
+            <Text style={[styles.switchDescription, { color: theme.colors.textSecondary }]}>{translateText("clients.form.activeDescription")}</Text>
           </View>
           <Switch
             value={Boolean(client.active)}

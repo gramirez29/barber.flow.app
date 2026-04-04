@@ -2,6 +2,8 @@ import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Button, Text } from "react-native-paper";
+import { useTranslation } from "../../context/LanguageContext";
+import { getNotificationDisplayText } from "../../services/apis/notificationService";
 import { useAppTheme } from "../../theme/ThemeContext";
 import type { NotificationItem } from "../../types/notifications";
 
@@ -26,6 +28,8 @@ export const NotificationItemCard = ({
   onPress,
 }: NotificationItemCardProps) => {
   const { theme } = useAppTheme();
+  const { translateText } = useTranslation();
+  const copy = getNotificationDisplayText(item, translateText);
 
   return (
     <Pressable
@@ -56,9 +60,11 @@ export const NotificationItemCard = ({
         </View>
 
         <View style={styles.headerCopy}>
-          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{item.title}</Text>
+          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{copy.title}</Text>
           <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
-            {item.type === "next-day-summary" ? "Tomorrow" : "Needs follow-up"}
+            {item.type === "next-day-summary"
+              ? translateText("notifications.metaTomorrow")
+              : translateText("notifications.metaNeedsFollowUp")}
           </Text>
         </View>
 
@@ -67,14 +73,14 @@ export const NotificationItemCard = ({
         ) : null}
       </View>
 
-      <Text style={[styles.message, { color: theme.colors.textSecondary }]}>{item.message}</Text>
+      <Text style={[styles.message, { color: theme.colors.textSecondary }]}>{copy.message}</Text>
 
       <View style={styles.actionsRow}>
         <Button compact mode="text" onPress={() => onPress(item)}>
-          Open
+          {translateText("common.open")}
         </Button>
         <Button compact mode="text" onPress={() => onDismiss(item.id)} textColor={theme.colors.textSecondary}>
-          Dismiss
+          {translateText("common.dismiss")}
         </Button>
       </View>
     </Pressable>

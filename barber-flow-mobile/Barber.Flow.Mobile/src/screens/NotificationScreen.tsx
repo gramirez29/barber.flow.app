@@ -1,9 +1,10 @@
 import React, { useMemo } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
-import { useNavigation } from '@react-navigation/native';
+import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { Button, Text } from "react-native-paper";
 import { NotificationSection } from "../components/notifications/NotificationSection";
 import { FormCard } from "../components/ui/FormCard";
+import { useTranslation } from "../context/LanguageContext";
 import { useAppTheme } from "../theme/ThemeContext";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { useNotification } from "../context/NotificationContext";
@@ -14,6 +15,7 @@ import type { AppTabParamList } from "../navigation/AppNavigator";
 export const NotificationScreen = () => {
     const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
     const { theme } = useAppTheme();
+    const { translateText } = useTranslation();
     const {
         dismissNotification,
         isLoading,
@@ -71,14 +73,18 @@ export const NotificationScreen = () => {
         try {
             await refreshNotifications();
         } catch (error: any) {
-            Alert.alert("Refresh failed", error?.message ?? "Notifications could not be refreshed.");
+            Alert.alert(
+                translateText("notifications.alerts.refreshFailedTitle"),
+                error?.message ?? translateText("notifications.alerts.refreshFailed"),
+            );
         }
     };
     
     return (
         <ScreenLayout
-            title="Notificaciones"
+            title={translateText("notifications.title")}
             backgroundColor={theme.colors.background}
+            onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         >
             <ScrollView
                 style={styles.flex}
@@ -86,60 +92,60 @@ export const NotificationScreen = () => {
                 showsVerticalScrollIndicator={false}
             >
                 <FormCard style={styles.heroCard}>
-                    <Text style={[styles.heroEyebrow, { color: theme.colors.textSecondary }]}>Daily summary</Text>
-                    <Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>Notifications workspace</Text>
+                    <Text style={[styles.heroEyebrow, { color: theme.colors.textSecondary }]}>{translateText("notifications.heroEyebrow")}</Text>
+                    <Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>{translateText("notifications.heroTitle")}</Text>
                     <Text style={[styles.heroSubtitle, { color: theme.colors.textSecondary }]}> 
-                        Review tomorrow's agenda, identify clients that need follow-up, and keep notification noise reduced to actionable summaries.
+                        {translateText("notifications.heroSubtitle")}
                     </Text>
 
                     <View style={styles.heroMetrics}>
                         <View style={[styles.metricPill, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
                             <Text style={[styles.metricValue, { color: theme.colors.textPrimary }]}>{notifications.length}</Text>
-                            <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>Visible</Text>
+                            <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>{translateText("common.visible")}</Text>
                         </View>
                         <View style={[styles.metricPill, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
                             <Text style={[styles.metricValue, { color: theme.colors.textPrimary }]}>{unreadCount}</Text>
-                            <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>Unread</Text>
+                            <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>{translateText("common.unread")}</Text>
                         </View>
                     </View>
 
                     <View style={styles.heroActions}>
                         <Button mode="contained" onPress={() => void handleRefresh()} loading={isLoading}>
-                            Refresh
+                            {translateText("common.refresh")}
                         </Button>
                         <Button mode="text" onPress={() => void handleMarkAllAsRead()} disabled={unreadCount === 0}>
-                            Mark all as read
+                            {translateText("common.markAllAsRead")}
                         </Button>
                     </View>
                 </FormCard>
 
                 {!notificationsEnabled ? (
                     <FormCard>
-                        <Text style={[styles.disabledTitle, { color: theme.colors.textPrimary }]}>Notifications are disabled</Text>
+                        <Text style={[styles.disabledTitle, { color: theme.colors.textPrimary }]}>{translateText("notifications.disabledTitle")}</Text>
                         <Text style={[styles.disabledBody, { color: theme.colors.textSecondary }]}> 
-                            Enable notifications in Settings to restore the summary feed and unread badge counts.
+                            {translateText("notifications.disabledBody")}
                         </Text>
                     </FormCard>
                 ) : (
                     <View style={styles.sectionsWrap}>
                         <NotificationSection
-                            description="One summary notification for tomorrow's scheduled appointments."
-                            emptyBody="When appointments exist for tomorrow, the app will group them into a single daily agenda summary."
-                            emptyTitle="No summary for tomorrow"
+                            description={translateText("notifications.tomorrowDescription")}
+                            emptyBody={translateText("notifications.tomorrowEmptyBody")}
+                            emptyTitle={translateText("notifications.tomorrowEmptyTitle")}
                             items={tomorrowNotifications}
                             onDismiss={(notificationId) => void handleDismiss(notificationId)}
                             onItemPress={(item) => void handleNotificationPress(item)}
-                            title="Tomorrow"
+                            title={translateText("notifications.tomorrowTitle")}
                         />
 
                         <NotificationSection
-                            description="Clients who have not visited recently and do not have a future appointment."
-                            emptyBody="Delayed-client reminders will appear here once a client crosses the current follow-up threshold."
-                            emptyTitle="No delayed clients"
+                            description={translateText("notifications.delayedClientsDescription")}
+                            emptyBody={translateText("notifications.delayedClientsEmptyBody")}
+                            emptyTitle={translateText("notifications.delayedClientsEmptyTitle")}
                             items={delayedNotifications}
                             onDismiss={(notificationId) => void handleDismiss(notificationId)}
                             onItemPress={(item) => void handleNotificationPress(item)}
-                            title="Needs Attention"
+                            title={translateText("notifications.delayedClientsTitle")}
                         />
                     </View>
                 )}

@@ -195,6 +195,35 @@ const mergeNotificationState = (
   });
 };
 
+export const getNotificationDisplayText = (
+  item: NotificationItem,
+  translateText: (key: string, options?: Record<string, string | number>) => string,
+) => {
+  if (item.type === "next-day-summary") {
+    const payload = item.payload as NextDaySummaryPayload;
+    return {
+      message:
+        payload.appointmentCount === 1
+          ? translateText("notifications.tomorrowMessageOne", {
+              name: payload.clientNames[0] ?? "a client",
+            })
+          : translateText("notifications.tomorrowMessageOther", {
+              count: payload.appointmentCount,
+            }),
+      title: translateText("notifications.tomorrowTitle"),
+    };
+  }
+
+  const payload = item.payload as DelayedClientSummaryPayload;
+  return {
+    message: translateText("notifications.delayedClientMessage", {
+      days: payload.daysSinceLastAppointment,
+      name: payload.clientName,
+    }),
+    title: translateText("notifications.delayedClientsTitle"),
+  };
+};
+
 export const notificationService = {
   async getStoredCollection(): Promise<NotificationCollection> {
     const rawValue = await AsyncStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
