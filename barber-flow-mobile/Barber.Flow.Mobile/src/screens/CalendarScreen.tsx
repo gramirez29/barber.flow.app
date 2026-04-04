@@ -16,15 +16,58 @@ import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { AppointmentCard } from "../components/calendar/AppointmentCard";
 import { AppointmentModal } from "../components/calendar/AppointmentModal";
 import { ScreenLayout } from "../components/ScreenLayout";
+import { useTranslation } from "../context/LanguageContext";
 import { useAppointmentStore } from "../features/appointments/appointment.store";
 import {
   Appointment,
   AppointmentDraft,
 } from "../features/appointments/appointments.types";
+import { getIntlLocale } from "../localization/i18n";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { RouteProp } from "@react-navigation/native";
 import type { AppTabParamList } from "../navigation/AppNavigator";
 
+LocaleConfig.locales.en = {
+  monthNames: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ],
+  monthNamesShort: [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ],
+  dayNames: [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ],
+  dayNamesShort: ["S", "M", "T", "W", "T", "F", "S"],
+  today: "Today",
+};
 LocaleConfig.locales.es = {
   monthNames: [
     "Enero",
@@ -66,8 +109,6 @@ LocaleConfig.locales.es = {
   dayNamesShort: ["D", "L", "M", "M", "J", "V", "S"],
   today: "Hoy",
 };
-LocaleConfig.defaultLocale = "es";
-
 type ViewMode = "month" | "week" | "day";
 
 const DATE_FORMAT = "yyyy-MM-dd";
@@ -82,20 +123,20 @@ const getWeekDates = (dateString: string) => {
   );
 };
 
-const formatLongDate = (dateString: string) =>
-  new Intl.DateTimeFormat("es-CR", {
+const formatLongDate = (dateString: string, locale: string) =>
+  new Intl.DateTimeFormat(locale, {
     weekday: "short",
     month: "long",
     day: "numeric",
   }).format(toDate(dateString));
 
-const formatWeekday = (dateString: string) =>
-  new Intl.DateTimeFormat("es-CR", {
+const formatWeekday = (dateString: string, locale: string) =>
+  new Intl.DateTimeFormat(locale, {
     weekday: "narrow",
   }).format(toDate(dateString));
 
-const formatDayNumber = (dateString: string) =>
-  new Intl.DateTimeFormat("es-CR", {
+const formatDayNumber = (dateString: string, locale: string) =>
+  new Intl.DateTimeFormat(locale, {
     day: "numeric",
   }).format(toDate(dateString));
 
@@ -103,6 +144,7 @@ export const CalendarScreen: React.FC = () => {
   const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList, "Calendar">>();
   const route = useRoute<RouteProp<AppTabParamList, "Calendar">>();
   const { theme } = useAppTheme();
+  const { language, translateText } = useTranslation();
   const {
     appointments,
     addAppointment,
@@ -117,6 +159,11 @@ export const CalendarScreen: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingAppointment, setEditingAppointment] =
     useState<Appointment | null>(null);
+  const locale = getIntlLocale(language);
+
+  useEffect(() => {
+    LocaleConfig.defaultLocale = language;
+  }, [language]);
 
   useEffect(() => {
     if (route.params?.source !== "notification") {
@@ -217,8 +264,8 @@ export const CalendarScreen: React.FC = () => {
             },
           ]}
         >
-          <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>Sin citas</Text>
-          <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
+          <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>{translateText("calendar.emptyTitle")}</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}> 
             {emptyMessage}
           </Text>
         </View>
@@ -240,7 +287,7 @@ export const CalendarScreen: React.FC = () => {
 
   return (
     <ScreenLayout
-      title="Calendario"
+      title={translateText("calendar.title")}
       backgroundColor={theme.colors.background}
       onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
     >
@@ -268,23 +315,27 @@ export const CalendarScreen: React.FC = () => {
             <View style={styles.summaryTopRow}>
               <View style={styles.summaryTextBlock}>
                 <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>
-                  Fecha seleccionada
+                  {translateText("calendar.selectedDate")}
                 </Text>
                 <Text style={[styles.summaryDate, { color: theme.colors.textPrimary }]}>
-                  {formatLongDate(selectedDate)}
+                  {formatLongDate(selectedDate, locale)}
                 </Text>
                 <Text style={[styles.summaryCount, { color: theme.colors.textSecondary }]}>
-                  {selectedAppointments.length} cita
-                  {selectedAppointments.length === 1 ? "" : "s"} para este dia
+                  {translateText(
+                    selectedAppointments.length === 1
+                      ? "calendar.appointmentCountForDay_one"
+                      : "calendar.appointmentCountForDay_other",
+                    { count: selectedAppointments.length },
+                  )}
                 </Text>
               </View>
 
               <View style={styles.summaryActions}>
                 <Button mode="contained" onPress={() => openCreateModal(selectedDate)}>
-                  Nueva cita
+                  {translateText("calendar.newAppointment")}
                 </Button>
                 <Button mode="text" onPress={() => setSelectedDate(today)}>
-                  Hoy
+                  {translateText("common.today")}
                 </Button>
               </View>
             </View>
@@ -317,14 +368,14 @@ export const CalendarScreen: React.FC = () => {
               <View style={styles.sectionHeader}>
                 <View>
                   <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
-                    Vista mensual
+                    {translateText("calendar.monthView")}
                   </Text>
                   <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-                    {formatLongDate(visibleMonth)}
+                    {formatLongDate(visibleMonth, locale)}
                   </Text>
                 </View>
                 <Button mode="text" onPress={() => openCreateModal(selectedDate)}>
-                  Agendar
+                  {translateText("calendar.schedule")}
                 </Button>
               </View>
 
@@ -349,7 +400,7 @@ export const CalendarScreen: React.FC = () => {
               />
 
               <Text style={[styles.calendarHint, { color: theme.colors.textSecondary }]}>
-                Toca un dia para ver sus citas. Manten presionado para crear una nueva cita.
+                {translateText("calendar.hint")}
               </Text>
 
               <Divider style={styles.divider} />
@@ -357,17 +408,17 @@ export const CalendarScreen: React.FC = () => {
               <View style={styles.sectionHeader}>
                 <View>
                   <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
-                    Agenda del dia
+                    {translateText("calendar.agendaDay")}
                   </Text>
                   <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-                    {formatLongDate(selectedDate)}
+                    {formatLongDate(selectedDate, locale)}
                   </Text>
                 </View>
               </View>
 
               {renderAppointmentList(
                 selectedAppointments,
-                "Selecciona un dia del calendario para ver sus citas o mantenlo presionado para crear una reserva nueva.",
+                translateText("calendar.emptyBodyMonth"),
               )}
             </Card.Content>
           </Card>
@@ -389,14 +440,14 @@ export const CalendarScreen: React.FC = () => {
               <View style={styles.sectionHeader}>
                 <View>
                   <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
-                    Vista semanal
+                    {translateText("calendar.viewWeek")}
                   </Text>
                   <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-                    Semana de {formatLongDate(selectedDate)}
+                    {translateText("calendar.weekOf", { date: formatLongDate(selectedDate, locale) })}
                   </Text>
                 </View>
                 <Button mode="text" onPress={() => openCreateModal(selectedDate)}>
-                  Agendar
+                  {translateText("calendar.schedule")}
                 </Button>
               </View>
 
@@ -426,7 +477,7 @@ export const CalendarScreen: React.FC = () => {
                           fontSize: 12,
                         }}
                       >
-                        {formatWeekday(date)}
+                        {formatWeekday(date, locale)}
                       </Text>
                       <Text
                         style={{
@@ -437,7 +488,7 @@ export const CalendarScreen: React.FC = () => {
                           fontWeight: "700",
                         }}
                       >
-                        {formatDayNumber(date)}
+                        {formatDayNumber(date, locale)}
                       </Text>
                       <Text
                         style={{
@@ -447,7 +498,12 @@ export const CalendarScreen: React.FC = () => {
                           fontSize: 11,
                         }}
                       >
-                        {dayAppointments.length} cita{dayAppointments.length === 1 ? "" : "s"}
+                        {translateText(
+                          dayAppointments.length === 1
+                            ? "calendar.weekSummary_one"
+                            : "calendar.weekSummary_other",
+                          { count: dayAppointments.length },
+                        )}
                       </Text>
                     </Pressable>
                   );
@@ -458,7 +514,7 @@ export const CalendarScreen: React.FC = () => {
 
               {renderAppointmentList(
                 selectedAppointments,
-                "Selecciona un dia de la semana y usa Agendar para crear la cita.",
+                translateText("calendar.emptyBodyWeek"),
               )}
             </Card.Content>
           </Card>
@@ -480,20 +536,20 @@ export const CalendarScreen: React.FC = () => {
               <View style={styles.sectionHeader}>
                 <View>
                   <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
-                    Vista diaria
+                    {translateText("calendar.viewDay")}
                   </Text>
                   <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-                    {formatLongDate(selectedDate)}
+                    {formatLongDate(selectedDate, locale)}
                   </Text>
                 </View>
                 <Button mode="contained" onPress={() => openCreateModal(selectedDate)}>
-                  Nueva cita
+                  {translateText("calendar.newAppointment")}
                 </Button>
               </View>
 
               {renderAppointmentList(
                 selectedAppointments,
-                "Todavia no hay reservas para este dia.",
+                translateText("calendar.emptyBodyDay"),
               )}
             </Card.Content>
           </Card>

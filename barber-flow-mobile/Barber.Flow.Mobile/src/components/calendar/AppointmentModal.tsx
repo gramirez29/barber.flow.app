@@ -12,11 +12,12 @@ import {
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { format } from "date-fns";
 import {
-  APPOINTMENT_PAYMENT_METHOD_LABELS,
+  getAppointmentPaymentMethodLabel,
   APPOINTMENT_PAYMENT_METHOD_OPTIONS,
   Appointment,
   AppointmentDraft,
 } from "../../features/appointments/appointments.types";
+import { useTranslation } from "../../context/LanguageContext";
 import { useAppTheme } from "../../theme/ThemeContext";
 import {
   formatPhoneNumber,
@@ -58,7 +59,7 @@ const validateAppointmentField = (
 ) => {
   if (key === "clientName") {
     return validateRequiredField(String(value ?? ""))
-      ? "El nombre del cliente es obligatorio"
+      ? "validation.appointmentClientNameRequired"
       : undefined;
   }
 
@@ -66,36 +67,36 @@ const validateAppointmentField = (
     const normalizedPhone = String(value ?? "");
 
     if (validateRequiredField(normalizedPhone)) {
-      return "El telefono es obligatorio";
+      return "validation.phoneRequired";
     }
 
     if (!/^\d{4}-\d{4}$/.test(normalizedPhone)) {
-      return "El telefono debe tener el formato 0000-0000";
+      return "validation.phoneFormat";
     }
 
     return undefined;
   }
 
   if (key === "time") {
-    return validateRequiredField(String(value ?? "")) ? "La hora es obligatoria" : undefined;
+    return validateRequiredField(String(value ?? "")) ? "validation.appointmentTimeRequired" : undefined;
   }
 
   if (key === "servicePrice") {
     if (value === undefined || value === "") {
-      return "El precio del servicio es obligatorio";
+      return "validation.appointmentServicePriceRequired";
     }
 
     const parsedValue = Number(value);
 
     if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
-      return "El precio debe ser mayor que 0";
+      return "validation.appointmentServicePricePositive";
     }
 
     return undefined;
   }
 
   if (key === "paymentMethodUsed") {
-    return validateRequiredField(String(value ?? "")) ? "Selecciona el metodo de pago" : undefined;
+    return validateRequiredField(String(value ?? "")) ? "validation.appointmentPaymentMethodRequired" : undefined;
   }
 
   return undefined;
@@ -109,6 +110,7 @@ export const AppointmentModal: React.FC<Props> = ({
   onSave,
 }) => {
   const { theme } = useAppTheme();
+  const { translateText } = useTranslation();
   const [draft, setDraft] = useState<AppointmentDraft>(emptyDraft(date));
   const [errors, setErrors] = useState<AppointmentFormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -254,35 +256,37 @@ export const AppointmentModal: React.FC<Props> = ({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>Nueva cita</Text>
+          <Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>{translateText("calendar.appointmentModal.eyebrow")}</Text>
           <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
-            {editingAppointment ? "Editar reserva" : "Agendar cita"}
+            {editingAppointment
+              ? translateText("calendar.appointmentModal.editTitle")
+              : translateText("calendar.appointmentModal.title")}
           </Text>
           <Text style={[styles.dateText, { color: theme.colors.textSecondary }]}>
-            Fecha seleccionada: {date}
+            {translateText("calendar.appointmentModal.dateSelected", { date })}
           </Text>
 
           <View style={styles.formGroup}>
-            <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>Estado de la cita</Text>
+            <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>{translateText("calendar.appointmentModal.status")}</Text>
             <SegmentedButtons
               density="small"
               onValueChange={(value) => setField("status", value as AppointmentDraft["status"])}
               value={draft.status ?? "scheduled"}
               buttons={[
-                { label: "Agendada", value: "scheduled" },
-                { label: "Confirm.", value: "confirmed" },
-                { label: "Complet.", value: "completed" },
-                { label: "Cancel.", value: "cancelled" },
+                { label: translateText("calendar.appointmentModal.statuses.scheduled"), value: "scheduled" },
+                { label: translateText("calendar.appointmentModal.statuses.confirmed"), value: "confirmed" },
+                { label: translateText("calendar.appointmentModal.statuses.completed"), value: "completed" },
+                { label: translateText("calendar.appointmentModal.statuses.cancelled"), value: "cancelled" },
               ]}
             />
             <HelperText type="info" visible={draft.status === "completed"}>
-              Las citas completadas apareceran en el reporte diario.
+              {translateText("calendar.appointmentModal.completedInfo")}
             </HelperText>
           </View>
 
           <View style={styles.formGroup}>
             <TextInput
-              label="Nombre del cliente"
+              label={translateText("calendar.appointmentModal.clientName")}
               value={draft.clientName}
               onChangeText={(value) => setField("clientName", value)}
               onBlur={() => onBlurField("clientName")}
@@ -290,13 +294,13 @@ export const AppointmentModal: React.FC<Props> = ({
               mode="outlined"
             />
             <HelperText type="error" visible={Boolean(touched.clientName && errors.clientName)}>
-              {errors.clientName}
+              {errors.clientName ? translateText(errors.clientName) : undefined}
             </HelperText>
           </View>
 
           <View style={styles.formGroup}>
             <TextInput
-              label="Telefono"
+              label={translateText("calendar.appointmentModal.phone")}
               value={draft.phone}
               onChangeText={(value) => setField("phone", formatPhoneNumber(value))}
               onBlur={() => onBlurField("phone")}
@@ -307,23 +311,23 @@ export const AppointmentModal: React.FC<Props> = ({
               maxLength={9}
             />
             <HelperText type="error" visible={Boolean(touched.phone && errors.phone)}>
-              {errors.phone}
+              {errors.phone ? translateText(errors.phone) : undefined}
             </HelperText>
           </View>
 
           <View style={styles.formGroup}>
             <TextInput
-              label="Servicio"
+              label={translateText("calendar.appointmentModal.service")}
               value={draft.serviceName ?? ""}
               onChangeText={(value) => setField("serviceName", value)}
               mode="outlined"
-              placeholder="Corte clasico, barba, combo..."
+              placeholder={translateText("calendar.appointmentModal.servicePlaceholder")}
             />
           </View>
 
           <View style={styles.formGroup}>
             <TextInput
-              label="Precio del servicio"
+              label={translateText("calendar.appointmentModal.servicePrice")}
               value={draft.servicePrice !== undefined ? String(draft.servicePrice) : ""}
               onChangeText={(value) => {
                 const normalized = value.replace(/,/g, ".");
@@ -337,12 +341,12 @@ export const AppointmentModal: React.FC<Props> = ({
               left={<TextInput.Affix text="CRC" />}
             />
             <HelperText type="error" visible={Boolean(touched.servicePrice && errors.servicePrice)}>
-              {errors.servicePrice}
+              {errors.servicePrice ? translateText(errors.servicePrice) : undefined}
             </HelperText>
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>Metodo de pago</Text>
+            <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>{translateText("calendar.appointmentModal.paymentMethod")}</Text>
             <SegmentedButtons
               density="small"
               onValueChange={(value) => {
@@ -354,23 +358,23 @@ export const AppointmentModal: React.FC<Props> = ({
               }}
               value={draft.paymentMethodUsed ?? ""}
               buttons={APPOINTMENT_PAYMENT_METHOD_OPTIONS.map((option) => ({
-                label: option === "card" ? "Card" : option === "transfer" ? "Transfer" : "Cash",
+                label: getAppointmentPaymentMethodLabel(option, translateText),
                 value: option,
               }))}
             />
             <HelperText type="info" visible={Boolean(draft.paymentMethodUsed)}>
               {draft.paymentMethodUsed
-                ? APPOINTMENT_PAYMENT_METHOD_LABELS[draft.paymentMethodUsed]
-                : "Selecciona como se cobro esta cita"}
+                ? getAppointmentPaymentMethodLabel(draft.paymentMethodUsed, translateText)
+                : translateText("calendar.appointmentModal.paymentMethodPlaceholder")}
             </HelperText>
             <HelperText type="error" visible={Boolean(touched.paymentMethodUsed && errors.paymentMethodUsed)}>
-              {errors.paymentMethodUsed}
+              {errors.paymentMethodUsed ? translateText(errors.paymentMethodUsed) : undefined}
             </HelperText>
           </View>
 
           <View style={styles.formGroup}>
             <TextInput
-              label="Hora"
+              label={translateText("calendar.appointmentModal.time")}
               value={draft.time}
               onPressIn={() => setTimePickerVisible(true)}
               onBlur={() => onBlurField("time")}
@@ -386,28 +390,30 @@ export const AppointmentModal: React.FC<Props> = ({
               }
             />
             <HelperText type="error" visible={Boolean(touched.time && errors.time)}>
-              {errors.time}
+              {errors.time ? translateText(errors.time) : undefined}
             </HelperText>
           </View>
 
           <View style={styles.formGroup}>
             <TextInput
-              label="Notas"
+              label={translateText("calendar.appointmentModal.notes")}
               value={draft.notes ?? ""}
               onChangeText={(value) => setField("notes", value)}
               mode="outlined"
               multiline
               numberOfLines={4}
-              placeholder="Indicaciones, preferencias o recordatorios"
+              placeholder={translateText("calendar.appointmentModal.notesPlaceholder")}
             />
           </View>
 
           <View style={styles.actions}>
             <Button mode="text" onPress={onClose}>
-              Cancelar
+              {translateText("calendar.appointmentModal.cancel")}
             </Button>
             <Button mode="contained" onPress={handleSubmit}>
-              {editingAppointment ? "Guardar cambios" : "Guardar cita"}
+              {editingAppointment
+                ? translateText("calendar.appointmentModal.saveChanges")
+                : translateText("calendar.appointmentModal.saveAppointment")}
             </Button>
           </View>
         </ScrollView>

@@ -2,11 +2,10 @@ export type AppointmentStatus = "scheduled" | "confirmed" | "completed" | "cance
 
 export type AppointmentPaymentMethod = "cash" | "card" | "transfer";
 
-export const APPOINTMENT_PAYMENT_METHOD_LABELS: Record<AppointmentPaymentMethod, string> = {
-    cash: "Cash",
-    card: "Credit/Debit Card",
-    transfer: "Digital Transfer",
-};
+export const getAppointmentPaymentMethodLabel = (
+    paymentMethod: AppointmentPaymentMethod,
+    translateText: (key: string) => string,
+) => translateText(`appointments.paymentMethods.${paymentMethod}`);
 
 export const APPOINTMENT_PAYMENT_METHOD_OPTIONS: AppointmentPaymentMethod[] = [
     "cash",

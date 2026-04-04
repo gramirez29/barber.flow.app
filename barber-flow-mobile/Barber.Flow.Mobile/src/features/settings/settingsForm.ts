@@ -46,16 +46,18 @@ export const validateApplicationUserField = (
   value: ApplicationUserSettingsForm[keyof ApplicationUserSettingsForm],
 ) => {
   if (key === "userName") {
-    return validateRequiredField(String(value ?? "")) ? "Name is required" : undefined;
+    return validateRequiredField(String(value ?? ""))
+      ? "validation.nameRequired"
+      : undefined;
   }
 
   if (key === "userPhone") {
     if (validateRequiredField(String(value ?? ""))) {
-      return "Phone is required";
+      return "validation.phoneRequired";
     }
 
     if (!/^\d{4}-\d{4}$/.test(String(value ?? ""))) {
-      return "Phone must be 0000-0000";
+      return "validation.phoneFormat";
     }
 
     return undefined;
@@ -67,17 +69,17 @@ export const validateApplicationUserField = (
 
   if (key === "barberName") {
     return validateRequiredField(String(value ?? ""))
-      ? "Barber name is required"
+      ? "validation.barberNameRequired"
       : undefined;
   }
 
   if (key === "barberPhone") {
     if (validateRequiredField(String(value ?? ""))) {
-      return "Barber phone is required";
+      return "validation.barberPhoneRequired";
     }
 
     if (!/^\d{4}-\d{4}$/.test(String(value ?? ""))) {
-      return "Barber phone must be 0000-0000";
+      return "validation.barberPhoneFormat";
     }
 
     return undefined;

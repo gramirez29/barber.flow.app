@@ -1,30 +1,30 @@
-import { StyleSheet, Alert } from "react-native"; 
+import { Alert } from "react-native";
 
 interface AlertBoxProps {
     title?: string;
     text?: string;
-    askmeLaterText?: string;
     cancelText?: string;
-    onPress?: void;
+    okText?: string;
+    onPress?: (() => void) | undefined;
 }
 
 export const AlertBox = ({
     title,
     text,
-    askmeLaterText,
     cancelText,
+    okText,
     onPress
 }: AlertBoxProps) => {
     Alert.alert(
-        title || 'Alert Title',
-        text || 'Alert Message',
+        title || '',
+        text || '',
         [
             {
-                text: cancelText || 'Cancel',
-                onPress: () => console.log('Cancel Pressed'),
+                text: cancelText || '',
+                onPress: () => console.warn('Cancel Pressed'),
                 style: 'cancel'
             },
-            {text: 'OK', onPress: onPress || (() => console.log('OK Pressed.'))},
+            {text: okText || 'OK', onPress: onPress || (() => console.warn('OK Pressed.'))},
         ]
     );
 };

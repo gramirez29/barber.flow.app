@@ -1,5 +1,6 @@
 using Barber.Flow.Domain.Interfaces;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Barber.Flow.Infrastructure.Services.InMemory;
 
@@ -23,7 +24,9 @@ public class InMemoryBarberRepository : IBarberRepository
 
     public Task<string> GetNextIdAsync(CancellationToken cancellation = default)
     {
-        var seq = Interlocked.Increment(ref _seq) - 1;
+        // Non-destructive peek: return the next ID without advancing the sequence.
+        // `_seq` is advanced when a new Barber is actually created (GenerateId()).
+        var seq = Volatile.Read(ref _seq);
         var id = $"CRB-{seq.ToString().PadLeft(4, '0')}";
         return Task.FromResult(id);
     }

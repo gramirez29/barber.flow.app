@@ -1,7 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LoginScreen } from '../screens/LoginScreen';
-import { AppNavigator } from './AppNavigator';
 import { DrawerNavigator } from './DrawerNavigator';
 import { useAuthStore } from '../store/auth.store';
 

@@ -2,6 +2,7 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Text, IconButton, ToggleButton } from "react-native-paper";
 import { format } from "date-fns";
+import { useTranslation } from "../../context/LanguageContext";
 
 type ViewMode = "month" | "week" | "day";
 
@@ -19,12 +20,15 @@ type ViewMode = "month" | "week" | "day";
     onPrev,
     onNext,
     onChangeView,
-    }) => (
+    }) => {
+    const { translateText } = useTranslation();
+
+    return (
     <View style={styles.header}>
         <IconButton icon="chevron-left" onPress={onPrev} />
         <Text style={styles.headerText}>
         {viewMode === "month" && format(currentDate, "MMMM yyyy")}
-        {viewMode === "week" && `Week of ${format(currentDate, "MMM d, yyyy")}`}
+        {viewMode === "week" && translateText("calendar.weekOf", { date: format(currentDate, "MMM d, yyyy") })}
         {viewMode === "day" && format(currentDate, "MMM d, yyyy")}
         </Text>
         <IconButton icon="chevron-right" onPress={onNext} />
@@ -38,6 +42,7 @@ type ViewMode = "month" | "week" | "day";
         </ToggleButton.Row>
     </View>
     );
+    };
 
     const styles = StyleSheet.create({
     header: {

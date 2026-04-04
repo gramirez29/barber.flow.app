@@ -9,6 +9,7 @@ import {
 } from "react-native-paper";
 import { FormCard } from "../ui/FormCard";
 import { useAppTheme } from "../../theme/ThemeContext";
+import { useTranslation } from "../../context/LanguageContext";
 import type { ApplicationUserSettingsForm, BarberApiResponse } from "../../types/settings";
 import type {
   ApplicationUserFormErrors,
@@ -56,19 +57,20 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
   values,
 }) => {
   const { theme } = useAppTheme();
+  const { translateText } = useTranslation();
 
   return (
     <View style={styles.container}>
       <FormCard>
-        <Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>Admin tools</Text>
-        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Manage Application Users</Text>
+        <Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>{translateText("settings.manageUsersForm.eyebrow")}</Text>
+        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{translateText("settings.manageUsersForm.title")}</Text>
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}> 
-          Create, search, update, and remove application users with barber profile data prepared for the backend.
+          {translateText("settings.manageUsersForm.subtitle")}
         </Text>
 
         <View style={styles.searchRow}>
           <TextInput
-            label="Search by Barber ID, email, or phone"
+            label={translateText("settings.manageUsersForm.searchLabel")}
             value={searchQuery}
             onChangeText={onSearchQueryChange}
             mode="outlined"
@@ -76,7 +78,7 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
             disabled={loading}
           />
           <Button mode="contained" onPress={onSearch} loading={loading} disabled={loading}>
-            Search
+            {translateText("common.search")}
           </Button>
         </View>
 
@@ -100,16 +102,16 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
       </FormCard>
 
       <FormCard>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Application user data</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>{translateText("settings.manageUsersForm.userDataTitle")}</Text>
         <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}> 
           {mode === "edit"
-            ? "You are editing an existing application user and barber profile."
-            : "Use the generated barber id and complete the required fields to create a new application user."}
+            ? translateText("settings.manageUsersForm.editSubtitle")
+            : translateText("settings.manageUsersForm.createSubtitle")}
         </Text>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Barber ID"
+            label={translateText("settings.manageUsersForm.barberId")}
             value={values.barberId ?? ""}
             mode="outlined"
             editable={false}
@@ -118,7 +120,7 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Name *"
+            label={translateText("settings.manageUsersForm.name")}
             value={values.userName}
             onChangeText={(value) => onFieldChange("userName", value)}
             onBlur={() => onBlurField("userName")}
@@ -127,13 +129,13 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
             disabled={loading}
           />
           <HelperText type="error" visible={Boolean(touched.userName && errors.userName)}>
-            {errors.userName}
+            {errors.userName ? translateText(errors.userName) : undefined}
           </HelperText>
         </View>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Phone *"
+            label={translateText("settings.manageUsersForm.phone")}
             value={values.userPhone}
             onChangeText={(value) => onFieldChange("userPhone", value)}
             onBlur={() => onBlurField("userPhone")}
@@ -145,13 +147,13 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
             disabled={loading}
           />
           <HelperText type="error" visible={Boolean(touched.userPhone && errors.userPhone)}>
-            {errors.userPhone}
+            {errors.userPhone ? translateText(errors.userPhone) : undefined}
           </HelperText>
         </View>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Email *"
+            label={translateText("settings.manageUsersForm.email")}
             value={values.userEmail}
             onChangeText={(value) => onFieldChange("userEmail", value)}
             onBlur={() => onBlurField("userEmail")}
@@ -162,13 +164,13 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
             disabled={loading}
           />
           <HelperText type="error" visible={Boolean(touched.userEmail && errors.userEmail)}>
-            {errors.userEmail}
+            {errors.userEmail ? translateText(errors.userEmail) : undefined}
           </HelperText>
         </View>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Barber name *"
+            label={translateText("settings.manageUsersForm.barberName")}
             value={values.barberName}
             onChangeText={(value) => onFieldChange("barberName", value)}
             onBlur={() => onBlurField("barberName")}
@@ -177,13 +179,13 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
             disabled={loading}
           />
           <HelperText type="error" visible={Boolean(touched.barberName && errors.barberName)}>
-            {errors.barberName}
+            {errors.barberName ? translateText(errors.barberName) : undefined}
           </HelperText>
         </View>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Barber phone *"
+            label={translateText("settings.manageUsersForm.barberPhone")}
             value={values.barberPhone}
             onChangeText={(value) => onFieldChange("barberPhone", value)}
             onBlur={() => onBlurField("barberPhone")}
@@ -195,13 +197,13 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
             disabled={loading}
           />
           <HelperText type="error" visible={Boolean(touched.barberPhone && errors.barberPhone)}>
-            {errors.barberPhone}
+            {errors.barberPhone ? translateText(errors.barberPhone) : undefined}
           </HelperText>
         </View>
 
         <View style={styles.formGroup}>
           <TextInput
-            label="Address"
+            label={translateText("settings.manageUsersForm.address")}
             value={values.address ?? ""}
             onChangeText={(value) => onFieldChange("address", value)}
             mode="outlined"
@@ -216,10 +218,12 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
             disabled={!isFormValid || loading}
             loading={loading}
           >
-            {mode === "edit" ? "Update user" : "Create user"}
+            {mode === "edit"
+              ? translateText("settings.manageUsersForm.updateUser")
+              : translateText("settings.manageUsersForm.createUser")}
           </Button>
           <Button mode="outlined" onPress={onReset} disabled={loading}>
-            Reset
+            {translateText("common.reset")}
           </Button>
           <Button
             mode="text"
@@ -227,7 +231,7 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
             disabled={!values.barberId || mode !== "edit" || loading}
             textColor={mode === "edit" ? theme.colors.error : theme.colors.textSecondary}
           >
-            Delete
+            {translateText("common.delete")}
           </Button>
         </View>
       </FormCard>

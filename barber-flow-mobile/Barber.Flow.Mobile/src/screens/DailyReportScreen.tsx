@@ -7,9 +7,11 @@ import { Button, Text } from "react-native-paper";
 import { FormCard } from "../components/ui/FormCard";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { ScreenTitle } from "../components/ui/ScreenTitle";
-import { APPOINTMENT_PAYMENT_METHOD_LABELS } from "../features/appointments/appointments.types";
+import { getAppointmentPaymentMethodLabel } from "../features/appointments/appointments.types";
 import { useAppointmentStore } from "../features/appointments/appointment.store";
 import { calculateDailyReportSummary } from "../features/reports/dailyReport";
+import { useTranslation } from "../context/LanguageContext";
+import { getIntlLocale } from "../localization/i18n";
 import { settingsService } from "../services/apis/settingsService";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -17,16 +19,16 @@ import {
   type ReportCalculationSettings,
 } from "../types/settings";
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("es-CR", {
+const formatCurrency = (value: number, locale: string) =>
+  new Intl.NumberFormat(locale, {
     currency: "CRC",
     maximumFractionDigits: 2,
     minimumFractionDigits: 2,
     style: "currency",
   }).format(value);
 
-const formatLongDate = (date: string) =>
-  new Intl.DateTimeFormat("es-CR", {
+const formatLongDate = (date: string, locale: string) =>
+  new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "long",
     weekday: "long",
@@ -36,6 +38,7 @@ const formatLongDate = (date: string) =>
 export const DailyReportScreen = () => {
   const navigation = useNavigation<any>();
   const { theme } = useAppTheme();
+  const { language, translateText } = useTranslation();
   const appointments = useAppointmentStore((state) => state.appointments);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [reportSettings, setReportSettings] = useState<ReportCalculationSettings>(
@@ -67,26 +70,27 @@ export const DailyReportScreen = () => {
     () => calculateDailyReportSummary(appointments, selectedDate, reportSettings),
     [appointments, reportSettings, selectedDate],
   );
+  const locale = getIntlLocale(language);
 
   const metricCards = [
-    { label: "Customers served", value: String(report.totalCustomersServed) },
-    { label: "Gross revenue", value: formatCurrency(report.grossRevenue) },
-    { label: "Net profit", value: formatCurrency(report.netProfit) },
+    { label: translateText("dailyReport.metrics.customersServed"), value: String(report.totalCustomersServed) },
+    { label: translateText("dailyReport.metrics.grossRevenue"), value: formatCurrency(report.grossRevenue, locale) },
+    { label: translateText("dailyReport.metrics.netProfit"), value: formatCurrency(report.netProfit, locale) },
   ];
 
   return (
     <ScreenLayout
-      title="Daily Closure"
+      title={translateText("dailyReport.title")}
       backgroundColor={theme.colors.background}
       onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <FormCard style={styles.heroCard}>
           <ScreenTitle
-            eyebrow="Shop owner summary"
+            eyebrow={translateText("dailyReport.heroEyebrow")}
             size="lg"
-            subtitle="Track completed services, collected sales, and actual daily profit from one operational report."
-            title="Daily closure report"
+            subtitle={translateText("dailyReport.heroSubtitle")}
+            title={translateText("dailyReport.heroTitle")}
           />
 
           <View style={styles.heroActions}>
@@ -100,30 +104,30 @@ export const DailyReportScreen = () => {
                 },
               ]}
             >
-              <Text style={[styles.dateSelectorLabel, { color: theme.colors.textSecondary }]}>Selected day</Text>
+              <Text style={[styles.dateSelectorLabel, { color: theme.colors.textSecondary }]}>{translateText("dailyReport.selectedDay")}</Text>
               <Text style={[styles.dateSelectorValue, { color: theme.colors.textPrimary }]}> 
-                {formatLongDate(selectedDate)}
+                {formatLongDate(selectedDate, locale)}
               </Text>
             </Pressable>
 
             <View style={styles.heroButtons}>
               <Button mode="contained" onPress={() => setDatePickerVisible(true)}>
-                Change day
+                {translateText("dailyReport.changeDay")}
               </Button>
               <Button mode="text" onPress={() => setSelectedDate(format(new Date(), "yyyy-MM-dd"))}>
-                Today
+                {translateText("common.today")}
               </Button>
             </View>
           </View>
 
           <View style={styles.formulaRow}>
             <View style={[styles.formulaPill, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-              <Text style={[styles.formulaLabel, { color: theme.colors.textSecondary }]}>Commission</Text>
+              <Text style={[styles.formulaLabel, { color: theme.colors.textSecondary }]}>{translateText("dailyReport.commission")}</Text>
               <Text style={[styles.formulaValue, { color: theme.colors.textPrimary }]}>{reportSettings.commissionPercentage}%</Text>
             </View>
             <View style={[styles.formulaPill, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-              <Text style={[styles.formulaLabel, { color: theme.colors.textSecondary }]}>Daily expense</Text>
-              <Text style={[styles.formulaValue, { color: theme.colors.textPrimary }]}>{formatCurrency(reportSettings.fixedDailyExpense)}</Text>
+              <Text style={[styles.formulaLabel, { color: theme.colors.textSecondary }]}>{translateText("dailyReport.dailyExpense")}</Text>
+              <Text style={[styles.formulaValue, { color: theme.colors.textPrimary }]}>{formatCurrency(reportSettings.fixedDailyExpense, locale)}</Text>
             </View>
           </View>
         </FormCard>
@@ -149,30 +153,30 @@ export const DailyReportScreen = () => {
 
         <FormCard>
           <ScreenTitle
-            eyebrow="Profit formula"
+            eyebrow={translateText("dailyReport.formulaEyebrow")}
             size="sm"
-            subtitle="Net profit = gross revenue - barber commission - fixed daily expense"
-            title="Daily earnings"
+            subtitle={translateText("dailyReport.formulaSubtitle")}
+            title={translateText("dailyReport.formulaTitle")}
           />
 
           <View style={styles.breakdownRow}>
             <View style={styles.breakdownItem}>
-              <Text style={[styles.breakdownLabel, { color: theme.colors.textSecondary }]}>Commission amount</Text>
-              <Text style={[styles.breakdownValue, { color: theme.colors.textPrimary }]}>{formatCurrency(report.commissionAmount)}</Text>
+              <Text style={[styles.breakdownLabel, { color: theme.colors.textSecondary }]}>{translateText("dailyReport.commissionAmount")}</Text>
+              <Text style={[styles.breakdownValue, { color: theme.colors.textPrimary }]}>{formatCurrency(report.commissionAmount, locale)}</Text>
             </View>
             <View style={styles.breakdownItem}>
-              <Text style={[styles.breakdownLabel, { color: theme.colors.textSecondary }]}>Fixed daily expense</Text>
-              <Text style={[styles.breakdownValue, { color: theme.colors.textPrimary }]}>{formatCurrency(report.fixedDailyExpense)}</Text>
+              <Text style={[styles.breakdownLabel, { color: theme.colors.textSecondary }]}>{translateText("dailyReport.dailyExpenseBreakdown")}</Text>
+              <Text style={[styles.breakdownValue, { color: theme.colors.textPrimary }]}>{formatCurrency(report.fixedDailyExpense, locale)}</Text>
             </View>
           </View>
         </FormCard>
 
         <FormCard>
           <ScreenTitle
-            eyebrow="Collections"
+            eyebrow={translateText("dailyReport.collectionsEyebrow")}
             size="sm"
-            subtitle="Review how the day's completed sales were paid to reconcile the cash drawer and digital collections."
-            title="Payment method breakdown"
+            subtitle={translateText("dailyReport.collectionsSubtitle")}
+            title={translateText("dailyReport.collectionsTitle")}
           />
 
           <View style={styles.paymentList}>
@@ -188,12 +192,17 @@ export const DailyReportScreen = () => {
                 ]}
               >
                 <View>
-                  <Text style={[styles.paymentMethod, { color: theme.colors.textPrimary }]}>{item.label}</Text>
+                  <Text style={[styles.paymentMethod, { color: theme.colors.textPrimary }]}>{getAppointmentPaymentMethodLabel(item.paymentMethod, translateText)}</Text>
                   <Text style={[styles.paymentMeta, { color: theme.colors.textSecondary }]}> 
-                    {item.appointmentCount} completed appointment{item.appointmentCount === 1 ? "" : "s"}
+                    {translateText(
+                      item.appointmentCount === 1
+                        ? "dailyReport.completedAppointmentMeta_one"
+                        : "dailyReport.completedAppointmentMeta_other",
+                      { count: item.appointmentCount },
+                    )}
                   </Text>
                 </View>
-                <Text style={[styles.paymentTotal, { color: theme.colors.textPrimary }]}>{formatCurrency(item.total)}</Text>
+                <Text style={[styles.paymentTotal, { color: theme.colors.textPrimary }]}>{formatCurrency(item.total, locale)}</Text>
               </View>
             ))}
           </View>
@@ -201,16 +210,16 @@ export const DailyReportScreen = () => {
 
         <FormCard>
           <ScreenTitle
-            eyebrow="Attendance"
+            eyebrow={translateText("dailyReport.attendanceEyebrow")}
             size="sm"
-            subtitle="Detailed ledger of the completed clients counted in this closure."
-            title="Completed appointments"
+            subtitle={translateText("dailyReport.attendanceSubtitle")}
+            title={translateText("dailyReport.attendanceTitle")}
           />
 
           {report.completedAppointments.length === 0 ? (
             <View style={[styles.emptyState, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-              <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>No completed appointments</Text>
-              <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>Mark appointments as completed in Calendar to include them in the daily closure report.</Text>
+              <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>{translateText("dailyReport.noCompletedAppointments")}</Text>
+              <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>{translateText("dailyReport.noCompletedAppointmentsBody")}</Text>
             </View>
           ) : (
             <View style={styles.ledgerList}>
@@ -228,15 +237,15 @@ export const DailyReportScreen = () => {
                   <View style={styles.ledgerCopy}>
                     <Text style={[styles.ledgerTitle, { color: theme.colors.textPrimary }]}>{appointment.clientName}</Text>
                     <Text style={[styles.ledgerMeta, { color: theme.colors.textSecondary }]}> 
-                      {appointment.time} • {appointment.serviceName ?? "General service"}
+                      {appointment.time} • {appointment.serviceName ?? translateText("dailyReport.generalService")}
                     </Text>
                     <Text style={[styles.ledgerMeta, { color: theme.colors.textSecondary }]}> 
                       {appointment.paymentMethodUsed
-                        ? APPOINTMENT_PAYMENT_METHOD_LABELS[appointment.paymentMethodUsed]
-                        : "Payment method not set"}
+                        ? getAppointmentPaymentMethodLabel(appointment.paymentMethodUsed, translateText)
+                        : translateText("dailyReport.paymentMethodNotSet")}
                     </Text>
                   </View>
-                  <Text style={[styles.ledgerAmount, { color: theme.colors.textPrimary }]}>{formatCurrency(appointment.servicePrice ?? 0)}</Text>
+                  <Text style={[styles.ledgerAmount, { color: theme.colors.textPrimary }]}>{formatCurrency(appointment.servicePrice ?? 0, locale)}</Text>
                 </View>
               ))}
             </View>

@@ -13,15 +13,15 @@ export const formatPhoneNumber = (phone: string) => {
 
 export const validateEmail = (email?: string) => {
     if (!email) {
-        return 'Email is required';
+        return 'validation.emailRequired';
     }
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email) ? undefined : 'Invalid email';
+    return regex.test(email) ? undefined : 'validation.invalidEmail';
 }
 
 export const validateRequiredField = (field?: string) => {
     if (!field || !String(field).trim()) {
-        return 'Required';
+        return 'validation.required';
     }
     return undefined;
 }
