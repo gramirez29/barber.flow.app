@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiFetch } from "./apiClient";
+import { apiFetch } from "./apis/apiClient";
 import type {
   ApplicationUserSettingsForm,
   BarberApiRequest,
@@ -9,8 +9,8 @@ import type {
   ReportCalculationSettings,
   SettingsPreferences,
   ThemeMode,
-} from "../../types/settings";
-import { DEFAULT_REPORT_CALCULATION_SETTINGS } from "../../types/settings";
+} from "../types/settings";
+import { DEFAULT_REPORT_CALCULATION_SETTINGS } from "../types/settings";
 
 const SETTINGS_PREFERENCES_KEY = "barber-flow-settings-preferences";
 

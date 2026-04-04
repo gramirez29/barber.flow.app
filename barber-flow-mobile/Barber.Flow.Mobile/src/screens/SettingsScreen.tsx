@@ -13,7 +13,7 @@ import {
   mapBarberResponseToForm,
   useApplicationUsersForm,
 } from "../features/settings/settingsForm";
-import { settingsService } from "../services/apis/settingsService";
+import { settingsService } from "../services/settingsService";
 import { useAuthStore } from "../store/auth.store";
 import { useLanguage, useTranslation } from "../context/LanguageContext";
 import { useAppTheme } from "../theme/ThemeContext";

@@ -13,7 +13,7 @@ import {
   translate,
 } from "../localization/i18n";
 import * as Localization from "expo-localization";
-import { settingsService } from "../services/apis/settingsService";
+import { settingsService } from "../services/settingsService";
 import type { Language, LanguageSource } from "../types/settings";
 
 type LanguageContextType = {
