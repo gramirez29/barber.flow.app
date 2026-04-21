@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Button, Text } from "react-native-paper";
 import { useTranslation } from "../../context/LanguageContext";
-import { getNotificationDisplayText } from "../../services/apis/notificationService";
+import { getNotificationDisplayText } from "../../services/notificationService";
 import { useAppTheme } from "../../theme/ThemeContext";
 import type { NotificationItem } from "../../types/notifications";
 

@@ -1,5 +1,6 @@
 export interface Client {
     id?: string;
+    photoUrl?: string;
     firstName: string;
     lastName: string;
     phone: string; // formatted "0000-0000"

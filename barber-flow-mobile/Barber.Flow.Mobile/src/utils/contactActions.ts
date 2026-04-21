@@ -123,7 +123,7 @@ const openClientWhatsApp = async (
     return;
   }
 
-  const url = `whatsapp://send?phone=${whatsappPhone}&text=${encodeURIComponent(buildMessage(labels, clientName))}`;
+  const url = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(buildMessage(labels, clientName))}`;
 
   try {
     await openUrl(

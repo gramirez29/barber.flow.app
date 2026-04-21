@@ -21,6 +21,7 @@ export const en = {
     update: "Update",
     visible: "Visible",
     unread: "Unread",
+    somethingWentWrong: "Something went wrong.",
   },
   drawer: {
     cancel: "Cancel",
@@ -176,6 +177,7 @@ export const en = {
     paymentMethods: {
       card: "Credit/Debit Card",
       cash: "Cash",
+      sinpeMovil: "Sinpe Movil",
       transfer: "Digital Transfer",
     },
   },
@@ -184,6 +186,7 @@ export const en = {
       clientCreated: "Client created.",
       clientRemoved: "Client removed successfully.",
       clientUpdated: "Client updated.",
+      listLoadFailed: "Clients could not be loaded.",
       noClientSelected: "No client selected to remove.",
       removeClientMessage: "Remove client?",
       removeFailed: "Remove failed",
@@ -195,8 +198,21 @@ export const en = {
       createClient: "Create client",
       delete: "Delete",
       findClient: "Find client",
+      newClient: "New client",
+      scheduleAppointment: "Schedule appointment",
+      scheduleAppointmentA11y: "Schedule appointment for %{clientName}",
       resetForm: "Reset form",
       saveChanges: "Save changes",
+    },
+    list: {
+      emptyBody: "Create your first client or refine your search to see matching records here.",
+      emptyTitle: "No clients to show",
+      helper: "Tap any client to update the information already registered in the system.",
+      listTitle: "Client directory",
+      noEmail: "No email registered",
+      searchPlaceholder: "Search by name, phone, or email",
+      subtitle: "Review clients, open a record to edit it, or create a new one from the floating action menu.",
+      title: "Clients workspace",
     },
     form: {
       activeDescription: "Use this to show whether the client profile is currently active.",
@@ -204,9 +220,11 @@ export const en = {
       address: "Address",
       birthday: "Birthday",
       createEyebrow: "Create client",
+      createScreenTitle: "Create client",
       createTitleFallback: "New client",
       createSubtitle: "Add contact details and preferences to save this client.",
       editEyebrow: "Client profile",
+      editScreenTitle: "Edit client",
       editingExisting: "Editing existing client",
       email: "Email",
       firstName: "First name *",
@@ -227,8 +245,8 @@ export const en = {
     paymentMethods: {
       cash: "Cash",
       none: "None",
-      sinpeMovil: "Sinpe Movil",
-      transfer: "Transfer",
+      sinpeMovil: "Quick Transfer (Sinpe)",
+      transfer: "Bank Transfer",
     },
     screen: {
       existingClientBody:

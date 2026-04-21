@@ -25,11 +25,11 @@ export const ScreenLayout = ({
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: backgroundColor }, center && styles.center ]}>
                 {title && (
-                  <Header
-                    title={title}
-                    onMenuPress={onMenuPress}
-                    onBellPress={hideHeaderActions ? undefined : () => navigation.navigate("NotificationScreen")}
-                  />
+                    <Header
+                        title={title}
+                        onMenuPress={onMenuPress}
+                        onBellPress={hideHeaderActions ? undefined : () => navigation.navigate("NotificationScreen")}
+                    />
                 )}
 
                 <View style={[styles.content, center && styles.center]}>

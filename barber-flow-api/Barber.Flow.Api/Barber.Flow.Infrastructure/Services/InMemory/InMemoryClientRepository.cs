@@ -33,7 +33,11 @@ public class InMemoryClientRepository : IClientRepository
 
     public Task<Client?> UpdateAsync(string id, Client client, CancellationToken ct = default)
     {
-        if (!_store.ContainsKey(id)) return Task.FromResult<Client?>(null);
+        if (!_store.ContainsKey(id))
+        {
+            return Task.FromResult<Client?>(null);
+        }
+        
         var existing = _store[id];
         existing.FirstName = client.FirstName;
         existing.LastName = client.LastName;
@@ -46,6 +50,7 @@ public class InMemoryClientRepository : IClientRepository
         existing.Active = client.Active;
         existing.UpdatedAt = DateTime.UtcNow;
         _store[id] = existing;
+        
         return Task.FromResult<Client?>(existing);
     }
 
@@ -62,15 +67,19 @@ public class InMemoryClientRepository : IClientRepository
 
     public Task<IEnumerable<Client>> FindAsync(string? query = null, CancellationToken ct = default)
     {
-        var list = _store.Values.AsEnumerable();
-        if (!string.IsNullOrWhiteSpace(query))
+        var clients = _store.Values.AsEnumerable();
+
+        if (string.IsNullOrWhiteSpace(query))
         {
-            query = query.Trim().ToLowerInvariant();
-            list = list.Where(c =>
-                c.FirstName.ToLowerInvariant().Contains(query) ||
-                c.LastName.ToLowerInvariant().Contains(query) ||
-                (c.Phone ?? string.Empty).Contains(query));
+            return Task.FromResult(Enumerable.Empty<Client>());
         }
-        return Task.FromResult(list);
+        
+        query = query.Trim().ToLowerInvariant();
+        clients = clients.Where(client =>
+            client.FirstName.ToLowerInvariant().Contains(query, StringComparison.InvariantCultureIgnoreCase) ||
+            client.LastName.ToLowerInvariant().Contains(query, StringComparison.InvariantCultureIgnoreCase) ||
+            (client.Phone ?? string.Empty).Contains(query,  StringComparison.InvariantCultureIgnoreCase));
+        
+        return Task.FromResult(clients);
     }
 }

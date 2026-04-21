@@ -41,7 +41,7 @@ public static class ClientsApi
         api.MapDelete("/delete/{id}", DeleteClientAsync)
             .WithName(nameof(DeleteClientAsync))
             .WithTags(ClientTagName);
-
+            
         return api;
     }
 

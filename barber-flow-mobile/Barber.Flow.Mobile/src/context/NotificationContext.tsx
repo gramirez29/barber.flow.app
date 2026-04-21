@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAppointmentStore } from "../features/appointments/appointment.store";
-import { notificationService } from "../services/apis/notificationService";
-import { settingsService } from "../services/apis/settingsService";
+import { notificationService } from "../services/notificationService";
+import { settingsService } from "../services/settingsService";
 import type { NotificationItem } from "../types/notifications";
 
 interface NotificationContextProps {

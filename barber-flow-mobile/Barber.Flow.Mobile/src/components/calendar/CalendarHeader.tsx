@@ -6,45 +6,48 @@ import { useTranslation } from "../../context/LanguageContext";
 
 type ViewMode = "month" | "week" | "day";
 
-    interface Props {
+interface Props {
     viewMode: ViewMode;
     currentDate: Date;
     onPrev: () => void;
     onNext: () => void;
     onChangeView: (mode: ViewMode) => void;
-    }
+}
 
-    export const CalendarHeader: React.FC<Props> = ({
+export const CalendarHeader: React.FC<Props> = ({
     viewMode,
     currentDate,
     onPrev,
     onNext,
     onChangeView,
-    }) => {
+}) => {
     const { translateText } = useTranslation();
 
     return (
-    <View style={styles.header}>
+        <View style={styles.header}>
         <IconButton icon="chevron-left" onPress={onPrev} />
         <Text style={styles.headerText}>
-        {viewMode === "month" && format(currentDate, "MMMM yyyy")}
-        {viewMode === "week" && translateText("calendar.weekOf", { date: format(currentDate, "MMM d, yyyy") })}
-        {viewMode === "day" && format(currentDate, "MMM d, yyyy")}
+            {viewMode === "month" && format(currentDate, "MMMM yyyy")}
+            {viewMode === "week" &&
+            translateText("calendar.weekOf", {
+                date: format(currentDate, "MMM d, yyyy"),
+            })}
+            {viewMode === "day" && format(currentDate, "MMM d, yyyy")}
         </Text>
         <IconButton icon="chevron-right" onPress={onNext} />
         <ToggleButton.Row
-        onValueChange={value => onChangeView(value as ViewMode)}
-        value={viewMode}
+            onValueChange={(value) => onChangeView(value as ViewMode)}
+            value={viewMode}
         >
-        <ToggleButton icon="calendar-month" value="month" />
-        <ToggleButton icon="calendar-week" value="week" />
-        <ToggleButton icon="calendar-today" value="day" />
+            <ToggleButton icon="calendar-month" value="month" />
+            <ToggleButton icon="calendar-week" value="week" />
+            <ToggleButton icon="calendar-today" value="day" />
         </ToggleButton.Row>
-    </View>
+        </View>
     );
-    };
+};
 
-    const styles = StyleSheet.create({
+const styles = StyleSheet.create({
     header: {
         flexDirection: "row",
         alignItems: "center",
@@ -60,4 +63,4 @@ type ViewMode = "month" | "week" | "day";
         fontWeight: "bold",
         color: "#222",
     },
-    });
+});

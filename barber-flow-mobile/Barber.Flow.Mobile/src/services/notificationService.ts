@@ -1,12 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { addDays, differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
-import type { Appointment } from "../../features/appointments/appointments.types";
+import type { Appointment } from "../features/appointments/appointments.types";
 import type {
   DelayedClientSummaryPayload,
   NextDaySummaryPayload,
   NotificationCollection,
   NotificationItem,
-} from "../../types/notifications";
+} from "../types/notifications";
 
 const NOTIFICATIONS_STORAGE_KEY = "barber-flow-notifications";
 const DELAYED_CLIENT_THRESHOLD_DAYS = 30;

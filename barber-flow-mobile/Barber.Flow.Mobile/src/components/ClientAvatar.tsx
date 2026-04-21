@@ -54,7 +54,7 @@ export const ClientAvatar: React.FC<ClientAvatarProps> = ({ size = 96, uri, init
         ]}
       >
         <Image
-          source={uri ? { uri } : require("../../assets/images/client-default.jpg")}
+          source={uri ? { uri } : require("../../assets/images/no-image.jpg")}
           style={{ width: size - 22, height: size - 22, borderRadius: (size - 22) / 2 }}
           resizeMode="cover"
         />
@@ -62,7 +62,7 @@ export const ClientAvatar: React.FC<ClientAvatarProps> = ({ size = 96, uri, init
           style={[
             styles.initialsBadge,
             {
-              backgroundColor: theme.colors.primary,
+              backgroundColor: theme.colors.badgePrimary,
             },
           ]}
         >

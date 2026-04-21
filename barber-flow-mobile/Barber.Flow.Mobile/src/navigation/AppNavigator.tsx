@@ -2,25 +2,20 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
-import { CalendarScreen } from '../screens/CalendarScreen';
 import { DailyReportScreen } from '../screens/DailyReportScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
-import { ClientsScreen } from '../screens/ClientsScreen';
+import { ClientsNavigator } from './ClientsNavigator';
 import { NotificationScreen } from '../screens/NotificationScreen';
 import { fonts } from '../theme/fonts';
 import { useAppTheme } from '../theme/ThemeContext';
 import { useNotification } from '../context/NotificationContext';
 import { useTranslation } from '../context/LanguageContext';
+import type { NavigatorScreenParams } from '@react-navigation/native';
+import { CalendarNavigator, type CalendarStackParamList } from './CalendarNavigator';
 
 
 export type AppTabParamList = {
-  Calendar:
-    | {
-        date?: string;
-        initialView?: "month" | "week" | "day";
-        source?: "notification";
-      }
-    | undefined;
+  Calendar: NavigatorScreenParams<CalendarStackParamList> | undefined;
   Clients: undefined;
   DailyReport: undefined;
   SettingsScreen: undefined;
@@ -121,14 +116,14 @@ export const AppNavigator = () => {
     >
       <Tab.Screen
         name="Calendar"
-        component={CalendarScreen}
+        component={CalendarNavigator}
         options={{
           title: tabMetadata.Calendar.label,
         }}
       />
       <Tab.Screen
         name="Clients"
-        component={ClientsScreen}
+        component={ClientsNavigator}
         options={{ title: tabMetadata.Clients.label }}
       />
       <Tab.Screen

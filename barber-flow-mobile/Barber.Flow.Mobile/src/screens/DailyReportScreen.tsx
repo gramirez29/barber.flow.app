@@ -12,7 +12,7 @@ import { useAppointmentStore } from "../features/appointments/appointment.store"
 import { calculateDailyReportSummary } from "../features/reports/dailyReport";
 import { useTranslation } from "../context/LanguageContext";
 import { getIntlLocale } from "../localization/i18n";
-import { settingsService } from "../services/apis/settingsService";
+import { settingsService } from "../services/settingsService";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
   DEFAULT_REPORT_CALCULATION_SETTINGS,
