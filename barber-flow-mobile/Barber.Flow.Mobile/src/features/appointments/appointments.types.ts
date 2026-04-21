@@ -1,6 +1,6 @@
 export type AppointmentStatus = "scheduled" | "confirmed" | "completed" | "cancelled";
 
-export type AppointmentPaymentMethod = "cash" | "card" | "transfer";
+export type AppointmentPaymentMethod = "cash" | "card" | "sinpeMovil" | "transfer";
 
 export const getAppointmentPaymentMethodLabel = (
     paymentMethod: AppointmentPaymentMethod,
@@ -9,6 +9,7 @@ export const getAppointmentPaymentMethodLabel = (
 
 export const APPOINTMENT_PAYMENT_METHOD_OPTIONS: AppointmentPaymentMethod[] = [
     "cash",
+    "sinpeMovil",
     "card",
     "transfer",
 ];

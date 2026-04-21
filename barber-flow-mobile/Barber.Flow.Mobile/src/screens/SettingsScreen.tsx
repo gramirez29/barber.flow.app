@@ -24,6 +24,9 @@ import {
   type Language,
   type ThemeMode,
 } from "../types/settings";
+import { DrawerActions, useNavigation } from "@react-navigation/core";
+import { AppTabParamList } from "../navigation/AppNavigator";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 
 const APP_VERSION = "1.0.0";
 const DEVELOPER_NAME = "Guillermo Ramirez";
@@ -62,6 +65,7 @@ export const SettingsScreen = () => {
     validateBeforeSubmit: validateReportSettingsBeforeSubmit,
     values: reportSettingValues,
   } = useReportCalculationSettingsForm();
+  const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
 
   // Note: we no longer prefetch next barber id on mount. The id
   // will be fetched exactly once immediately before creating a barber.
@@ -284,7 +288,11 @@ export const SettingsScreen = () => {
   };
 
   return (
-    <ScreenLayout title={translateText("settings.title")} backgroundColor={theme.colors.background}>
+    <ScreenLayout
+      title={translateText("settings.title")} 
+      backgroundColor={theme.colors.background}
+      onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+      >
       <KeyboardAwareScrollView
         style={styles.flex}
         contentContainerStyle={styles.scrollContent}

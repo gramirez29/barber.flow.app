@@ -44,9 +44,12 @@ export const NotificationScreen = () => {
 
         if (route === "Calendar") {
             navigation.navigate("Calendar", {
-                date: item.payload.date,
-                initialView: "day",
-                source: "notification",
+                screen: "CalendarHome",
+                params: {
+                    date: item.payload.date,
+                    initialView: "day",
+                    source: "notification",
+                },
             });
             return;
         }

@@ -20,7 +20,8 @@ export const lightTheme = {
     card: '#1E1E1E',
     primaryInput: '#FFFFFF',
     primaryTextInput: '#6B7280',
-    error: '#DC2626'
+    error: '#DC2626',
+    badgePrimary: '#22a559'
   },
   layout: {
     spacing: { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 },
@@ -60,7 +61,8 @@ export const darkTheme = {
     card: '#F5F7FA',
     primaryInput: '#0B1220',
     primaryTextInput: '#94A3B8',
-    error: '#F87171'
+    error: '#F87171',
+    badgePrimary: '#22a559'
   },
   layout: {
     spacing: { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 },

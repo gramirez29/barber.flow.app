@@ -4,29 +4,37 @@ import { Card, Text } from "react-native-paper";
 import { Appointment } from "../../features/appointments/appointments.types";
 import { useTranslation } from "../../context/LanguageContext";
 
-    interface Props {
+interface AppointmentCardProps {
     appointment: Appointment;
     onPress?: () => void;
-    }
+}
 
-    export const AppointmentCard: React.FC<Props> = ({ appointment, onPress }) => {
+export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, onPress }) => {
     const { translateText } = useTranslation();
 
     return (
     <Card style={styles.card} onPress={onPress} mode="contained">
         <Card.Title
         title={appointment.clientName}
-        subtitle={appointment.serviceName ? `${appointment.time} • ${appointment.serviceName}` : appointment.time}
-        />
+        subtitle={
+            appointment.serviceName
+            ? `${appointment.time} • ${appointment.serviceName}`
+            : appointment.time
+        }
+    />
         <Card.Content>
-        <Text>{translateText("clients.form.phone")}: {appointment.phone}</Text>
-        {appointment.notes ? <Text style={styles.notes}>{appointment.notes}</Text> : null}
+            <Text>
+            {translateText("clients.form.phone")}: {appointment.phone}
+            </Text>
+            {appointment.notes ? (
+            <Text style={styles.notes}>{appointment.notes}</Text>
+            ) : null}
         </Card.Content>
     </Card>
-    );
-    };
+);
+};
 
-    const styles = StyleSheet.create({
+const styles = StyleSheet.create({
     card: {
         marginBottom: 12,
         borderRadius: 12,
@@ -35,4 +43,4 @@ import { useTranslation } from "../../context/LanguageContext";
     notes: {
         marginTop: 8,
     },
-    });
+});

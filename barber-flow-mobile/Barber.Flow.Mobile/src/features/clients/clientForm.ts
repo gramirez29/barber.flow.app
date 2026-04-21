@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { Client } from "../../types/clients";
 
 export const PAYMENT_METHODS = [
@@ -100,7 +100,7 @@ export const useClientForm = () => {
   const [errors, setErrors] = useState<ClientFormErrors>({});
   const [touched, setTouched] = useState<ClientTouchedFields>({});
 
-  const setField = <K extends keyof Client>(key: K, value: Client[K]) => {
+  const setField = useCallback(<K extends keyof Client>(key: K, value: Client[K]) => {
     setClient((currentClient) => ({
       ...currentClient,
       [key]: value,
@@ -111,9 +111,9 @@ export const useClientForm = () => {
       ...currentErrors,
       [key]: error,
     }));
-  };
+  }, []);
 
-  const onBlurField = (key: keyof Client) => {
+  const onBlurField = useCallback((key: keyof Client) => {
     setTouched((currentTouched) => ({
       ...currentTouched,
       [key]: true,
@@ -123,9 +123,9 @@ export const useClientForm = () => {
       ...currentErrors,
       [key]: validateClientField(key, client[key]),
     }));
-  };
+  }, [client]);
 
-  const validateBeforeSubmit = () => {
+  const validateBeforeSubmit = useCallback(() => {
     const nextErrors = buildClientValidationErrors(client);
 
     setErrors(nextErrors);
@@ -137,19 +137,19 @@ export const useClientForm = () => {
     });
 
     return nextErrors;
-  };
+  }, [client]);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setClient(createEmptyClient());
     setErrors({});
     setTouched({});
-  };
+  }, []);
 
-  const loadClient = (nextClient: Client) => {
+  const loadClient = useCallback((nextClient: Client) => {
     setClient(nextClient);
     setErrors(buildClientValidationErrors(nextClient));
     setTouched({});
-  };
+  }, []);
 
   const isFormValid =
     !validateClientField("firstName", client.firstName) &&

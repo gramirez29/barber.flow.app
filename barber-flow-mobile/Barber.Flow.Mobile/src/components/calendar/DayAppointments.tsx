@@ -1,31 +1,37 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Button } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { useAppointmentStore } from "../../features/appointments/appointment.store";
-import { AppointmentModal } from "./AppointmentModal";
-import { Appointment, AppointmentDraft } from "../../features/appointments/appointments.types";
+import { Appointment } from "../../features/appointments/appointments.types";
 import { useTranslation } from "../../context/LanguageContext";
 
-interface Props {
+interface DayAppointmentsProps {
   date: string;
 }
 
-export const DayAppointments = ({ date }: Props) => {
-  const { appointments, addAppointment, updateAppointment } = useAppointmentStore();
+export const DayAppointments = ({ date }: DayAppointmentsProps) => {
+  const navigation = useNavigation<any>();
+  const { appointments } = useAppointmentStore();
   const { translateText } = useTranslation();
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
 
-  const dayAppointments = appointments.filter(a => a.date === date);
+  const dayAppointments = appointments.filter(appointment => appointment.date === date);
 
   const openNew = () => {
-    setEditingAppointment(null);
-    setModalVisible(true);
+    navigation.navigate("AppointmentForm", {
+      mode: "create",
+      date,
+      afterSave: "goBack",
+    });
   };
 
   const openEdit = (appointment: Appointment) => {
-    setEditingAppointment(appointment);
-    setModalVisible(true);
+    navigation.navigate("AppointmentForm", {
+      mode: "edit",
+      date: appointment.date,
+      appointmentId: appointment.id,
+      afterSave: "goBack",
+    });
   };
 
   return (
@@ -51,22 +57,6 @@ export const DayAppointments = ({ date }: Props) => {
         </ScrollView>
       )}
 
-      <AppointmentModal
-        visible={modalVisible}
-        date={date}
-        editingAppointment={editingAppointment}
-        onClose={() => setModalVisible(false)}
-        onSave={(appointment: AppointmentDraft) => {
-          if (editingAppointment) {
-            updateAppointment(editingAppointment.id, appointment);
-          } else {
-            addAppointment(appointment);
-          }
-
-          setEditingAppointment(null);
-          setModalVisible(false);
-        }}
-      />
     </View>
   );
 };

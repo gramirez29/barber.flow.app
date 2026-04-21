@@ -12,20 +12,18 @@ import { addDays, format, startOfWeek } from "date-fns";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { DrawerActions } from "@react-navigation/core";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AppointmentCard } from "../components/calendar/AppointmentCard";
-import { AppointmentModal } from "../components/calendar/AppointmentModal";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { useTranslation } from "../context/LanguageContext";
 import { useAppointmentStore } from "../features/appointments/appointment.store";
 import {
   Appointment,
-  AppointmentDraft,
 } from "../features/appointments/appointments.types";
 import { getIntlLocale } from "../localization/i18n";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { RouteProp } from "@react-navigation/native";
-import type { AppTabParamList } from "../navigation/AppNavigator";
+import type { CalendarStackParamList } from "../navigation/CalendarNavigator";
 
 LocaleConfig.locales.en = {
   monthNames: [
@@ -141,24 +139,19 @@ const formatDayNumber = (dateString: string, locale: string) =>
   }).format(toDate(dateString));
 
 export const CalendarScreen: React.FC = () => {
-  const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList, "Calendar">>();
-  const route = useRoute<RouteProp<AppTabParamList, "Calendar">>();
+  const navigation = useNavigation<NativeStackNavigationProp<CalendarStackParamList, "CalendarHome">>();
+  const route = useRoute<RouteProp<CalendarStackParamList, "CalendarHome">>();
   const { theme } = useAppTheme();
   const { language, translateText } = useTranslation();
   const {
     appointments,
-    addAppointment,
     getAppointmentsByDate,
-    updateAppointment,
   } = useAppointmentStore();
 
   const today = format(new Date(), DATE_FORMAT);
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [selectedDate, setSelectedDate] = useState(today);
   const [visibleMonth, setVisibleMonth] = useState(today);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingAppointment, setEditingAppointment] =
-    useState<Appointment | null>(null);
   const locale = getIntlLocale(language);
 
   useEffect(() => {
@@ -166,7 +159,11 @@ export const CalendarScreen: React.FC = () => {
   }, [language]);
 
   useEffect(() => {
-    if (route.params?.source !== "notification") {
+    if (!route.params?.source) {
+      return;
+    }
+
+    if (route.params.source !== "notification" && route.params.source !== "clientSaved") {
       return;
     }
 
@@ -182,7 +179,7 @@ export const CalendarScreen: React.FC = () => {
       initialView: undefined,
       source: undefined,
     });
-  }, [navigation, route.params]);
+  }, [navigation, route.params, today]);
 
   const selectedAppointments = getAppointmentsByDate(selectedDate);
   const weekDates = getWeekDates(selectedDate);
@@ -222,31 +219,28 @@ export const CalendarScreen: React.FC = () => {
 
   const openCreateModal = (date: string) => {
     setSelectedDate(date);
-    setEditingAppointment(null);
-    setModalVisible(true);
+    setVisibleMonth(date);
+    navigation.navigate("AppointmentForm", {
+      mode: "create",
+      date,
+      afterSave: "goBack",
+    });
   };
 
   const handleSelectDay = (date: string) => {
     setSelectedDate(date);
-    setEditingAppointment(null);
     setViewMode("day");
   };
 
   const openEditModal = (appointment: Appointment) => {
     setSelectedDate(appointment.date);
-    setEditingAppointment(appointment);
-    setModalVisible(true);
-  };
-
-  const handleSaveAppointment = (draft: AppointmentDraft) => {
-    if (editingAppointment) {
-      updateAppointment(editingAppointment.id, draft);
-    } else {
-      addAppointment(draft);
-    }
-
-    setEditingAppointment(null);
-    setModalVisible(false);
+    setVisibleMonth(appointment.date);
+    navigation.navigate("AppointmentForm", {
+      mode: "edit",
+      date: appointment.date,
+      appointmentId: appointment.id,
+      afterSave: "goBack",
+    });
   };
 
   const renderAppointmentList = (
@@ -555,16 +549,6 @@ export const CalendarScreen: React.FC = () => {
           </Card>
         ) : null}
 
-        <AppointmentModal
-          visible={modalVisible}
-          date={selectedDate}
-          editingAppointment={editingAppointment}
-          onClose={() => {
-            setEditingAppointment(null);
-            setModalVisible(false);
-          }}
-          onSave={handleSaveAppointment}
-        />
       </KeyboardAwareScrollView>
     </ScreenLayout>
   );

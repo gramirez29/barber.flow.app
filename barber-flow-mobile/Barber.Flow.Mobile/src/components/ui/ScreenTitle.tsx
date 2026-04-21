@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from '../../theme/ThemeContext';
 
-interface Props {
+interface ScreenTitleProps {
     align?: "left" | "center";
     children?: React.ReactNode;
     eyebrow?: string;
@@ -17,7 +17,7 @@ const titleSizeMap = {
     lg: 30,
 } as const;
 
-export const ScreenTitle = ({ align = "left", children, eyebrow, size = "md", subtitle, title }: Props) => {
+export const ScreenTitle = ({ align = "left", children, eyebrow, size = "md", subtitle, title }: ScreenTitleProps) => {
 
     const { theme } = useAppTheme();
     const resolvedTitle = title ?? children;
