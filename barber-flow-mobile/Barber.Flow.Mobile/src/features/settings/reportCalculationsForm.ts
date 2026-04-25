@@ -45,7 +45,7 @@ export const validateReportCalculationField = (
 	}
 
 	return undefined;
-	};
+};
 
 const buildErrors = (
 	values: ReportCalculationSettings,
