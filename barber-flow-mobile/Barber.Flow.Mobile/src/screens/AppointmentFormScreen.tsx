@@ -34,163 +34,167 @@ type AppointmentFormRoute = RouteProp<
 >;
 
 export const AppointmentFormScreen = () => {
-  const navigation = useNavigation<any>();
-  const route = useRoute<AppointmentFormRoute>();
-  const insets = useSafeAreaInsets();
-  const { theme } = useAppTheme();
-  const { translateText } = useTranslation();
-  const { appointments, addAppointment, updateAppointment } = useAppointmentStore();
+	const navigation = useNavigation<any>();
+	const route = useRoute<AppointmentFormRoute>();
+	const insets = useSafeAreaInsets();
+	const { theme } = useAppTheme();
+	const { translateText } = useTranslation();
+	const { appointments, addAppointment, updateAppointment } =
+		useAppointmentStore();
 
-  const params = route.params;
-  const afterSave = params.afterSave ?? "goBack";
+	const params = route.params;
+	const afterSave = params.afterSave ?? "goBack";
 
-  const editingAppointment: Appointment | null = useMemo(() => {
-    if (params.mode !== "edit") {
-      return null;
+	const editingAppointment: Appointment | null = useMemo(() => {
+		if (params.mode !== "edit") {
+			return null;
+		}
+
+		if (!params.appointmentId) {
+			return null;
+		}
+
+		return (
+			appointments.find(
+				(appointment) => appointment.id === params.appointmentId,
+			) ?? null
+		);
+	}, [appointments, params.appointmentId, params.mode]);
+
+	const effectiveDate = editingAppointment?.date ?? params.date;
+
+	const { draft, errors, touched, onBlurField, setField, setTouched, submit } =
+		useAppointmentForm({
+			date: effectiveDate,
+			editingAppointment,
+			initialDraft: params.initialDraft,
+			enabled: true,
+		});
+
+	const title = useMemo(
+		() =>
+		params.mode === "edit"
+			? translateText("calendar.appointmentModal.editTitle")
+			: translateText("calendar.appointmentModal.title"),
+		[params.mode, translateText],
+	);
+
+	const handleCancel = () => {
+		navigation.goBack();
+	};
+
+	const handleSubmit = () => {
+		if (params.mode === "edit") {
+			if (!params.appointmentId) {
+				Alert.alert(title, translateText("common.somethingWentWrong"));
+				return;
+			}
+
+			if (!editingAppointment) {
+				Alert.alert(title, translateText("common.somethingWentWrong"));
+				navigation.goBack();
+				return;
+			}
+		}
+
+		const normalizedDraft = submit({ editingAppointment });
+
+		if (!normalizedDraft) {
+			return;
+		}
+
+		if (params.mode === "edit" && params.appointmentId) {
+			updateAppointment(params.appointmentId, normalizedDraft);
+		} else {
+			addAppointment(normalizedDraft);
+		}
+
+		if (afterSave === "goToCalendarDay") {
+		const parentTabNavigation = navigation.getParent?.() as
+			| BottomTabNavigationProp<any>
+			| undefined;
+
+		if (typeof navigation.popToTop === "function") {
+			navigation.popToTop();
+		} else {
+			navigation.goBack();
+		}
+
+		parentTabNavigation?.navigate("Calendar", {
+			screen: "CalendarHome",
+			params: {
+			date: normalizedDraft.date,
+			initialView: "day",
+			source: "clientSaved",
+			},
+		});
+
+		return;
     }
 
-    if (!params.appointmentId) {
-      return null;
-    }
-
-    return (
-      appointments.find((appointment) => appointment.id === params.appointmentId) ??
-      null
-    );
-  }, [appointments, params.appointmentId, params.mode]);
-
-  const effectiveDate = editingAppointment?.date ?? params.date;
-
-  const { draft, errors, touched, onBlurField, setField, setTouched, submit } =
-    useAppointmentForm({
-      date: effectiveDate,
-      editingAppointment,
-      initialDraft: params.initialDraft,
-      enabled: true,
-    });
-
-  const title = useMemo(
-    () =>
-      params.mode === "edit"
-        ? translateText("calendar.appointmentModal.editTitle")
-        : translateText("calendar.appointmentModal.title"),
-    [params.mode, translateText],
-  );
-
-  const handleCancel = () => {
     navigation.goBack();
-  };
+	};
 
-  const handleSubmit = () => {
-    if (params.mode === "edit") {
-      if (!params.appointmentId) {
-        Alert.alert(title, translateText("common.somethingWentWrong"));
-        return;
-      }
+	return (
+		<ScreenLayout
+			title={title}
+			backgroundColor={theme.colors.background}
+			hideHeaderActions
+		>
+			<KeyboardAwareScrollView
+				style={styles.flex}
+				contentContainerStyle={[
+				styles.scrollContent,
+				{
+					paddingBottom: Math.max(24, insets.bottom + 24),
+				},
+				]}
+				enableOnAndroid
+				keyboardOpeningTime={0}
+				extraScrollHeight={Platform.OS === "android" ? 120 : 20}
+				keyboardShouldPersistTaps="handled"
+				showsVerticalScrollIndicator={false}
+			>
+				<FormCard>
+					<Text
+						style={[styles.dateText, { color: theme.colors.textSecondary }]}
+					>
+						{translateText("calendar.appointmentModal.dateSelected", {
+						date: effectiveDate,
+						})}
+					</Text>
 
-      if (!editingAppointment) {
-        Alert.alert(title, translateText("common.somethingWentWrong"));
-        navigation.goBack();
-        return;
-      }
-    }
-
-    const normalizedDraft = submit({ editingAppointment });
-
-    if (!normalizedDraft) {
-      return;
-    }
-
-    if (params.mode === "edit" && params.appointmentId) {
-      updateAppointment(params.appointmentId, normalizedDraft);
-    } else {
-      addAppointment(normalizedDraft);
-    }
-
-    if (afterSave === "goToCalendarDay") {
-      const parentTabNavigation = navigation.getParent?.() as
-        | BottomTabNavigationProp<any>
-        | undefined;
-
-      if (typeof navigation.popToTop === "function") {
-        navigation.popToTop();
-      } else {
-        navigation.goBack();
-      }
-
-      parentTabNavigation?.navigate("Calendar", {
-        screen: "CalendarHome",
-        params: {
-          date: normalizedDraft.date,
-          initialView: "day",
-          source: "clientSaved",
-        },
-      });
-
-      return;
-    }
-
-    navigation.goBack();
-  };
-
-  return (
-    <ScreenLayout
-      title={title}
-      backgroundColor={theme.colors.background}
-      hideHeaderActions
-    >
-      <KeyboardAwareScrollView
-        style={styles.flex}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingBottom: Math.max(24, insets.bottom + 24),
-          },
-        ]}
-        enableOnAndroid
-        keyboardOpeningTime={0}
-        extraScrollHeight={Platform.OS === "android" ? 120 : 20}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <FormCard>
-          <Text style={[styles.dateText, { color: theme.colors.textSecondary }]}>
-            {translateText("calendar.appointmentModal.dateSelected", {
-              date: effectiveDate,
-            })}
-          </Text>
-
-          <AppointmentForm
-            draft={draft}
-            errors={errors}
-            touched={touched}
-            isEditMode={params.mode === "edit"}
-            onFieldChange={setField}
-            onFieldBlur={onBlurField}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            onPaymentMethodTouched={() =>
-              setTouched((currentTouched: Record<string, boolean>) => ({
-                ...currentTouched,
-                paymentMethodUsed: true,
-              }))
-            }
-          />
-        </FormCard>
-      </KeyboardAwareScrollView>
-    </ScreenLayout>
-  );
+					<AppointmentForm
+						draft={draft}
+						errors={errors}
+						touched={touched}
+						isEditMode={params.mode === "edit"}
+						onFieldChange={setField}
+						onFieldBlur={onBlurField}
+						onSubmit={handleSubmit}
+						onCancel={handleCancel}
+						onPaymentMethodTouched={() =>
+						setTouched((currentTouched: Record<string, boolean>) => ({
+							...currentTouched,
+							paymentMethodUsed: true,
+						}))
+						}
+					/>
+				</FormCard>
+			</KeyboardAwareScrollView>
+		</ScreenLayout>
+	);
 };
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: 10,
-  },
-  dateText: {
-    fontSize: 14,
-    marginBottom: 14,
-  },
+	flex: {
+		flex: 1,
+	},
+	scrollContent: {
+		paddingTop: 10,
+	},
+	dateText: {
+		fontSize: 14,
+		marginBottom: 14,
+	},
 });

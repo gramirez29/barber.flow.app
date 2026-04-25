@@ -5,15 +5,15 @@ import { settingsService } from "../services/settingsService";
 import type { NotificationItem } from "../types/notifications";
 
 interface NotificationContextProps {
-  dismissNotification: (notificationId: string) => Promise<void>;
-  isLoading: boolean;
-  markAllAsRead: () => Promise<void>;
-  markAsRead: (notificationId: string) => Promise<void>;
-  notifications: NotificationItem[];
-  notificationsEnabled: boolean;
-  refreshNotifications: () => Promise<void>;
-  setNotificationsEnabled: (value: boolean) => Promise<void>;
-  unreadCount: number;
+	dismissNotification: (notificationId: string) => Promise<void>;
+	isLoading: boolean;
+	markAllAsRead: () => Promise<void>;
+	markAsRead: (notificationId: string) => Promise<void>;
+	notifications: NotificationItem[];
+	notificationsEnabled: boolean;
+	refreshNotifications: () => Promise<void>;
+	setNotificationsEnabled: (value: boolean) => Promise<void>;
+	unreadCount: number;
 }
 
 const NotificationContext = createContext<NotificationContextProps | null>(null);

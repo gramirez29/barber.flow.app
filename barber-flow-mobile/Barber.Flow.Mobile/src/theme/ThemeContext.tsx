@@ -11,8 +11,8 @@ import { lightTheme, darkTheme, AppTheme } from "./themes";
 import type { ThemeMode } from "../types/settings";
 
 type ThemeContextType = {
-  theme: AppTheme;
-  toggleTheme: () => void;
+	theme: AppTheme;
+	toggleTheme: () => void;
     setThemeMode: (mode: ThemeMode) => Promise<void>;
     themeMode: ThemeMode;
     resolvedThemeMode: Exclude<ThemeMode, "system">;
@@ -23,7 +23,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
     const [systemThemeMode, setSystemThemeMode] = useState<Exclude<ThemeMode, "system">>(
-      Appearance.getColorScheme() === "dark" ? "dark" : "light",
+		Appearance.getColorScheme() === "dark" ? "dark" : "light",
     );
 
     useEffect(() => {
