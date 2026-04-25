@@ -21,204 +21,223 @@ type ClientFormScreenNavigation = NativeStackNavigationProp<ClientsStackParamLis
 type ClientFormScreenRoute = RouteProp<ClientsStackParamList, "ClientForm">;
 
 export const ClientFormScreen = () => {
-  const navigation = useNavigation<ClientFormScreenNavigation>();
-  const route = useRoute<ClientFormScreenRoute>();
-  const { theme } = useAppTheme();
-  const { translateText } = useTranslation();
-  const insets = useSafeAreaInsets();
-  const {
-    client,
-    errors,
-    touched,
-    isFormValid,
-    loadClient,
-    onBlurField,
-    resetForm,
-    setField,
-    validateBeforeSubmit,
-  } = useClientForm();
-  const [loading, setLoading] = useState(false);
+	const navigation = useNavigation<ClientFormScreenNavigation>();
+	const route = useRoute<ClientFormScreenRoute>();
+	const { theme } = useAppTheme();
+	const { translateText } = useTranslation();
+	const insets = useSafeAreaInsets();
+	const {
+		client,
+		errors,
+		touched,
+		isFormValid,
+		loadClient,
+		onBlurField,
+		resetForm,
+		setField,
+		validateBeforeSubmit,
+	} = useClientForm();
 
-  const isEditMode = route.params.mode === "edit";
+	const [loading, setLoading] = useState(false);
+	const isEditMode = route.params.mode === "edit";
 
-  useEffect(() => {
-    if (route.params.client) {
-      loadClient(route.params.client);
-      return;
-    }
+	useEffect(() => {
+		if (route.params.client) {
+			loadClient(route.params.client);
+			return;
+		}
 
-    resetForm();
-  }, [loadClient, resetForm, route.params.client]);
+		resetForm();
+	}, [loadClient, resetForm, route.params.client]);
 
-  const screenTitle = useMemo(
-    () => (isEditMode
-      ? translateText("clients.form.editScreenTitle")
-      : translateText("clients.form.createScreenTitle")),
-    [isEditMode, translateText],
-  );
+	const screenTitle = useMemo(
+		() => (isEditMode
+			? translateText("clients.form.editScreenTitle")
+			: translateText("clients.form.createScreenTitle")),
+		[isEditMode, translateText],
+	);
 
-  const handleFieldChange = <K extends keyof Client>(key: K, value: Client[K]) => {
-    if (key === "phone") {
-      setField(key, formatPhoneNumber(String(value ?? "")) as Client[K]);
-      return;
-    }
+	const handleFieldChange = <K extends keyof Client>(key: K, value: Client[K]) => {
+		if (key === "phone") {
+			setField(key, formatPhoneNumber(String(value ?? "")) as Client[K]);
+			return;
+		}
 
-    setField(key, value);
-  };
+		setField(key, value);
+	};
 
-  const openDatePicker = () => {
-    if (Platform.OS !== "android") {
-      return;
-    }
+	const openDatePicker = () => {
+		if (Platform.OS !== "android") {
+			return;
+		}
 
     const current = client.birthday ? new Date(client.birthday) : new Date();
+
     DateTimePickerAndroid.open({
-      mode: "date",
-      onChange: (_event, selectedDate) => {
-        if (selectedDate) {
-          setField("birthday", selectedDate.toISOString());
-        }
-      },
-      value: current,
-    });
-  };
+		mode: "date",
+		onChange: (_event, selectedDate) => {
+			if (selectedDate) {
+			setField("birthday", selectedDate.toISOString());
+			}
+		},
+		value: current,
+		});
+	};
 
-  const handleSave = async () => {
-    const nextErrors = validateBeforeSubmit();
+	const handleSave = async () => {
+		const nextErrors = validateBeforeSubmit();
 
-    if (nextErrors.firstName || nextErrors.lastName || nextErrors.phone || nextErrors.email) {
-      Alert.alert(translateText("common.save"), translateText("clients.alerts.validation"));
-      return;
-    }
+		if (
+			nextErrors.firstName ||
+			nextErrors.lastName ||
+			nextErrors.phone ||
+			nextErrors.email
+		) {
+			Alert.alert(
+			translateText("common.save"),
+			translateText("clients.alerts.validation"),
+			);
+			return;
+		}
+			setLoading(true);
 
-    setLoading(true);
+			try {
+				if (isEditMode && client.id) {
+					await clientsService.update(client.id, client);
+					Alert.alert(
+					translateText("common.update"),
+					translateText("clients.alerts.clientUpdated"),
+					);
+				} else {
+					await clientsService.create(client);
+					Alert.alert(
+					translateText("common.create"),
+					translateText("clients.alerts.clientCreated"),
+					);
+				}
 
-    try {
-      if (isEditMode && client.id) {
-        await clientsService.update(client.id, client);
-        Alert.alert(translateText("common.update"), translateText("clients.alerts.clientUpdated"));
-      } else {
-        await clientsService.create(client);
-        Alert.alert(translateText("common.create"), translateText("clients.alerts.clientCreated"));
-      }
+			navigation.goBack();
+			} catch (error: any) {
+				Alert.alert(
+					translateText("common.save"),
+					error?.message ?? translateText("clients.alerts.saveFailed"),
+				);
+			} finally {
+				setLoading(false);
+			}
+	};
 
-      navigation.goBack();
-    } catch (error: any) {
-      Alert.alert(translateText("common.save"), error?.message ?? translateText("clients.alerts.saveFailed"));
-    } finally {
-      setLoading(false);
-    }
-  };
+	const handleDelete = async () => {
+		if (!client.id) {
+			Alert.alert(translateText("common.delete"), translateText("clients.alerts.noClientSelected"));
+			return;
+		}
 
-  const handleDelete = async () => {
-    if (!client.id) {
-      Alert.alert(translateText("common.delete"), translateText("clients.alerts.noClientSelected"));
-      return;
-    }
+		Alert.alert(translateText("common.delete"), translateText("clients.alerts.removeClientMessage"), [
 
-    Alert.alert(translateText("common.delete"), translateText("clients.alerts.removeClientMessage"), [
-      { text: translateText("common.cancel"), style: "cancel" },
-      {
-        onPress: async () => {
-          setLoading(true);
+			{ text: translateText("common.cancel"), style: "cancel" },
+			{
 
-          try {
-            await clientsService.delete(client.id as string);
-            Alert.alert(translateText("common.delete"), translateText("clients.alerts.clientRemoved"));
-            navigation.goBack();
-          } catch (error: any) {
-            Alert.alert(translateText("common.delete"), error?.message ?? translateText("clients.alerts.removeFailed"));
-          } finally {
-            setLoading(false);
-          }
-        },
-        style: "destructive",
-        text: translateText("common.delete"),
-      },
-    ]);
-  };
+				onPress: async () => {
+					setLoading(true);
 
-  const handleCancel = () => {
-    resetForm();
-    navigation.goBack();
-  };
+					try {
+						await clientsService.delete(client.id as string);
+						Alert.alert(translateText("common.delete"), translateText("clients.alerts.clientRemoved"));
+						navigation.goBack();
+					} catch (error: any) {
+						Alert.alert(translateText("common.delete"), error?.message ?? translateText("clients.alerts.removeFailed"));
+					} finally {
+							setLoading(false);
+					}
+				},
+				style: "destructive",
+				text: translateText("common.delete"),
+			},
+		]);
+	};
 
-  return (
-    <ScreenLayout
-      title={screenTitle}
-      backgroundColor={theme.colors.background}
-      hideHeaderActions
-    >
-      <KeyboardAwareScrollView
-        style={styles.flex}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingBottom: Math.max(24, insets.bottom + 24),
-          },
-        ]}
-        enableOnAndroid
-        keyboardOpeningTime={0}
-        extraScrollHeight={Platform.OS === "android" ? 120 : 20}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <ClientForm
-          client={client}
-          errors={errors}
-          touched={touched}
-          loading={loading}
-          onFieldChange={handleFieldChange}
-          onFieldBlur={onBlurField}
-          onOpenDatePicker={openDatePicker}
-        />
+	const handleCancel = () => {
+		resetForm();
+		navigation.goBack();
+	};
 
-        <View style={styles.actions}>
+	return (
+		<ScreenLayout
+		title={screenTitle}
+		backgroundColor={theme.colors.background}
+		hideHeaderActions
+		>
+		<KeyboardAwareScrollView
+			style={styles.flex}
+			contentContainerStyle={[
+			styles.scrollContent,
+			{
+				paddingBottom: Math.max(24, insets.bottom + 24),
+			},
+			]}
+			enableOnAndroid
+			keyboardOpeningTime={0}
+			extraScrollHeight={Platform.OS === "android" ? 120 : 20}
+			keyboardShouldPersistTaps="handled"
+			showsVerticalScrollIndicator={false}>
 
-          <Button
-            mode="contained"
-            onPress={() => void handleSave()}
-            disabled={!isFormValid || loading}
-            loading={loading}
-          >
-            {isEditMode
-              ? translateText("clients.buttons.saveChanges")
-              : translateText("clients.buttons.createClient")}
-          </Button>
+			<ClientForm
+				client={client}
+				errors={errors}
+				touched={touched}
+				loading={loading}
+				onFieldChange={handleFieldChange}
+				onFieldBlur={onBlurField}
+				onOpenDatePicker={openDatePicker}
+			/>
 
-          <Button
-            mode="contained"
-            onPress={handleCancel}
-            disabled={loading}
-          >
-            {translateText("common.cancel")}
-          </Button>
+			<View style={styles.actions}>
 
-          {isEditMode ? (
-            <Button
-              mode="outlined"
-              onPress={() => void handleDelete()}
-              disabled={loading}
-              textColor={theme.colors.error}
-            >
-              {translateText("clients.buttons.delete")}
-            </Button>
-          ) : null}
-        </View>
-      </KeyboardAwareScrollView>
-    </ScreenLayout>
-  );
-};
+			<Button
+				mode="contained"
+				onPress={() => void handleSave()}
+				disabled={!isFormValid || loading}
+				loading={loading}
+			>
+				{isEditMode
+				? translateText("clients.buttons.saveChanges")
+				: translateText("clients.buttons.createClient")}
+			</Button>
+
+			<Button
+				mode="contained"
+				onPress={handleCancel}
+				disabled={loading}
+			>
+				{translateText("common.cancel")}
+			</Button>
+
+			{isEditMode ? (
+				<Button
+					mode="outlined"
+					onPress={() => void handleDelete()}
+					disabled={loading}
+					textColor={theme.colors.error}
+					>
+					{translateText("clients.buttons.delete")}
+				</Button>
+			) : null}
+			</View>
+		</KeyboardAwareScrollView>
+		</ScreenLayout>
+	);
+	};
 
 const styles = StyleSheet.create({
-  actions: {
-    gap: 10,
-    marginTop: 18,
-  },
-  flex: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: 18,
-  },
+	actions: {
+		gap: 10,
+		marginTop: 18,
+	},
+	flex: {
+		flex: 1,
+	},
+	scrollContent: {
+		paddingTop: 18,
+	},
 });

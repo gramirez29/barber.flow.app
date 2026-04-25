@@ -9,28 +9,28 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { createNavigationTheme, createPaperTheme } from './src/theme/themes';
 
 function Main() {
-  const { theme } = useAppTheme();
-  const paperTheme = createPaperTheme(theme);
-  const navigationTheme = createNavigationTheme(theme);
+	const { theme } = useAppTheme();
+	const paperTheme = createPaperTheme(theme);
+	const navigationTheme = createNavigationTheme(theme);
 
-  return (
-    <PaperProvider theme={paperTheme}>
-      <NavigationContainer theme={navigationTheme}>
-        <NotificationProvider>
-        <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
-        <RootNavigator />
-        </NotificationProvider>
-      </NavigationContainer>
-    </PaperProvider>
-  );
+	return (
+		<PaperProvider theme={paperTheme}>
+			<NavigationContainer theme={navigationTheme}>
+				<NotificationProvider>
+					<StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
+					<RootNavigator />
+				</NotificationProvider>
+			</NavigationContainer>
+		</PaperProvider>
+	);
 }
 
 export default function App() {
-  return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <Main />
-      </LanguageProvider>
-    </ThemeProvider>
-  );
+	return (
+		<ThemeProvider>
+			<LanguageProvider>
+				<Main />
+			</LanguageProvider>
+		</ThemeProvider>
+	);
 }
