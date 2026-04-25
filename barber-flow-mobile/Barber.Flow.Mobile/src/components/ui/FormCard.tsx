@@ -1,8 +1,8 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useAppTheme } from "../../theme/ThemeContext";
 
-type FormCardProps = { children: React.ReactNode; style?: any };
+type FormCardProps = { children: React.ReactNode; style?: StyleProp<ViewStyle> };
 
 export const FormCard: React.FC<FormCardProps> = ({ children, style }) => {
 	const { theme } = useAppTheme();

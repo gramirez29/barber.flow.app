@@ -11,6 +11,7 @@ import { useNotification } from "../context/NotificationContext";
 import type { NotificationItem } from "../types/notifications";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import type { AppTabParamList } from "../navigation/AppNavigator";
+import { getErrorMessage } from "../utils/errors";
 
 export const NotificationScreen = () => {
     const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
@@ -75,10 +76,10 @@ export const NotificationScreen = () => {
     const handleRefresh = async () => {
         try {
             await refreshNotifications();
-        } catch (error: any) {
+        } catch (error: unknown) {
             Alert.alert(
                 translateText("notifications.alerts.refreshFailedTitle"),
-                error?.message ?? translateText("notifications.alerts.refreshFailed"),
+                getErrorMessage(error) || translateText("notifications.alerts.refreshFailed"),
             );
         }
     };

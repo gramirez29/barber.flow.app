@@ -5,6 +5,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
+import type { CompositeNavigationProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { CalendarStackParamList } from "../navigation/CalendarNavigator";
+import type { AppTabParamList } from "../navigation/AppNavigator";
 import { Text } from "react-native-paper";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { AppointmentForm } from "../components/calendar/AppointmentForm";
@@ -34,7 +38,7 @@ type AppointmentFormRoute = RouteProp<
 >;
 
 export const AppointmentFormScreen = () => {
-	const navigation = useNavigation<any>();
+	const navigation = useNavigation<CompositeNavigationProp<NativeStackNavigationProp<CalendarStackParamList>, BottomTabNavigationProp<AppTabParamList>>>();
 	const route = useRoute<AppointmentFormRoute>();
 	const insets = useSafeAreaInsets();
 	const { theme } = useAppTheme();
@@ -111,7 +115,7 @@ export const AppointmentFormScreen = () => {
 
 		if (afterSave === "goToCalendarDay") {
 		const parentTabNavigation = navigation.getParent?.() as
-			| BottomTabNavigationProp<any>
+			| BottomTabNavigationProp<AppTabParamList>
 			| undefined;
 
 		if (typeof navigation.popToTop === "function") {

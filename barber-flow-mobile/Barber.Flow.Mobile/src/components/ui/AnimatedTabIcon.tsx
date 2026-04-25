@@ -4,7 +4,13 @@ import Animated, {
     withSpring,
 } from "react-native-reanimated";
 
-export const AnimatedTabIcon = ({ name, focused, color }: any) => {
+interface AnimatedTabIconProps {
+    name: React.ComponentProps<typeof Ionicons>["name"];
+    focused: boolean;
+    color: string;
+}
+
+export const AnimatedTabIcon = ({ name, focused, color }: AnimatedTabIconProps) => {
     const animatedStyle = useAnimatedStyle(() => {
         return {
         transform: [

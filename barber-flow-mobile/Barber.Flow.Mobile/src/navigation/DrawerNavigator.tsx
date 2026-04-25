@@ -1,10 +1,15 @@
 import React from "react";
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import { AppNavigator } from "./AppNavigator";
+import { AppNavigator, type AppTabParamList } from "./AppNavigator";
 import { AppDrawerContent } from "../components/ui/AppDrawerContent";
 import { useTranslation } from "../context/LanguageContext";
+import type { NavigatorScreenParams } from "@react-navigation/native";
 
-const Drawer = createDrawerNavigator();
+export type DrawerParamList = {
+	HomeTabs: NavigatorScreenParams<AppTabParamList> | undefined;
+};
+
+const Drawer = createDrawerNavigator<DrawerParamList>();
 
 export const DrawerNavigator = () => {
 	const { translateText } = useTranslation();

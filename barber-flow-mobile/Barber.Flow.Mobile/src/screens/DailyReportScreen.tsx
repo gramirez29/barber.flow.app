@@ -1,3 +1,5 @@
+import type { DrawerNavigationProp } from "@react-navigation/drawer";
+import type { DrawerParamList } from "../navigation/DrawerNavigator";
 import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import {
@@ -40,7 +42,7 @@ const formatLongDate = (date: string, locale: string) =>
 	}).format(new Date(`${date}T12:00:00`));
 
 export const DailyReportScreen = () => {
-	const navigation = useNavigation<any>();
+	const navigation = useNavigation<DrawerNavigationProp<DrawerParamList>>();
 	const { theme } = useAppTheme();
 	const { language, translateText } = useTranslation();
 	const appointments = useAppointmentStore((state) => state.appointments);

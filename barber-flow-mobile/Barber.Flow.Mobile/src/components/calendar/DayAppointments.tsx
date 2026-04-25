@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Button } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { CalendarStackParamList } from "../../navigation/CalendarNavigator";
 import { useAppointmentStore } from "../../features/appointments/appointment.store";
 import { Appointment } from "../../features/appointments/appointments.types";
 import { useTranslation } from "../../context/LanguageContext";
@@ -10,7 +12,7 @@ interface DayAppointmentsProps {
 }
 
 export const DayAppointments = ({ date }: DayAppointmentsProps) => {
-	const navigation = useNavigation<any>();
+	const navigation = useNavigation<NativeStackNavigationProp<CalendarStackParamList>>();
 	const { appointments } = useAppointmentStore();
 	const { translateText } = useTranslation();
 

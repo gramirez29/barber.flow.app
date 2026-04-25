@@ -103,7 +103,7 @@ export const buildApplicationUserErrors = (
 
 export const useApplicationUsersForm = () => {
 	const [values, setValues] = useState<ApplicationUserSettingsForm>(
-    createEmptyApplicationUserForm(),
+		createEmptyApplicationUserForm(),
 	);
 	const [errors, setErrors] = useState<ApplicationUserFormErrors>({});
 	const [touched, setTouched] = useState<ApplicationUserFormTouched>({});
@@ -112,23 +112,23 @@ export const useApplicationUsersForm = () => {
 	const setField = <K extends keyof ApplicationUserSettingsForm>(
 		key: K,
 		value: ApplicationUserSettingsForm[K],
-	) => {
-		const normalizedValue =
-		key === "userPhone" || key === "barberPhone"
-			? (formatPhoneNumber(
-				String(value ?? ""),
-			) as ApplicationUserSettingsForm[K])
-			: value;
+		) => {
+			const normalizedValue =
+			key === "userPhone" || key === "barberPhone"
+				? (formatPhoneNumber(
+					String(value ?? ""),
+				) as ApplicationUserSettingsForm[K])
+				: value;
 
-		setValues((currentValues) => ({
-		...currentValues,
-		[key]: normalizedValue,
-		}));
+			setValues((currentValues) => ({
+			...currentValues,
+			[key]: normalizedValue,
+			}));
 
-		setErrors((currentErrors) => ({
-		...currentErrors,
-		[key]: validateApplicationUserField(key, normalizedValue),
-		}));
+			setErrors((currentErrors) => ({
+			...currentErrors,
+			[key]: validateApplicationUserField(key, normalizedValue),
+			}));
 	};
 
 	const onBlurField = (key: keyof ApplicationUserSettingsForm) => {

@@ -1,7 +1,9 @@
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StyleSheet, View } from "react-native";
 import { Header } from "./ui/Header";
-import { useNavigation } from "@react-navigation/native"; 
+import { useNavigation } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import type { AppTabParamList } from "../navigation/AppNavigator"; 
 interface ScreenLayoutProps {
     children: React.ReactNode;
     title?: string;
@@ -20,7 +22,7 @@ export const ScreenLayout = ({
     hideHeaderActions = false,
     }: ScreenLayoutProps) => {
 
-        const navigation = useNavigation<any>();
+        const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
 
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: backgroundColor }, center && styles.center ]}>

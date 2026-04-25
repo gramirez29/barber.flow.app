@@ -18,6 +18,7 @@ import { useAuthStore } from "../store/auth.store";
 import { useLanguage, useTranslation } from "../context/LanguageContext";
 import { useAppTheme } from "../theme/ThemeContext";
 import { FormCard } from "../components/ui/FormCard";
+import { getErrorMessage } from "../utils/errors";
 import {
 	DEFAULT_REPORT_CALCULATION_SETTINGS,
 	type BarberApiResponse,
@@ -48,7 +49,7 @@ export const SettingsScreen = () => {
 		setField,
 		touched,
 		validateBeforeSubmit,
-    values,
+		values,
 	} = useApplicationUsersForm();
 
 	const [applicationUserLoading, setApplicationUserLoading] = useState(false);
@@ -156,10 +157,10 @@ export const SettingsScreen = () => {
 
 			setApplicationUserResults([]);
 			setSearchQuery("");
-		} catch (error: any) {
+		} catch (error: unknown) {
 			Alert.alert(
 				translateText("common.delete"),
-				error?.message ?? translateText("settings.alerts.saveFailed"),
+				getErrorMessage(error) || translateText("settings.alerts.saveFailed"),
 			);
 		} finally {
 			setApplicationUserLoading(false);
@@ -197,10 +198,10 @@ export const SettingsScreen = () => {
 					);
 				}
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			Alert.alert(
 				translateText("common.search"),
-				error?.message ?? translateText("settings.alerts.searchFailed"),
+				getErrorMessage(error) || translateText("settings.alerts.searchFailed"),
 			);
 		} finally {
 			setApplicationUserLoading(false);
@@ -234,10 +235,10 @@ export const SettingsScreen = () => {
 						resetValues();
 						setApplicationUserResults([]);
 						setSearchQuery("");
-					} catch (error: any) {
+					} catch (error: unknown) {
 						Alert.alert(
 							translateText("common.delete"),
-							error?.message ?? translateText("settings.alerts.deleteFailed"),
+							getErrorMessage(error) || translateText("settings.alerts.deleteFailed"),
 						);
 					} finally {
 						setApplicationUserLoading(false);

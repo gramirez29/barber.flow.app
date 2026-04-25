@@ -5,15 +5,18 @@ import {
 	Pressable,
 	StyleSheet,
 	TextInputProps,
+	type StyleProp,
+	type ViewStyle,
+	type TextStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "../../theme/ThemeContext";
 
 type Props = TextInputProps & {
-	containerStyle?: any;
+	containerStyle?: StyleProp<ViewStyle>;
 	error?: boolean;
-	inputRef?: React.RefObject<TextInput>;
-	inputStyle?: any;
+	inputRef?: React.RefObject<TextInput | null>;
+	inputStyle?: StyleProp<TextStyle>;
 	onFocusVisible?: () => void;
 };
 

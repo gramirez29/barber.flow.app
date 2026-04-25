@@ -14,6 +14,8 @@ import {
 	Dimensions,
 	Keyboard as RNKeyboard,
 	View,
+	type KeyboardEventName,
+	type KeyboardEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../components/ScreenLayout';
@@ -23,6 +25,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useWindowDimensions } from 'react-native';
 import { PasswordInput } from '../components/ui/PasswordInput';
 import { FormCard } from '../components/ui/FormCard';
+import { getErrorMessage } from '../utils/errors';
 import { useAppTheme } from '../theme/ThemeContext';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -48,10 +51,10 @@ export const LoginScreen: React.FC<Props> = () => {
 	const [scrollY, setScrollY] = useState(0);
 
 	useEffect(() => {
-		const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-		const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-		const showSub = RNKeyboard.addListener(showEvent as any, (e: any) => setKeyboardHeight(e.endCoordinates?.height ?? 0));
-		const hideSub = RNKeyboard.addListener(hideEvent as any, () => setKeyboardHeight(0));
+		const showEvent: KeyboardEventName = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+		const hideEvent: KeyboardEventName = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+		const showSub = RNKeyboard.addListener(showEvent, (e: KeyboardEvent) => setKeyboardHeight(e.endCoordinates?.height ?? 0));
+		const hideSub = RNKeyboard.addListener(hideEvent, () => setKeyboardHeight(0));
 		return () => { showSub.remove(); hideSub.remove(); };
 	}, []);
 
@@ -66,15 +69,19 @@ export const LoginScreen: React.FC<Props> = () => {
 			const user = await authService.login(userName.trim(), password);
 			setUser(user);
 			//  navigation.replace('Main');
-		} catch (err: any) {
-			setError(err?.message ?? 'Login failed');
+		} catch (err: unknown) {
+			setError(getErrorMessage(err));
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	const ensureVisible = (ref: React.RefObject<RNTextInput | null>) => {
-		const r = ref.current as any;
+		type MeasurableRef = {
+			measureInWindow?: (cb: (x: number, y: number, w: number, h: number) => void) => void;
+			measure?: (cb: (x: number, y: number, w: number, h: number) => void) => void;
+		};
+		const r = ref.current as (MeasurableRef & RNTextInput) | null;
 		if (!r || !scrollRef.current) {
 			return;
 		}
@@ -86,7 +93,7 @@ export const LoginScreen: React.FC<Props> = () => {
 			return;
 		}
 
-		(measureFn as any).call(r, (x: number, y: number, w: number, h: number) => {
+		measureFn.call(r, (x: number, y: number, w: number, h: number) => {
 			const windowHeight = Dimensions.get('window').height;
 			const kbTop = windowHeight - keyboardHeight;
 			const elementBottom = y + h;
@@ -176,7 +183,7 @@ export const LoginScreen: React.FC<Props> = () => {
 										{translateText('login.username')}
 									</Text>
 									<RNTextInput
-										ref={emailRef as any}
+										ref={emailRef}
 										placeholder={translateText('login.enterUsername')}
 										placeholderTextColor={theme.colors.textSecondary}
 										value={userName}
@@ -202,7 +209,7 @@ export const LoginScreen: React.FC<Props> = () => {
 										{translateText('login.password')}
 									</Text>
 									<PasswordInput
-										inputRef={passwordRef as any}
+										inputRef={passwordRef}
 										placeholder={translateText('login.enterPassword')}
 										placeholderTextColor={theme.colors.textSecondary}
 										value={password}

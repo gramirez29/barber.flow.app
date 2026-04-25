@@ -7,7 +7,7 @@ import {
 	Image,
 	Alert,
 } from "react-native";
-import { DrawerContentScrollView } from "@react-navigation/drawer";
+import { DrawerContentScrollView, type DrawerContentComponentProps } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/auth.store";
 import { authService } from "../../services/authService";
@@ -25,7 +25,7 @@ const getInitials = (value: string) =>
 		.map((part) => part[0]?.toUpperCase() ?? "")
 		.join("") || "BF";
 
-export const AppDrawerContent = (props: any) => {
+export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 	const clearUser = useAuthStore((s) => s.clearUser);
 	const user = useAuthStore((s) => s.user);
 	const { theme } = useAppTheme();

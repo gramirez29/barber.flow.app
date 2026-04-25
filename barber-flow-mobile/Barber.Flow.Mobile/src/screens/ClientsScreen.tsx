@@ -12,8 +12,7 @@ import { ClientsListEmptyState } from "../components/clients/ClientsListEmptySta
 import { FormCard } from "../components/ui/FormCard";
 import { useTranslation } from "../context/LanguageContext";
 import type { AppointmentDraft, AppointmentPaymentMethod } from "../features/appointments/appointments.types";
-import { clientsService } from "../services/clientService";
-import { ScreenLayout } from "../components/ScreenLayout";
+import { clientsService } from "../services/clientService";import { getErrorMessage } from '../utils/errors';import { ScreenLayout } from "../components/ScreenLayout";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { Client } from "../types/clients";
 import type { AppTabParamList } from "../navigation/AppNavigator";
@@ -89,11 +88,11 @@ export const ClientsScreen: React.FC = () => {
                     if (isActive) {
                         setClients(nextClients ?? []);
                     }
-                } catch (error: any) {
+                } catch (error: unknown) {
                     if (isActive) {
                         Alert.alert(
                             translateText("common.search"),
-                            error?.message ?? translateText("clients.alerts.listLoadFailed"),
+                            getErrorMessage(error) || translateText("clients.alerts.listLoadFailed"),
                         );
                     }
                 } finally {

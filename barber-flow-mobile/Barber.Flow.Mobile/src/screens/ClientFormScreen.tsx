@@ -12,8 +12,7 @@ import { useTranslation } from "../context/LanguageContext";
 import { useClientForm } from "../features/clients/clientForm";
 import type { ClientsStackParamList } from "../navigation/ClientsNavigator";
 import { clientsService } from "../services/clientService";
-import { ScreenLayout } from "../components/ScreenLayout";
-import { useAppTheme } from "../theme/ThemeContext";
+import { ScreenLayout } from "../components/ScreenLayout";import { getErrorMessage } from '../utils/errors';import { useAppTheme } from "../theme/ThemeContext";
 import type { Client } from "../types/clients";
 import { formatPhoneNumber } from "../utils/formatUtil";
 
@@ -117,10 +116,10 @@ export const ClientFormScreen = () => {
 				}
 
 			navigation.goBack();
-			} catch (error: any) {
+			} catch (error: unknown) {
 				Alert.alert(
 					translateText("common.save"),
-					error?.message ?? translateText("clients.alerts.saveFailed"),
+					getErrorMessage(error) || translateText("clients.alerts.saveFailed"),
 				);
 			} finally {
 				setLoading(false);
@@ -145,8 +144,8 @@ export const ClientFormScreen = () => {
 						await clientsService.delete(client.id as string);
 						Alert.alert(translateText("common.delete"), translateText("clients.alerts.clientRemoved"));
 						navigation.goBack();
-					} catch (error: any) {
-						Alert.alert(translateText("common.delete"), error?.message ?? translateText("clients.alerts.removeFailed"));
+					} catch (error: unknown) {
+						Alert.alert(translateText("common.delete"), getErrorMessage(error) || translateText("clients.alerts.removeFailed"));
 					} finally {
 							setLoading(false);
 					}

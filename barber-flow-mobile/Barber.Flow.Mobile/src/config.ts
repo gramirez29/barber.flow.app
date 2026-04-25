@@ -2,7 +2,7 @@
     // - Prefer process.env.BARBERFLOW_API_URL (works with dotenv/babel plugins or CI env vars)
     // - Then Expo Constants.extra (for eas/app.json configuration)
     // - Fallback to the development URL. Replace placeholders as needed.
-    let expoExtra: any = undefined;
+    let expoExtra: { APP_ENV?: string; BASE_URL?: string; ADMIN_USERNAME?: string } | undefined = undefined;
     try {
          
         const Constants = require("expo-constants");

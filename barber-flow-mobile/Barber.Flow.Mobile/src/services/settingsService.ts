@@ -25,16 +25,16 @@ const mapBarberRequest = (
 	Address: values.address?.trim() || undefined,
 });
 
-const mapBarberResponse = (response: any): BarberApiResponse => ({
-	id: response?.id ?? response?.Id,
-	userName: response?.userName ?? response?.UserName ?? "",
-	userPhone: response?.userPhone ?? response?.UserPhone ?? "",
-	userEmail: response?.userEmail ?? response?.UserEmail ?? "",
-	barberName: response?.barberName ?? response?.BarberName ?? "",
-	barberPhone: response?.barberPhone ?? response?.BarberPhone ?? "",
-	address: response?.address ?? response?.Address ?? undefined,
-	createdAt: response?.createdAt ?? response?.CreatedAt,
-	updatedAt: response?.updatedAt ?? response?.UpdatedAt,
+const mapBarberResponse = (response: Record<string, unknown>): BarberApiResponse => ({
+	id: ((response.id ?? response.Id) as string | undefined) ?? "",
+	userName: ((response.userName ?? response.UserName) as string | undefined) ?? "",
+	userPhone: ((response.userPhone ?? response.UserPhone) as string | undefined) ?? "",
+	userEmail: ((response.userEmail ?? response.UserEmail) as string | undefined) ?? "",
+	barberName: ((response.barberName ?? response.BarberName) as string | undefined) ?? "",
+	barberPhone: ((response.barberPhone ?? response.BarberPhone) as string | undefined) ?? "",
+	address: (response.address ?? response.Address) as string | undefined,
+	createdAt: (response.createdAt ?? response.CreatedAt) as string | undefined,
+	updatedAt: (response.updatedAt ?? response.UpdatedAt) as string | undefined,
 });
 
 const normalizePreferences = (

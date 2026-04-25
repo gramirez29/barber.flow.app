@@ -70,7 +70,7 @@ const tryRefreshStoredSession = async () => {
     return refreshedUser;
 };
 
-export type ApiFetchOptions = Omit<RequestInit, "body" | "headers"> & { json?: any; headers?: Record<string, string> };
+export type ApiFetchOptions = Omit<RequestInit, "body" | "headers"> & { json?: unknown; headers?: Record<string, string> };
 
 export async function apiFetch(path: string, opts: ApiFetchOptions = {}) {
     const storedUser = await getStoredUser();
