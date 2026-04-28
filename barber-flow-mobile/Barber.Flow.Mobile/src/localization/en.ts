@@ -85,6 +85,7 @@
 		dailyReportCalculations: "Daily Report Calculations",
 		followSystem: "Follow system",
 		manageApplicationUsers: "Manage Application Users",
+		addApplicationUser: "Add Application User",
 		preferences: "Preferences",
 		quickToggle: "Quick toggle",
 		title: "Settings",

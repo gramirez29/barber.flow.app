@@ -4,7 +4,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { Button, SegmentedButtons, Text } from "react-native-paper";
 import { ReportCalculationSettingsForm } from "../components/settings/ReportCalculationSettingsForm";
 import { ScreenLayout } from "../components/ScreenLayout";
-import { ManageApplicationUsersForm } from "../components/settings/ManageApplicationUsersForm";
+import { ApplicationUsersModal } from "../components/settings/ApplicationUsersModal";
 import { SettingItem } from "../components/settings/SettingItem";
 import { SettingSection } from "../components/settings/SettingSection";
 import { useNotification } from "../context/NotificationContext";
@@ -54,6 +54,7 @@ export const SettingsScreen = () => {
 
 	const [applicationUserLoading, setApplicationUserLoading] = useState(false);
 	const [applicationUserResults, setApplicationUserResults] = useState<BarberApiResponse[]>([]);
+	const [isManageUsersModalVisible, setIsManageUsersModalVisible] = useState(false);
 	const [reportSettingsLoading, setReportSettingsLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState("");
 	const {
@@ -458,24 +459,13 @@ export const SettingsScreen = () => {
 			{isAdmin ? (
 				<SettingSection
 					title={translateText("settings.manageApplicationUsers")}>
-					<ManageApplicationUsersForm
-						errors={errors}
-						isFormValid={isFormValid}
-						loading={applicationUserLoading}
-						mode={mode}
-						onBlurField={onBlurField}
-						onDelete={handleApplicationUserDelete}
-						onFieldChange={setField}
-						onReset={() => void handleResetApplicationUser()}
-						onSearch={() => void handleApplicationUserSearch()}
-						onSearchQueryChange={setSearchQuery}
-						onSelectResult={handleSelectApplicationUserResult}
-						onSubmit={() => void handleApplicationUserSubmit()}
-						searchQuery={searchQuery}
-						searchResults={applicationUserResults}
-						touched={touched}
-						values={values}
-					/>
+					<Button
+						mode="contained"
+						onPress={() => setIsManageUsersModalVisible(true)}
+						style={styles.addUserButton}
+					>
+						{translateText("settings.addApplicationUser")}
+					</Button>
 				</SettingSection>
 			) : null}
 
@@ -543,6 +533,31 @@ export const SettingsScreen = () => {
 				</View>
 			</FormCard>
 			</KeyboardAwareScrollView>
+			{isAdmin ? (
+				<ApplicationUsersModal
+					visible={isManageUsersModalVisible}
+					onClose={() => {
+						void handleResetApplicationUser();
+						setIsManageUsersModalVisible(false);
+					}}
+					errors={errors}
+					isFormValid={isFormValid}
+					loading={applicationUserLoading}
+					mode={mode}
+					onBlurField={onBlurField}
+					onDelete={handleApplicationUserDelete}
+					onFieldChange={setField}
+					onReset={() => void handleResetApplicationUser()}
+					onSearch={() => void handleApplicationUserSearch()}
+					onSearchQueryChange={setSearchQuery}
+					onSelectResult={handleSelectApplicationUserResult}
+					onSubmit={() => void handleApplicationUserSubmit()}
+					searchQuery={searchQuery}
+					searchResults={applicationUserResults}
+					touched={touched}
+					values={values}
+				/>
+			) : null}
 		</ScreenLayout>
 	);
 };
@@ -599,6 +614,9 @@ const styles = StyleSheet.create({
 	},
 	aboutCard: {
 		marginTop: 8,
+	},
+	addUserButton: {
+		alignSelf: "flex-start",
 	},
 	aboutEyebrow: {
 		fontSize: 12,

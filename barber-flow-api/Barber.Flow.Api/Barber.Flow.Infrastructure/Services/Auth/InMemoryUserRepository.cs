@@ -19,7 +19,7 @@ public class InMemoryUserRepository() : IUserRepository
     public InMemoryUserRepository(IConfiguration config) : this()
     {
         // In real applications, passwords should be hashed and salted
-        var user1 = new User { Id = Guid.NewGuid(), Name = "Admin User", UserName = "admin", Password = "admin", Email = "admin@example.com", Role = "Admin" };
+        var user1 = new User { Id = Guid.NewGuid(), Name = "Admin User", UserName = "admin", Password = "password", Email = "admin@example.com", Role = "Admin" };
         var user2 = new User { Id = Guid.NewGuid(), Name = "Barber User", UserName = "barber", Password = "barber", Email = "barber@example.com", Role = "Barber" };
 
         _store[user1.Name] = user1;
@@ -41,10 +41,14 @@ public class InMemoryUserRepository() : IUserRepository
     public Task<User?> GetAuthenticationUserAsync(string userName, string password, CancellationToken cancellation = default)
     {
         var users = _store.Values.AsEnumerable();
-        if (!string.IsNullOrWhiteSpace(userName))
+        if (!string.IsNullOrWhiteSpace(userName) && !string.IsNullOrWhiteSpace(password))
         {
             userName = userName.Trim().ToLowerInvariant();
-            users = users.Where(user => user.UserName.ToLowerInvariant() == userName);
+            password = password.Trim().ToLowerInvariant();
+
+            users = users
+                .Where(user => user.UserName.ToLowerInvariant() == userName
+                && user.Password.Equals(password, StringComparison.InvariantCultureIgnoreCase));
         }
 
         var user = users.FirstOrDefault();
