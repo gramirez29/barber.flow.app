@@ -87,6 +87,7 @@
 		heroSubtitle:
 		"Configura las preferencias de la aplicación, administra usuarios de aplicación solo para administradores y mantén la experiencia alineada con tu flujo de trabajo.",
 		manageApplicationUsers: "Administrar usuarios de la aplicación",
+		addApplicationUser: "Agregar Usuario de Aplicación",
 		preferences: "Preferencias",
 		quickToggle: "Cambio rápido",
 		settingsAndPreferences: "Ajustes y preferencias",

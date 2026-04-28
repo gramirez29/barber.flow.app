@@ -22,6 +22,6 @@ public static class UsersApi
     private static async Task<IResult> GetAuthenticationUserAsync(AuthRequest req, IUserService userService)
     {
         var user = await userService.GetAuthenticationUserAsync(req.UserName, req.Password);
-        return user == null ? TypedResults.NotFound() : TypedResults.Ok(user);
+        return user == null ? TypedResults.BadRequest(new { message = "Invalid credentials" }) : TypedResults.Ok(user);
     }
 }

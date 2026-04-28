@@ -1,7 +1,9 @@
 using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Barbers;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
 
 namespace Barber.Flow.Api.Apis;
@@ -16,11 +18,13 @@ public static class BarbersApi
 
         api.MapPost("/create", CreateBarberAsync)
             .WithName(nameof(CreateBarberAsync))
-            .WithTags(BarberTag);
+            .WithTags(BarberTag)
+            .RequireAuthorization();
 
         api.MapPut("/update/{id}", UpdateBarberAsync)
             .WithName(nameof(UpdateBarberAsync))
-            .WithTags(BarberTag);
+            .WithTags(BarberTag)
+            .RequireAuthorization();
 
         api.MapGet("/search", FindBarbersAsync)
             .WithName(nameof(FindBarbersAsync))
@@ -34,11 +38,13 @@ public static class BarbersApi
 
         api.MapGet("/nextId", NextIdAsync)
             .WithName(nameof(NextIdAsync))
-            .WithTags(BarberTag);
+            .WithTags(BarberTag)
+            .RequireAuthorization();
 
         api.MapDelete("/delete/{id}", DeleteBarberAsync)
             .WithName(nameof(DeleteBarberAsync))
-            .WithTags(BarberTag);
+            .WithTags(BarberTag)
+            .RequireAuthorization();
 
         return api;
     }
@@ -46,10 +52,20 @@ public static class BarbersApi
     private static async Task<IResult> CreateBarberAsync(
         BarberRequest request,
         IBarberService barberService,
+        IValidator<BarberRequest> validator,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? httpContext.User.Identity?.Name;
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            return TypedResults.ValidationProblem(validationResult.ToDictionary());
+        }
+
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? httpContext.User.FindFirst("username")?.Value
+            ?? httpContext.User.Identity?.Name;
         var config = httpContext.RequestServices.GetRequiredService<IConfiguration>();
         var adminUser = config["BARBERFLOW_ADMIN_USERNAME"] ?? config["AdminUsername"] ?? "admin";
         if (!string.Equals(userId, adminUser, StringComparison.OrdinalIgnoreCase))
@@ -78,10 +94,20 @@ public static class BarbersApi
         string id,
         BarberRequest request,
         IBarberService barberService,
+        IValidator<BarberRequest> validator,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? httpContext.User.Identity?.Name;
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            return TypedResults.ValidationProblem(validationResult.ToDictionary());
+        }
+
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? httpContext.User.FindFirst("username")?.Value
+            ?? httpContext.User.Identity?.Name;
         var config = httpContext.RequestServices.GetRequiredService<IConfiguration>();
         var adminUser = config["BARBERFLOW_ADMIN_USERNAME"] ?? config["AdminUsername"] ?? "admin";
         if (!string.Equals(userId, adminUser, StringComparison.OrdinalIgnoreCase))
@@ -119,7 +145,10 @@ public static class BarbersApi
 
     private static async Task<IResult> DeleteBarberAsync(string id, IBarberService barberService, HttpContext httpContext, CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? httpContext.User.Identity?.Name;
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? httpContext.User.FindFirst("username")?.Value
+            ?? httpContext.User.Identity?.Name;
         var config = httpContext.RequestServices.GetRequiredService<IConfiguration>();
         var adminUser = config["BARBERFLOW_ADMIN_USERNAME"] ?? config["AdminUsername"] ?? "admin";
         if (!string.Equals(userId, adminUser, StringComparison.OrdinalIgnoreCase))

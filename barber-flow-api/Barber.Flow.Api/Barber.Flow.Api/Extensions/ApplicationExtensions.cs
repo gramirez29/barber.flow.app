@@ -12,6 +12,8 @@ using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Infrastructure.Services.InMemory;
 using Barber.Flow.Application.Services.Users;
 using Barber.Flow.Application.Services.Reports;
+using Barber.Flow.Api.DTOs.Requests;
+using FluentValidation;
 
 namespace Barber.Flow.Api.Extensions;
 
@@ -47,6 +49,8 @@ public static class ApplicationExtensions
 
         services.AddScoped<IReportService, ReportService>();
         services.AddSingleton<IReportRepository, InMemoryReportRepository>();
+
+        services.AddScoped<IValidator<BarberRequest>, BarberRequestValidator>();
 
         // services.AddSwaggerDocumentation(configuration);
 
