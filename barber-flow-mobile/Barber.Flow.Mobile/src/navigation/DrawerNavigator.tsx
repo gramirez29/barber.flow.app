@@ -16,7 +16,16 @@ export const DrawerNavigator = () => {
 
 	return (
     <Drawer.Navigator
-		screenOptions={{ headerShown: false }}
+		screenOptions={{
+			headerShown: false,
+			drawerStyle: {
+				backgroundColor: "#1C1C1C",
+				borderRightColor: "transparent",
+				borderRightWidth: 0,
+			},
+			drawerActiveBackgroundColor: "#2B2B2B",
+			drawerInactiveBackgroundColor: "transparent",
+		}}
 		drawerContent={(props) => <AppDrawerContent {...props} />}
 >
 	<Drawer.Screen

@@ -31,7 +31,11 @@ export interface ApplicationUserSettingsForm {
 	userEmail: string;
 	barberName: string;
 	barberPhone: string;
+	shopName?: string;
+	shopPhone?: string;
 	address?: string;
+	password?: string;
+	profilePhotoUrl?: string;
 }
 
 export interface BarberApiRequest {
@@ -40,7 +44,11 @@ export interface BarberApiRequest {
 	UserEmail: string;
 	BarberName: string;
 	BarberPhone: string;
+	BarberShopName?: string;
+	BarberShopPhone?: string;
 	Address?: string;
+	Password?: string;
+	PhotoUrl?: string;
 }
 
 export interface BarberApiResponse {
@@ -50,7 +58,10 @@ export interface BarberApiResponse {
 	userEmail: string;
 	barberName: string;
 	barberPhone: string;
+	shopName?: string;
+	shopPhone?: string;
 	address?: string;
+	photoUrl?: string;
 	createdAt?: string;
 	updatedAt?: string;
 }

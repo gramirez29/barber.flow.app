@@ -1,62 +1,70 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-	TextInput as RNTextInput,
-	Text,
 	StyleSheet,
-	ActivityIndicator,
-	Image,
+	Text,
+	View,
+	ImageBackground,
 	KeyboardAvoidingView,
 	Platform,
 	ScrollView,
 	TouchableWithoutFeedback,
 	Keyboard,
 	Pressable,
-	Dimensions,
-	Keyboard as RNKeyboard,
-	View,
-	type KeyboardEventName,
-	type KeyboardEvent,
+	ActivityIndicator,
+	useWindowDimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ScreenLayout } from '../components/ScreenLayout';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { TextInput as PaperTextInput } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/auth.store';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useWindowDimensions } from 'react-native';
-import { PasswordInput } from '../components/ui/PasswordInput';
-import { FormCard } from '../components/ui/FormCard';
 import { getErrorMessage } from '../utils/errors';
-import { useAppTheme } from '../theme/ThemeContext';
 import { useTranslation } from '../context/LanguageContext';
+
+// ─── Design tokens (local, scoped to LoginScreen) ───────────────────────────
+const COLORS = {
+	bg: '#0D0D0D',
+	surface: '#1A1A1A',
+	surfaceElevated: '#252525',
+	gold: '#C9A84C',
+	goldLight: '#E5C878',
+	textPrimary: '#FFFFFF',
+	textSecondary: '#9B9B9B',
+	border: '#3A3A3A',
+	overlay: 'rgba(0,0,0,0.58)',
+	error: '#F87171',
+	errorBg: 'rgba(248,113,113,0.10)',
+} as const;
+
+const PAPER_THEME = {
+	colors: {
+		primary: COLORS.gold,
+		onSurfaceVariant: COLORS.textSecondary,
+		background: COLORS.surfaceElevated,
+		outline: COLORS.border,
+		surface: COLORS.surfaceElevated,
+		onSurface: COLORS.textPrimary,
+		error: COLORS.error,
+	},
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 type Props = NativeStackScreenProps<any, any>;
 
 export const LoginScreen: React.FC<Props> = () => {
-	const { theme } = useAppTheme();
 	const { translateText } = useTranslation();
+	const { height: screenHeight } = useWindowDimensions();
+
 	const [userName, setUserName] = useState('');
 	const [password, setPassword] = useState('');
+	const [passwordVisible, setPasswordVisible] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 
 	const setUser = useAuthStore((s) => s.setUser);
-	const scrollRef = React.useRef<React.ElementRef<typeof ScrollView> | null>(null);
-	const insets = useSafeAreaInsets();
-	const { width } = useWindowDimensions();
-
-	const emailRef = useRef<RNTextInput | null>(null);
-	const passwordRef = useRef<RNTextInput | null>(null);
-
-	const [keyboardHeight, setKeyboardHeight] = useState(0);
-	const [scrollY, setScrollY] = useState(0);
-
-	useEffect(() => {
-		const showEvent: KeyboardEventName = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-		const hideEvent: KeyboardEventName = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-		const showSub = RNKeyboard.addListener(showEvent, (e: KeyboardEvent) => setKeyboardHeight(e.endCoordinates?.height ?? 0));
-		const hideSub = RNKeyboard.addListener(hideEvent, () => setKeyboardHeight(0));
-		return () => { showSub.remove(); hideSub.remove(); };
-	}, []);
 
 	const submit = async () => {
 		setError(null);
@@ -68,7 +76,6 @@ export const LoginScreen: React.FC<Props> = () => {
 		try {
 			const user = await authService.login(userName.trim(), password);
 			setUser(user);
-			//  navigation.replace('Main');
 		} catch (err: unknown) {
 			setError(getErrorMessage(err));
 		} finally {
@@ -76,298 +83,344 @@ export const LoginScreen: React.FC<Props> = () => {
 		}
 	};
 
-	const ensureVisible = (ref: React.RefObject<RNTextInput | null>) => {
-		type MeasurableRef = {
-			measureInWindow?: (cb: (x: number, y: number, w: number, h: number) => void) => void;
-			measure?: (cb: (x: number, y: number, w: number, h: number) => void) => void;
-		};
-		const r = ref.current as (MeasurableRef & RNTextInput) | null;
-		if (!r || !scrollRef.current) {
-			return;
-		}
-		
-		const measureFn = r.measureInWindow ?? r.measure;
-
-		if (typeof measureFn !== 'function') { 
-			scrollRef.current?.scrollTo({ y: scrollY + 160, animated: true });   
-			return;
-		}
-
-		measureFn.call(r, (x: number, y: number, w: number, h: number) => {
-			const windowHeight = Dimensions.get('window').height;
-			const kbTop = windowHeight - keyboardHeight;
-			const elementBottom = y + h;
-			if (keyboardHeight > 0 && elementBottom > kbTop - 12) {
-				const delta = elementBottom - (kbTop - 12);
-				scrollRef.current?.scrollTo({ y: Math.max(0, scrollY + delta + 16), animated: true });
-			} else if (Platform.OS === 'android' && keyboardHeight === 0) {
-				scrollRef.current?.scrollTo({ y: Math.max(0, scrollY + 160), animated: true });
-			}
-		});
-	};
-
-	const HEADER_HEIGHT = theme.layout.sizes.headerHeight ?? 64;
-	const keyboardVerticalOffset = insets.top + HEADER_HEIGHT + 8;
-	const contentWidth = Math.min((theme.layout.sizes.maxContentWidth ?? 520) + 24, width - 24);
-
 	return (
-		<ScreenLayout backgroundColor={theme.colors.background} hideHeaderActions>
-			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={keyboardVerticalOffset} style={styles.container}>
+		<SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+			<StatusBar style="light" />
+			<KeyboardAvoidingView
+				style={styles.flex}
+				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+			>
 				<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-					<ScrollView ref={scrollRef} contentContainerStyle={[styles.scrollContainer, { paddingBottom: Math.max(24, keyboardHeight + 24) }]} keyboardShouldPersistTaps="handled" onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)} scrollEventThrottle={16}>
-						<View style={[styles.contentWrap, { maxWidth: contentWidth }]}> 
-							<View
-								style={[
-									styles.heroPanel,
-									{
-										backgroundColor: theme.colors.surface,
-										borderColor: theme.colors.border,
-									},
-									theme.layout.shadows.card,
-								]}
-							>
-								<View style={styles.heroTopRow}>
-									<View style={[styles.brandBadge, { backgroundColor: theme.mode === 'dark' ? 'rgba(96, 165, 250, 0.18)' : 'rgba(59, 130, 246, 0.12)' }]}>
-										<Text style={[styles.brandBadgeText, { color: theme.colors.secondary }]}>
-											Barber Flow
-										</Text>
+					<ScrollView
+						contentContainerStyle={styles.scroll}
+						keyboardShouldPersistTaps="handled"
+						showsVerticalScrollIndicator={false}
+					>
+						{/* ── Hero image (top half) ── */}
+						<ImageBackground
+							source={require('../../assets/images/barber-flow-background-image.jpg')}
+							style={[styles.hero, { height: screenHeight * 0.46 }]}
+							resizeMode="cover"
+						>
+							<View style={styles.overlay}>
+								{/* Brand row */}
+								<View style={styles.brandRow}>
+									<View style={styles.brandIconCircle}>
+										<Ionicons name="cut" size={18} color={COLORS.bg} />
 									</View>
-									<View style={[styles.statusPill, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}> 
-										<Text style={[styles.statusPillText, { color: theme.colors.textSecondary }]}>
-											{translateText('login.secureAccess')}
-										</Text>
-									</View>
+									<Text style={styles.brandName}>BARBER FLOW</Text>
 								</View>
 
-								<Image source={require('../../assets/images/login-temporal.jpg')} style={[styles.image, { height: theme.layout.sizes.imageBannerHeight }]} resizeMode="contain" />
-
-								<Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>
+								{/* Hero text */}
+								<Text style={styles.heroTitle}>
 									{translateText('login.heroTitle')}
 								</Text>
-								<Text style={[styles.heroBody, { color: theme.colors.textSecondary }]}>
+								<Text style={styles.heroBody}>
 									{translateText('login.heroBody')}
 								</Text>
 
-								<View style={styles.featureRow}>
-									<View style={[styles.featureChip, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-										<Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>
-											{translateText('login.appointments')}
-										</Text>
-									</View>
-									<View style={[styles.featureChip, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-										<Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>
-											{translateText('login.clients')}
-										</Text>
-									</View>
-									<View style={[styles.featureChip, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-										<Text style={[styles.featureChipText, { color: theme.colors.textSecondary }]}>
-											{translateText('login.notifications')}
-										</Text>
-									</View>
+								{/* Feature pills */}
+								<View style={styles.pillRow}>
+									{(['login.appointments', 'login.clients', 'login.notifications'] as const).map((key) => (
+										<View key={key} style={styles.pill}>
+											<Text style={styles.pillText}>{translateText(key)}</Text>
+										</View>
+									))}
 								</View>
 							</View>
+						</ImageBackground>
 
-							<FormCard style={styles.authCard}>
-								<Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>
-									{translateText('login.welcomeBack')}
-								</Text>
-								<Text style={[styles.title, { color: theme.colors.textPrimary }]}>
-									{translateText('login.signInToContinue')}
-								</Text>
-								<Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-									{translateText('login.subtitle')}
-								</Text>
+						{/* ── Form card (overlaps hero by 28 px) ── */}
+						<View style={styles.card}>
+							{/* Drag handle */}
+							<View style={styles.handle} />
 
-								<View style={styles.formGroup}>
-									<Text style={[styles.label, { color: theme.colors.textSecondary }]}>
-										{translateText('login.username')}
-									</Text>
-									<RNTextInput
-										ref={emailRef}
-										placeholder={translateText('login.enterUsername')}
-										placeholderTextColor={theme.colors.textSecondary}
-										value={userName}
-										onChangeText={setUserName}
-										style={[
-											styles.input,
-											{
-												backgroundColor: theme.colors.primaryInput,
-												borderColor: error ? theme.colors.error : theme.colors.border,
-												color: theme.colors.textPrimary,
-											},
-										]}
-										autoCapitalize="none"
-										returnKeyType="next"
-										selectionColor={theme.colors.secondary}
-										onFocus={() => ensureVisible(emailRef)}
-										onSubmitEditing={() => passwordRef.current?.focus()}
-									/>
+							<Text style={styles.eyebrow}>{translateText('login.secureAccess')}</Text>
+							<Text style={styles.cardTitle}>{translateText('login.welcomeBack')}</Text>
+							<Text style={styles.cardSubtitle}>{translateText('login.signInToContinue')}</Text>
+
+							<View style={styles.inputs}>
+								{/* Username */}
+								<PaperTextInput
+									mode="outlined"
+									label={translateText('login.username')}
+									placeholder={translateText('login.enterUsername')}
+									value={userName}
+									onChangeText={setUserName}
+									autoCapitalize="none"
+									autoCorrect={false}
+									returnKeyType="next"
+									theme={PAPER_THEME}
+									outlineStyle={styles.inputOutline}
+									style={styles.paperInput}
+									left={
+										<PaperTextInput.Icon
+											icon={() => (
+												<Ionicons name="person-outline" size={20} color={COLORS.textSecondary} />
+											)}
+										/>
+									}
+								/>
+
+								{/* Password */}
+								<PaperTextInput
+									mode="outlined"
+									label={translateText('login.password')}
+									placeholder={translateText('login.enterPassword')}
+									value={password}
+									onChangeText={setPassword}
+									secureTextEntry={!passwordVisible}
+									returnKeyType="done"
+									onSubmitEditing={submit}
+									theme={PAPER_THEME}
+									outlineStyle={styles.inputOutline}
+									style={styles.paperInput}
+									left={
+										<PaperTextInput.Icon
+											icon={() => (
+												<Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
+											)}
+										/>
+									}
+									right={
+										<PaperTextInput.Icon
+											icon={() => (
+												<Ionicons
+													name={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
+													size={20}
+													color={COLORS.textSecondary}
+												/>
+											)}
+											onPress={() => setPasswordVisible((v) => !v)}
+										/>
+									}
+								/>
+							</View>
+
+							{/* Error banner */}
+							{error ? (
+								<View style={styles.errorCard}>
+									<Ionicons name="alert-circle-outline" size={16} color={COLORS.error} style={styles.errorIcon} />
+									<View style={styles.errorText}>
+										<Text style={styles.errorTitle}>{translateText('login.authFailed')}</Text>
+										<Text style={styles.errorMsg}>{error}</Text>
+									</View>
 								</View>
+							) : null}
 
-								<View style={styles.formGroup}>
-									<Text style={[styles.label, { color: theme.colors.textSecondary }]}>
-										{translateText('login.password')}
-									</Text>
-									<PasswordInput
-										inputRef={passwordRef}
-										placeholder={translateText('login.enterPassword')}
-										placeholderTextColor={theme.colors.textSecondary}
-										value={password}
-										onChangeText={setPassword}
-										onFocusVisible={() => ensureVisible(passwordRef)}
-										onSubmitEditing={submit}
-										returnKeyType="done"
-										error={Boolean(error)}
-									/>
-								</View>
+							{/* CTA button */}
+							<Pressable
+								style={({ pressed }) => [
+									styles.button,
+									{ opacity: pressed || loading ? 0.8 : 1 },
+								]}
+								onPress={submit}
+								disabled={loading}
+								accessibilityRole="button"
+								accessibilityLabel={translateText('login.signIn')}
+							>
+								{loading ? (
+									<ActivityIndicator color={COLORS.bg} />
+								) : (
+									<Text style={styles.buttonText}>{translateText('login.signIn').toUpperCase()}</Text>
+								)}
+							</Pressable>
 
-								{error ? (
-								<View style={[styles.errorCard, { backgroundColor: theme.mode === 'dark' ? 'rgba(248, 113, 113, 0.14)' : 'rgba(220, 38, 38, 0.08)', borderColor: theme.colors.error }]}> 
-									<Text style={[styles.errorTitle, { color: theme.colors.error }]}>
-										{translateText('login.authFailed')}
-									</Text>
-									<Text style={[styles.error, { color: theme.colors.error }]}>
-										{error}
-									</Text>
-								</View>
-								) : null}
-
-								<Pressable
-									style={[
-										styles.button,
-										{
-											backgroundColor: theme.colors.primary,
-											opacity: loading ? 0.82 : 1,
-										},
-									]}
-									onPress={submit}
-									disabled={loading}
-									>
-									{loading ? (
-										<ActivityIndicator color={theme.mode === 'dark' ? '#0F172A' : '#FFFFFF'} />
-									) : (
-										<Text style={[styles.buttonText, { color: theme.mode === 'dark' ? '#0F172A' : '#FFFFFF' }]}>
-											{translateText('login.signIn')}
-										</Text>
-									)}
-								</Pressable>
-
-								<Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>{translateText('login.helperText')}</Text>
-							</FormCard>
+							<Text style={styles.helperText}>{translateText('login.helperText')}</Text>
 						</View>
 					</ScrollView>
 				</TouchableWithoutFeedback>
 			</KeyboardAvoidingView>
-		</ScreenLayout>
+		</SafeAreaView>
 	);
 };
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-	container: { flex: 1 },
-	scrollContainer: {
+	safe: {
+		flex: 1,
+		backgroundColor: COLORS.bg,
+	},
+	flex: { flex: 1 },
+	scroll: {
 		flexGrow: 1,
-		justifyContent: "center",
-		alignItems: "center",
-		paddingVertical: 20,
-		paddingHorizontal: 18,
 	},
-	contentWrap: { width: "100%", gap: 18 },
-	heroPanel: {
-		borderRadius: 24,
-		borderWidth: 1,
-		overflow: "hidden",
-		paddingHorizontal: 22,
-		paddingVertical: 20,
+
+	// Hero
+	hero: {
+		width: '100%',
 	},
-	heroTopRow: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		gap: 12,
-		flexWrap: "wrap",
+	overlay: {
+		flex: 1,
+		backgroundColor: COLORS.overlay,
+		justifyContent: 'flex-end',
+		paddingHorizontal: 24,
+		paddingBottom: 48,
 	},
-	brandBadge: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999 },
-	brandBadgeText: {
-		fontSize: 12,
-		fontWeight: "700",
-		letterSpacing: 0.8,
-		textTransform: "uppercase",
+	brandRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 10,
+		marginBottom: 20,
 	},
-	statusPill: {
-		borderWidth: 1,
-		borderRadius: 999,
-		paddingHorizontal: 12,
-		paddingVertical: 7,
+	brandIconCircle: {
+		width: 36,
+		height: 36,
+		borderRadius: 18,
+		backgroundColor: COLORS.gold,
+		alignItems: 'center',
+		justifyContent: 'center',
 	},
-	statusPillText: { fontSize: 12, fontWeight: "600" },
-	image: { width: "100%", marginTop: 12, marginBottom: 6 },
+	brandName: {
+		color: COLORS.gold,
+		fontSize: 14,
+		fontWeight: '800',
+		letterSpacing: 3,
+	},
 	heroTitle: {
-		fontSize: 28,
-		lineHeight: 34,
-		fontWeight: "700",
+		color: COLORS.textPrimary,
+		fontSize: 26,
+		fontWeight: '700',
+		lineHeight: 33,
 		marginBottom: 10,
 	},
-	heroBody: { fontSize: 15, lineHeight: 22, marginBottom: 16 },
-	featureRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-	featureChip: {
+	heroBody: {
+		color: 'rgba(255,255,255,0.72)',
+		fontSize: 14,
+		lineHeight: 21,
+		marginBottom: 18,
+	},
+	pillRow: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 8,
+	},
+	pill: {
 		borderWidth: 1,
+		borderColor: COLORS.gold,
 		borderRadius: 999,
 		paddingHorizontal: 12,
-		paddingVertical: 8,
+		paddingVertical: 5,
+		backgroundColor: 'rgba(201,168,76,0.10)',
 	},
-	featureChipText: { fontSize: 12, fontWeight: "600" },
-	authCard: { paddingVertical: 22 },
+	pillText: {
+		color: COLORS.goldLight,
+		fontSize: 11,
+		fontWeight: '600',
+		letterSpacing: 0.4,
+	},
+
+	// Card
+	card: {
+		backgroundColor: COLORS.surface,
+		borderTopLeftRadius: 28,
+		borderTopRightRadius: 28,
+		marginTop: -28,
+		flex: 1,
+		paddingHorizontal: 24,
+		paddingTop: 16,
+		paddingBottom: 32,
+	},
+	handle: {
+		width: 40,
+		height: 4,
+		borderRadius: 2,
+		backgroundColor: COLORS.border,
+		alignSelf: 'center',
+		marginBottom: 24,
+	},
 	eyebrow: {
-		fontSize: 12,
-		fontWeight: "700",
-		letterSpacing: 1,
-		marginBottom: 8,
-		textTransform: "uppercase",
+		color: COLORS.gold,
+		fontSize: 11,
+		fontWeight: '700',
+		letterSpacing: 2,
+		textTransform: 'uppercase',
+		marginBottom: 6,
 	},
-	title: { fontSize: 24, fontWeight: "700", marginBottom: 8 },
-	subtitle: { fontSize: 14, lineHeight: 21, marginBottom: 20 },
-	formGroup: { marginBottom: 14 },
-	label: {
-		fontSize: 12,
-		fontWeight: "700",
-		letterSpacing: 0.6,
-		marginBottom: 8,
-		textTransform: "uppercase",
+	cardTitle: {
+		color: COLORS.textPrimary,
+		fontSize: 26,
+		fontWeight: '700',
+		marginBottom: 6,
 	},
-	input: {
-		borderWidth: 1,
-		paddingVertical: 14,
-		paddingHorizontal: 14,
+	cardSubtitle: {
+		color: COLORS.textSecondary,
+		fontSize: 14,
+		lineHeight: 21,
+		marginBottom: 28,
+	},
+
+	// Inputs
+	inputs: {
+		gap: 16,
+		marginBottom: 20,
+	},
+	paperInput: {
+		backgroundColor: COLORS.surfaceElevated,
+		fontSize: 15,
+	},
+	inputOutline: {
 		borderRadius: 12,
-		fontSize: 16,
 	},
+
+	// Error
 	errorCard: {
+		flexDirection: 'row',
+		alignItems: 'flex-start',
+		backgroundColor: COLORS.errorBg,
 		borderWidth: 1,
-		borderRadius: 16,
-		marginBottom: 14,
-		paddingHorizontal: 14,
-		paddingVertical: 12,
+		borderColor: COLORS.error,
+		borderRadius: 12,
+		padding: 12,
+		marginBottom: 16,
+		gap: 10,
+	},
+	errorIcon: {
+		marginTop: 1,
+	},
+	errorText: {
+		flex: 1,
 	},
 	errorTitle: {
+		color: COLORS.error,
+		fontSize: 12,
+		fontWeight: '700',
+		letterSpacing: 0.5,
+		textTransform: 'uppercase',
+		marginBottom: 2,
+	},
+	errorMsg: {
+		color: COLORS.error,
 		fontSize: 13,
-		fontWeight: "700",
-		marginBottom: 4,
-		textTransform: "uppercase",
+		lineHeight: 19,
 	},
-	error: { fontSize: 14, lineHeight: 20 },
+
+	// Button
 	button: {
-		minHeight: 52,
-		paddingVertical: 14,
+		height: 54,
 		borderRadius: 14,
-		alignItems: "center",
-		justifyContent: "center",
-		marginTop: 4,
+		backgroundColor: COLORS.gold,
+		alignItems: 'center',
+		justifyContent: 'center',
+		shadowColor: COLORS.gold,
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.4,
+		shadowRadius: 10,
+		elevation: 6,
+		marginBottom: 20,
 	},
-	buttonText: { fontSize: 16, fontWeight: "700" },
+	buttonText: {
+		color: COLORS.bg,
+		fontSize: 15,
+		fontWeight: '800',
+		letterSpacing: 1.5,
+	},
+
+	// Helper
 	helperText: {
+		color: COLORS.textSecondary,
 		fontSize: 13,
 		lineHeight: 18,
-		marginTop: 14,
-		textAlign: "center",
+		textAlign: 'center',
 	},
 });

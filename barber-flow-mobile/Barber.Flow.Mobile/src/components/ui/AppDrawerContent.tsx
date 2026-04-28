@@ -9,12 +9,24 @@ import {
 } from "react-native";
 import { DrawerContentScrollView, type DrawerContentComponentProps } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAuthStore } from "../../store/auth.store";
 import { authService } from "../../services/authService";
 import { useAppTheme } from "../../theme/ThemeContext";
 import { useTranslation } from "../../context/LanguageContext";
-import { ScreenTitle } from "./ScreenTitle";
 const pkg = require("../../../package.json");
+
+const DRAWER_COLORS = {
+	bg: "#1C1C1C",
+	surface: "#1A1A1A",
+	surfaceElevated: "#252525",
+	border: "#3A3A3A",
+	textPrimary: "#FFFFFF",
+	textSecondary: "#B0B0B0",
+	separator: "#9A9A9A",
+	accentMuted: "rgba(201, 168, 76, 0.16)",
+	errorMuted: "rgba(229, 115, 115, 0.22)",
+} as const;
 
 const getInitials = (value: string) =>
 	value
@@ -89,8 +101,8 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 			style={[
 				styles.actionRow,
 				{
-					backgroundColor: theme.colors.background,
-					borderColor: theme.colors.border,
+					backgroundColor: DRAWER_COLORS.surface,
+					borderColor: DRAWER_COLORS.border,
 				},
 			]}
 		>
@@ -98,20 +110,14 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 				style={[
 					styles.actionIconWrap,
 					{
-						backgroundColor: destructive
-						? theme.mode === "dark"
-							? "rgba(248, 113, 113, 0.16)"
-							: "rgba(220, 38, 38, 0.10)"
-						: theme.mode === "dark"
-							? "rgba(96, 165, 250, 0.18)"
-							: "rgba(59, 130, 246, 0.10)",
+						backgroundColor: destructive ? DRAWER_COLORS.errorMuted : DRAWER_COLORS.accentMuted,
 					},
 				]}
 			>
 				<Ionicons
 					name={icon}
 					size={20}
-					color={destructive ? theme.colors.error : theme.colors.textPrimary}
+					color={destructive ? "#E57373" : DRAWER_COLORS.textPrimary}
 				/>
 			</View>
 
@@ -119,46 +125,62 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 				<Text
 					style={[
 						styles.actionLabel,
-						{ color: destructive ? theme.colors.error : theme.colors.textPrimary },
+						{ color: destructive ? "#E57373" : DRAWER_COLORS.textPrimary },
 					]}
 					>
 					{label}
 				</Text>
-				<Text style={[styles.actionDescription, { color: theme.colors.textSecondary }]}>
+				<Text style={[styles.actionDescription, { color: DRAWER_COLORS.textSecondary }]}>
 					{description}
 				</Text>
 			</View>
 
-			<Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
+			<Ionicons name="chevron-forward" size={18} color={DRAWER_COLORS.textSecondary} />
 		</TouchableOpacity>
 	);
 
 	return (
-		<DrawerContentScrollView
-			{...props}
-			contentContainerStyle={[
-				styles.container,
-				{ backgroundColor: theme.colors.background },
-			]}
-			>
+		<View style={styles.root}>
+			<LinearGradient
+				colors={["rgba(154,154,154,0)", "rgba(154,154,154,0.18)", "rgba(154,154,154,0.18)", "rgba(154,154,154,0)"]}
+				locations={[0, 0.35, 0.65, 1]}
+				start={{ x: 0, y: 0 }}
+				end={{ x: 0, y: 1 }}
+				style={styles.sideFadeLine}
+				pointerEvents="none"
+			/>
+			<DrawerContentScrollView
+				{...props}
+				contentContainerStyle={[
+					styles.container,
+					{ backgroundColor: DRAWER_COLORS.bg },
+				]}
+				>
+			<View style={styles.topGoldDivider} />
 			<View
 				style={[
 					styles.heroCard,
 					{
-						backgroundColor: theme.colors.surface,
-						borderColor: theme.colors.border,
+						backgroundColor: DRAWER_COLORS.surface,
+						borderColor: DRAWER_COLORS.border,
 					},
 					theme.layout.shadows.card,
 				]}
 			>
+				<LinearGradient
+					colors={["#080808", "#111111", "#1B1B1B"]}
+					end={{ x: 1, y: 0.5 }}
+					start={{ x: 0, y: 0.5 }}
+					style={styles.heroGradient}
+				>
 				<View style={styles.heroTopRow}>
-					<View style={[styles.brandPill, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}> 
-						<Text style={[styles.brandPillText, { color: theme.colors.textSecondary }]}>
+					<View style={[styles.brandPill, { backgroundColor: DRAWER_COLORS.surfaceElevated, borderColor: DRAWER_COLORS.border }]}> 
+						<Text style={[styles.brandPillText, { color: DRAWER_COLORS.textSecondary }]}>
 							Barber Flow
 						</Text>
 					</View>
-					<View style={[styles.versionPill, { backgroundColor: theme.mode === "dark" ? "rgba(96, 165, 250, 0.18)" : "rgba(59, 130, 246, 0.10)" }]}> 
-						<Text style={[styles.versionPillText, { color: theme.colors.secondary }]}>
+					<View style={[styles.versionPill, { backgroundColor: DRAWER_COLORS.accentMuted }]}> 
+						<Text style={[styles.versionPillText, { color: "#E8D4A2" }]}>
 							v{version}
 						</Text>
 					</View>
@@ -177,59 +199,63 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 								},
 							]}
 						/>
-						<View style={[styles.avatarBadge, { backgroundColor: theme.colors.primary }]}> 
-							<Text style={[styles.avatarBadgeText, { color: theme.mode === "dark" ? "#0F172A" : "#FFFFFF" }]}>
+						<View style={[styles.avatarBadge, { backgroundColor: "#C9A84C" }]}> 
+							<Text style={[styles.avatarBadgeText, { color: "#0D0D0D" }]}>
 								{initials}
 							</Text>
 						</View>
 					</View>
 
 					<View style={styles.userInfo}>
-						<ScreenTitle
-							eyebrow={translateText("drawer.studioAccess")}
-							size="sm"
-							subtitle={email || userName || translateText("drawer.noAccountMetadata")}
-							title={identity}
-						/>
+						<Text style={styles.profileEyebrow}>{translateText("drawer.studioAccess")}</Text>
+						<Text style={styles.profileTitle} numberOfLines={1}>{identity}</Text>
+						<Text style={styles.profileSubtitle} numberOfLines={1}>
+							{email || userName || translateText("drawer.noAccountMetadata")}
+						</Text>
 						{role ? (
-							<View style={[styles.rolePill, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-								<Text style={[styles.rolePillText, { color: theme.colors.textSecondary }]}>{role}</Text>
+							<View style={[styles.rolePill, { backgroundColor: DRAWER_COLORS.surfaceElevated, borderColor: DRAWER_COLORS.border }]}>
+								<Text style={[styles.rolePillText, { color: DRAWER_COLORS.textSecondary }]}>{role}</Text>
 							</View>
 						) : null}
 					</View>
 				</View>
 
-				<Text style={[styles.heroBody, { color: theme.colors.textSecondary }]}>
+				<Text style={[styles.heroBody, { color: DRAWER_COLORS.textSecondary }]}>
 					{translateText("drawer.heroBody")}
 				</Text>
+				</LinearGradient>
 			</View>
 
+			<View style={styles.sectionGoldDivider} />
+
 			<View style={styles.section}>
-				<Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+				<Text style={[styles.sectionLabel, { color: DRAWER_COLORS.textSecondary }]}>
 					{translateText("drawer.workspace")}
 				</Text>
 				{renderAction({
 					description: translateText("drawer.settingsDescription"),
-					icon: "settings-outline",
+					icon: "construct-outline",
 					label: translateText("drawer.settings"),
 					onPress: goToSettings,
 				})}
 			</View>
 
+			<View style={styles.sectionGoldDivider} />
+
 			<View style={styles.section}>
-				<Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+				<Text style={[styles.sectionLabel, { color: DRAWER_COLORS.textSecondary }]}>
 					{translateText("drawer.support")}
 				</Text>
 				{renderAction({
 					description: translateText("drawer.helpDescription"),
-					icon: "help-circle-outline",
+					icon: "sparkles-outline",
 					label: translateText("drawer.help"),
 					onPress: openHelp,
 				})}
 				{renderAction({
 					description: translateText("drawer.logoutDescription"),
 					destructive: true,
-					icon: "log-out-outline",
+					icon: "power-outline",
 					label: translateText("drawer.logout"),
 					onPress: handleLogout,
 				})}
@@ -237,30 +263,67 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 
 			<View style={styles.footerWrap} />
 
-			<View style={[styles.footer, { borderTopColor: theme.colors.border }]}>
-				<Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
+			<View style={styles.footerGoldDivider} />
+
+			<LinearGradient
+				colors={["#080808", "#0D0D0D", "#1B1B1B"]}
+				end={{ x: 1, y: 0.5 }}
+				start={{ x: 0, y: 0.5 }}
+				style={styles.footer}
+			>
+				<Text style={[styles.footerText, { color: DRAWER_COLORS.textSecondary }]}>
 					Barber Flow Mobile
 				</Text>
-				<Text style={[styles.footerMeta, { color: theme.colors.textSecondary }]}>
+				<Text style={[styles.footerMeta, { color: DRAWER_COLORS.textSecondary }]}>
 					v{version} • {year}
 				</Text>
-			</View>
-		</DrawerContentScrollView>
+			</LinearGradient>
+			</DrawerContentScrollView>
+		</View>
 	);
 	};
 
 const styles = StyleSheet.create({
+	root: {
+		flex: 1,
+		backgroundColor: DRAWER_COLORS.bg,
+	},
+	sideFadeLine: {
+		position: "absolute",
+		right: 0,
+		top: 8,
+		bottom: 8,
+		width: 2,
+		zIndex: 10,
+	},
 	container: { 
 		flexGrow: 1,
 		paddingHorizontal: 16,
 		paddingVertical: 16,
 	},
+	topGoldDivider: {
+		backgroundColor: DRAWER_COLORS.separator,
+		borderRadius: 1,
+		height: StyleSheet.hairlineWidth,
+		opacity: 0.5,
+		marginBottom: 14,
+	},
 	heroCard: {
 		borderRadius: 26,
 		borderWidth: 1,
 		marginBottom: 20,
+		overflow: "hidden",
+	},
+	heroGradient: {
 		paddingHorizontal: 18,
 		paddingVertical: 18,
+	},
+	sectionGoldDivider: {
+		backgroundColor: DRAWER_COLORS.separator,
+		height: StyleSheet.hairlineWidth,
+		opacity: 0.45,
+		marginBottom: 14,
+		marginHorizontal: 2,
 	},
 	heroTopRow: {
 		flexDirection: "row",
@@ -317,6 +380,25 @@ const styles = StyleSheet.create({
 		flex: 1,
 		gap: 10,
 	},
+	profileEyebrow: {
+		color: DRAWER_COLORS.textSecondary,
+		fontSize: 11,
+		fontWeight: "700",
+		letterSpacing: 0.8,
+		textTransform: "uppercase",
+	},
+	profileTitle: {
+		color: DRAWER_COLORS.textPrimary,
+		fontSize: 19,
+		fontWeight: "700",
+		lineHeight: 25,
+	},
+	profileSubtitle: {
+		color: DRAWER_COLORS.textSecondary,
+		fontSize: 12,
+		lineHeight: 17,
+		marginTop: -4,
+	},
 	rolePill: {
 		alignSelf: "flex-start",
 		borderRadius: 999,
@@ -353,6 +435,7 @@ const styles = StyleSheet.create({
 		marginBottom: 10,
 		paddingHorizontal: 14,
 		paddingVertical: 14,
+		backgroundColor: "#101010",
 	},
 	actionIconWrap: {
 		alignItems: "center",
@@ -376,11 +459,18 @@ const styles = StyleSheet.create({
 	footerWrap: {
 		flex: 1,
 	},
+	footerGoldDivider: {
+		backgroundColor: DRAWER_COLORS.separator,
+		height: StyleSheet.hairlineWidth,
+		opacity: 0.5,
+		marginBottom: 10,
+		marginHorizontal: 2,
+	},
 	footer: {
-		borderTopWidth: 1,
+		borderRadius: 16,
 		gap: 4,
-		paddingHorizontal: 4,
-		paddingTop: 14,
+		paddingHorizontal: 12,
+		paddingVertical: 14,
 	},
 	footerText: {
 		fontSize: 13,

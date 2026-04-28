@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Platform, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, ImageBackground, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button } from "react-native-paper";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
@@ -12,17 +12,27 @@ import { useTranslation } from "../context/LanguageContext";
 import { useClientForm } from "../features/clients/clientForm";
 import type { ClientsStackParamList } from "../navigation/ClientsNavigator";
 import { clientsService } from "../services/clientService";
-import { ScreenLayout } from "../components/ScreenLayout";import { getErrorMessage } from '../utils/errors';import { useAppTheme } from "../theme/ThemeContext";
+import { ScreenLayout } from "../components/ScreenLayout";
+import { getErrorMessage } from '../utils/errors';
 import type { Client } from "../types/clients";
 import { formatPhoneNumber } from "../utils/formatUtil";
 
 type ClientFormScreenNavigation = NativeStackNavigationProp<ClientsStackParamList, "ClientForm">;
 type ClientFormScreenRoute = RouteProp<ClientsStackParamList, "ClientForm">;
 
+const COLORS = {
+	bg: "#0D0D0D",
+	surface: "#1A1A1A",
+	surfaceElevated: "#252525",
+	gold: "#C9A84C",
+	textPrimary: "#FFFFFF",
+	border: "#3A3A3A",
+	error: "#F87171",
+} as const;
+
 export const ClientFormScreen = () => {
 	const navigation = useNavigation<ClientFormScreenNavigation>();
 	const route = useRoute<ClientFormScreenRoute>();
-	const { theme } = useAppTheme();
 	const { translateText } = useTranslation();
 	const insets = useSafeAreaInsets();
 	const {
@@ -162,73 +172,91 @@ export const ClientFormScreen = () => {
 	};
 
 	return (
-		<ScreenLayout
-		title={screenTitle}
-		backgroundColor={theme.colors.background}
-		hideHeaderActions
+		<ImageBackground
+			source={require("../../assets/images/barber-flow-background-image.jpg")}
+			style={styles.screenBg}
+			resizeMode="cover"
 		>
-		<KeyboardAwareScrollView
-			style={styles.flex}
-			contentContainerStyle={[
-			styles.scrollContent,
-			{
-				paddingBottom: Math.max(24, insets.bottom + 24),
-			},
-			]}
-			enableOnAndroid
-			keyboardOpeningTime={0}
-			extraScrollHeight={Platform.OS === "android" ? 120 : 20}
-			keyboardShouldPersistTaps="handled"
-			showsVerticalScrollIndicator={false}>
-
-			<ClientForm
-				client={client}
-				errors={errors}
-				touched={touched}
-				loading={loading}
-				onFieldChange={handleFieldChange}
-				onFieldBlur={onBlurField}
-				onOpenDatePicker={openDatePicker}
-			/>
-
-			<View style={styles.actions}>
-
-			<Button
-				mode="contained"
-				onPress={() => void handleSave()}
-				disabled={!isFormValid || loading}
-				loading={loading}
+			<StatusBar style="light" translucent backgroundColor="transparent" />
+			<View style={styles.screenOverlay} />
+			<ScreenLayout
+			title={screenTitle}
+			backgroundColor="transparent"
+			hideHeaderActions
 			>
-				{isEditMode
-				? translateText("clients.buttons.saveChanges")
-				: translateText("clients.buttons.createClient")}
-			</Button>
+			<KeyboardAwareScrollView
+				style={styles.flex}
+				contentContainerStyle={[
+				styles.scrollContent,
+				{
+					paddingBottom: Math.max(24, insets.bottom + 24),
+				},
+				]}
+				enableOnAndroid
+				keyboardOpeningTime={0}
+				extraScrollHeight={Platform.OS === "android" ? 120 : 20}
+				keyboardShouldPersistTaps="handled"
+				showsVerticalScrollIndicator={false}>
 
-			<Button
-				mode="contained"
-				onPress={handleCancel}
-				disabled={loading}
-			>
-				{translateText("common.cancel")}
-			</Button>
+				<ClientForm
+					client={client}
+					errors={errors}
+					touched={touched}
+					loading={loading}
+					onFieldChange={handleFieldChange}
+					onFieldBlur={onBlurField}
+					onOpenDatePicker={openDatePicker}
+				/>
 
-			{isEditMode ? (
-				<Button
-					mode="outlined"
-					onPress={() => void handleDelete()}
-					disabled={loading}
-					textColor={theme.colors.error}
+				<View style={styles.actions}>
+					<Pressable
+						style={[styles.btnPrimary, (!isFormValid || loading) && styles.btnDisabled]}
+						onPress={() => void handleSave()}
+						disabled={!isFormValid || loading}
 					>
-					{translateText("clients.buttons.delete")}
-				</Button>
-			) : null}
-			</View>
-		</KeyboardAwareScrollView>
-		</ScreenLayout>
+						{loading ? (
+							<ActivityIndicator color={COLORS.bg} size="small" />
+						) : (
+							<Text style={styles.btnPrimaryText}>
+								{isEditMode
+									? translateText("clients.buttons.saveChanges")
+									: translateText("clients.buttons.createClient")}
+							</Text>
+						)}
+					</Pressable>
+
+					<Pressable
+						style={[styles.btnSecondary, loading && styles.btnDisabled]}
+						onPress={handleCancel}
+						disabled={loading}
+					>
+						<Text style={styles.btnSecondaryText}>{translateText("common.cancel")}</Text>
+					</Pressable>
+
+					{isEditMode ? (
+						<Pressable
+							style={[styles.btnDanger, loading && styles.btnDisabled]}
+							onPress={() => void handleDelete()}
+							disabled={loading}
+						>
+							<Text style={styles.btnDangerText}>{translateText("clients.buttons.delete")}</Text>
+						</Pressable>
+					) : null}
+				</View>
+			</KeyboardAwareScrollView>
+			</ScreenLayout>
+		</ImageBackground>
 	);
 	};
 
 const styles = StyleSheet.create({
+	screenBg: {
+		flex: 1,
+	},
+	screenOverlay: {
+		...StyleSheet.absoluteFillObject,
+		backgroundColor: "rgba(13,13,13,0.65)",
+	},
 	actions: {
 		gap: 10,
 		marginTop: 18,
@@ -238,5 +266,49 @@ const styles = StyleSheet.create({
 	},
 	scrollContent: {
 		paddingTop: 18,
+	},
+	btnPrimary: {
+		alignItems: "center",
+		backgroundColor: COLORS.gold,
+		borderRadius: 14,
+		justifyContent: "center",
+		paddingVertical: 15,
+	},
+	btnPrimaryText: {
+		color: COLORS.bg,
+		fontSize: 16,
+		fontWeight: "700",
+		letterSpacing: 0.3,
+	},
+	btnSecondary: {
+		alignItems: "center",
+		backgroundColor: COLORS.surfaceElevated,
+		borderColor: COLORS.border,
+		borderRadius: 14,
+		borderWidth: 1,
+		justifyContent: "center",
+		paddingVertical: 15,
+	},
+	btnSecondaryText: {
+		color: COLORS.textPrimary,
+		fontSize: 16,
+		fontWeight: "600",
+	},
+	btnDanger: {
+		alignItems: "center",
+		backgroundColor: "rgba(248,113,113,0.10)",
+		borderColor: COLORS.error,
+		borderRadius: 14,
+		borderWidth: 1,
+		justifyContent: "center",
+		paddingVertical: 15,
+	},
+	btnDangerText: {
+		color: COLORS.error,
+		fontSize: 16,
+		fontWeight: "600",
+	},
+	btnDisabled: {
+		opacity: 0.45,
 	},
 });
