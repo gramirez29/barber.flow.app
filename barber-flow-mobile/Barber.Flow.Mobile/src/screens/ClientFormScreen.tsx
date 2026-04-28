@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, ImageBackground, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -176,6 +177,7 @@ export const ClientFormScreen = () => {
 			style={styles.screenBg}
 			resizeMode="cover"
 		>
+			<StatusBar style="light" translucent backgroundColor="transparent" />
 			<View style={styles.screenOverlay} />
 			<ScreenLayout
 			title={screenTitle}

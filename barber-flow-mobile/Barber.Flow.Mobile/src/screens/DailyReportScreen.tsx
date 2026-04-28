@@ -2,6 +2,7 @@ import type { DrawerNavigationProp } from "@react-navigation/drawer";
 import type { DrawerParamList } from "../navigation/DrawerNavigator";
 import React, { useCallback, useMemo, useState } from "react";
 import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import {
 	useNavigation,
 	DrawerActions,
@@ -108,6 +109,7 @@ export const DailyReportScreen = () => {
 			style={styles.screenBg}
 			resizeMode="cover"
 		>
+			<StatusBar style="light" translucent backgroundColor="transparent" />
 			<View style={styles.screenOverlay} />
 			<ScreenLayout
 				title={translateText("dailyReport.title")}

@@ -39,7 +39,15 @@
     },
     "plugins": [
       "@react-native-community/datetimepicker",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite a Barber Flow acceder a tu galeria para seleccionar una foto de perfil.",
+          "cameraPermission": "Permite a Barber Flow acceder a la camara para tomar una foto de perfil.",
+          "microphonePermission": "Permite a Barber Flow acceder al microfono al grabar video desde la camara."
+        }
+      ]
     ]
   }
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ImageBackground, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import { addDays, format, startOfWeek } from "date-fns";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -276,6 +277,7 @@ export const CalendarScreen: React.FC = () => {
 			style={styles.screenBg}
 			resizeMode="cover"
 		>
+			<StatusBar style="light" translucent backgroundColor="transparent" />
 			<View style={styles.screenOverlay} />
 			<ScreenLayout
 				title={translateText("calendar.title")}

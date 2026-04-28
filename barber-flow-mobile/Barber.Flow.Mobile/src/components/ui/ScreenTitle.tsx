@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { useAppTheme } from '../../theme/ThemeContext';
+import { useAppTheme } from "../../theme/ThemeContext";
 
 interface ScreenTitleProps {
     align?: "left" | "center";
@@ -12,7 +12,7 @@ interface ScreenTitleProps {
 }
 
 const titleSizeMap = {
-    sm: 20,
+    sm: 19,
     md: 24,
     lg: 30,
 } as const;
@@ -46,6 +46,7 @@ export const ScreenTitle = ({ align = "left", children, eyebrow, size = "md", su
                         {
                             color: theme.colors.textPrimary,
                             fontSize: titleSizeMap[size],
+                            lineHeight: size === "sm" ? 26 : size === "md" ? 32 : 38,
                             textAlign,
                         },
                     ]}
@@ -63,6 +64,7 @@ export const ScreenTitle = ({ align = "left", children, eyebrow, size = "md", su
                             textAlign,
                         },
                     ]}
+                    numberOfLines={1}
                 >
                     {subtitle}
                 </Text>
@@ -73,20 +75,20 @@ export const ScreenTitle = ({ align = "left", children, eyebrow, size = "md", su
 
 const styles = StyleSheet.create({
     container: {
-        gap: 4,
+        gap: 2,
     },
     eyebrow: {
-        fontSize: 12,
-        fontWeight: '700',
+        fontSize: 11,
+        fontWeight: "700",
         letterSpacing: 0.9,
-        textTransform: 'uppercase',
+        textTransform: "uppercase",
     },
     title: {
-        fontWeight: '700',
-        lineHeight: 34,
+        fontWeight: "700",
     },
     subtitle: {
-        fontSize: 14,
-        lineHeight: 20,
+        fontSize: 12,
+        lineHeight: 17,
+        marginTop: 2,
     },
 });

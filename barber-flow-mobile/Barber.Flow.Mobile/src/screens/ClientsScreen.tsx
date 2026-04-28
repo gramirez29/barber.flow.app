@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, ImageBackground, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import type { CompositeNavigationProp } from "@react-navigation/native";
 import { DrawerActions, useIsFocused, useNavigation } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
@@ -133,6 +134,7 @@ export const ClientsScreen: React.FC = () => {
             style={styles.screenBg}
             resizeMode="cover"
         >
+            <StatusBar style="light" translucent backgroundColor="transparent" />
             <View style={styles.screenOverlay} />
             <ScreenLayout
                 title={translateText("clients.screen.title")}

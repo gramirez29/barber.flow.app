@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Platform, StyleSheet, View } from "react-native";
+import {
+	Alert,
+	ImageBackground,
+	Platform,
+	Pressable,
+	StyleSheet,
+	Switch,
+	Text,
+	useWindowDimensions,
+	View,
+} from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { Button, SegmentedButtons, Text } from "react-native-paper";
 import { ReportCalculationSettingsForm } from "../components/settings/ReportCalculationSettingsForm";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { ApplicationUsersModal } from "../components/settings/ApplicationUsersModal";
-import { SettingItem } from "../components/settings/SettingItem";
-import { SettingSection } from "../components/settings/SettingSection";
 import { useNotification } from "../context/NotificationContext";
 import { useReportCalculationSettingsForm } from "../features/settings/reportCalculationsForm";
 import {
@@ -16,14 +24,11 @@ import {
 import { settingsService } from "../services/settingsService";
 import { useAuthStore } from "../store/auth.store";
 import { useLanguage, useTranslation } from "../context/LanguageContext";
-import { useAppTheme } from "../theme/ThemeContext";
-import { FormCard } from "../components/ui/FormCard";
 import { getErrorMessage } from "../utils/errors";
 import {
 	DEFAULT_REPORT_CALCULATION_SETTINGS,
 	type BarberApiResponse,
 	type Language,
-	type ThemeMode,
 } from "../types/settings";
 import { DrawerActions, useNavigation } from "@react-navigation/core";
 import { AppTabParamList } from "../navigation/AppNavigator";
@@ -32,11 +37,23 @@ import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 const APP_VERSION = "1.0.0";
 const DEVELOPER_NAME = "Guillermo Ramirez";
 
+const COLORS = {
+	bg: "#0D0D0D",
+	surface: "#1A1A1A",
+	surfaceElevated: "#252525",
+	gold: "#C9A84C",
+	textPrimary: "#FFFFFF",
+	textSecondary: "#9B9B9B",
+	border: "#3A3A3A",
+	overlay: "rgba(13,13,13,0.65)",
+} as const;
+
 export const SettingsScreen = () => {
+	const { width } = useWindowDimensions();
+	const isUltraCompact = width <= 360;
 	const user = useAuthStore((state) => state.user);
 	const isAdmin = user?.role === "Admin";
 	const { notificationsEnabled, setNotificationsEnabled, unreadCount } = useNotification();
-	const { resolvedThemeMode, setThemeMode, theme, themeMode } = useAppTheme();
 	const { isUsingSystemLanguage, language, resetToSystemLanguage, setLanguage, systemLanguage } = useLanguage();
 	const { translateText } = useTranslation();
 	const {
@@ -69,9 +86,6 @@ export const SettingsScreen = () => {
 	} = useReportCalculationSettingsForm();
 	const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
 
-	// Note: we no longer prefetch next barber id on mount. The id
-	// will be fetched exactly once immediately before creating a barber.
-
 	useEffect(() => {
 		let mounted = true;
 
@@ -93,8 +107,20 @@ export const SettingsScreen = () => {
 		};
 	}, [loadReportSettingValues]);
 
-	const handleThemeModeChange = async (value: string) => {
-		await setThemeMode(value as ThemeMode);
+	const primeNextBarberId = async () => {
+		setApplicationUserLoading(true);
+
+		try {
+			const nextId = await settingsService.getNextBarberId();
+			setField("barberId", nextId);
+		} catch (error: unknown) {
+			Alert.alert(
+				translateText("common.search"),
+				getErrorMessage(error) || translateText("settings.alerts.nextIdFailed"),
+			);
+		} finally {
+			setApplicationUserLoading(false);
+		}
 	};
 
 	const handleLanguageChange = async (value: string) => {
@@ -119,10 +145,13 @@ export const SettingsScreen = () => {
 
 		if (
 			nextErrors.userName ||
-			nextErrors.userPhone ||
+			nextErrors.password ||
 			nextErrors.userEmail ||
 			nextErrors.barberName ||
-			nextErrors.barberPhone
+			nextErrors.barberPhone ||
+			nextErrors.shopName ||
+			nextErrors.shopPhone ||
+			nextErrors.address
 		) {
 			Alert.alert(
 				translateText("common.save"),
@@ -142,18 +171,17 @@ export const SettingsScreen = () => {
 				);
 				loadValues(mapBarberResponseToForm(updated), "edit");
 			} else {
-				// Fetch a one-time barber id immediately before creating so
-				// we don't prefetch on mount or after other actions.
-				const nextId = await settingsService.getNextBarberId();
-				setField("barberId", nextId);
-
-				const created = await settingsService.createApplicationUser({ ...values, barberId: nextId });
+				const barberIdToUse = values.barberId?.trim() || (await settingsService.getNextBarberId());
+				const created = await settingsService.createApplicationUser({
+					...values,
+					barberId: barberIdToUse,
+				});
 				Alert.alert(
 					translateText("common.save"),
 					translateText("settings.alerts.applicationUserCreated", { id: created.id }),
 				);
-				// Clear the form after successful create; do not prefetch another id.
-				resetValues();
+				await handleResetApplicationUser();
+				return;
 			}
 
 			setApplicationUserResults([]);
@@ -223,7 +251,7 @@ export const SettingsScreen = () => {
 		Alert.alert(translateText("common.delete"), translateText("settings.alerts.confirmDeleteUser", { id: barberId }), [
 			{ text: translateText("common.cancel"), style: "cancel" },
 			{
-					onPress: async () => {
+				onPress: async () => {
 					setApplicationUserLoading(true);
 
 					try {
@@ -232,10 +260,7 @@ export const SettingsScreen = () => {
 							translateText("common.delete"),
 							translateText("settings.alerts.applicationUserDeleted", { id: barberId }),
 						);
-						// Reset the form after delete; do not prefetch a new id.
-						resetValues();
-						setApplicationUserResults([]);
-						setSearchQuery("");
+						await handleResetApplicationUser();
 					} catch (error: unknown) {
 						Alert.alert(
 							translateText("common.delete"),
@@ -255,6 +280,12 @@ export const SettingsScreen = () => {
 		resetValues();
 		setApplicationUserResults([]);
 		setSearchQuery("");
+		await primeNextBarberId();
+	};
+
+	const handleOpenManageUsers = async () => {
+		setIsManageUsersModalVisible(true);
+		await handleResetApplicationUser();
 	};
 
 	const handleSelectApplicationUserResult = (result: BarberApiResponse) => {
@@ -290,290 +321,228 @@ export const SettingsScreen = () => {
 	};
 
 	return (
-		<ScreenLayout
-			title={translateText("settings.title")}
-			backgroundColor={theme.colors.background}
-			onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+		<ImageBackground
+			source={require("../../assets/images/barber-flow-background-image.jpg")}
+			style={styles.screenBg}
+			resizeMode="cover"
 		>
-			<KeyboardAwareScrollView
-				style={styles.flex}
-				contentContainerStyle={styles.scrollContent}
-				enableOnAndroid
-				keyboardOpeningTime={0}
-				extraScrollHeight={Platform.OS === "android" ? 120 : 20}
-				keyboardShouldPersistTaps="handled"
-				showsVerticalScrollIndicator={false}
+			<StatusBar style="light" translucent backgroundColor="transparent" />
+			<View style={styles.screenOverlay} />
+			<ScreenLayout
+				title={translateText("settings.title")}
+				backgroundColor="transparent"
+				onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
 			>
-				<FormCard style={styles.heroCard}>
-					<Text
-						style={[styles.heroEyebrow, { color: theme.colors.textSecondary }]}
-					>
-						{translateText("settings.workspaceSettings")}
-					</Text>
-					<Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>
-						{translateText("settings.settingsAndPreferences")}
-					</Text>
-					<Text
-						style={[styles.heroSubtitle, { color: theme.colors.textSecondary }]}
-					>
-						{translateText("settings.heroSubtitle")}
-					</Text>
+				<KeyboardAwareScrollView
+					style={styles.flex}
+					contentContainerStyle={styles.scrollContent}
+					enableOnAndroid
+					keyboardOpeningTime={0}
+					extraScrollHeight={Platform.OS === "android" ? 120 : 20}
+					keyboardShouldPersistTaps="handled"
+					showsVerticalScrollIndicator={false}
+				>
+					<View style={styles.card}>
+						<Text style={styles.eyebrow}>{translateText("settings.workspaceSettings")}</Text>
+						<Text style={[styles.heroTitle, isUltraCompact && styles.heroTitleUltraCompact]}>{translateText("settings.settingsAndPreferences")}</Text>
+						<Text style={styles.heroSubtitle}>{translateText("settings.heroSubtitle")}</Text>
 
-					<View style={styles.heroActions}>
-						<Button
-						mode="contained"
-						onPress={() => void setThemeMode("system")}
-						>
-						{translateText("settings.followSystem")}
-						</Button>
-						<Button
-						mode="text"
-						onPress={() =>
-							void setThemeMode(
-							resolvedThemeMode === "dark" ? "light" : "dark",
-							)
-						}
-						>
-						{translateText("settings.quickToggle")}
-						</Button>
+						<View style={styles.heroMetrics}>
+							<View style={styles.metricPill}>
+								<Text style={styles.metricValue}>{isUsingSystemLanguage ? "Auto" : "Manual"}</Text>
+								<Text style={styles.metricLabel}>{translateText("settings.preferencesPanel.languageTitle")}</Text>
+							</View>
+							<View style={styles.metricPill}>
+								<Text style={styles.metricValue}>{unreadCount}</Text>
+								<Text style={styles.metricLabel}>{translateText("common.unread")}</Text>
+							</View>
+						</View>
 					</View>
-				</FormCard>
 
-			<SettingSection title={translateText("settings.preferences")}>
-				<View style={styles.preferenceBlock}>
-					<Text
-						style={[
-							styles.preferenceTitle,
-							{ color: theme.colors.textPrimary },
-						]}
-						>
-						{translateText("settings.preferencesPanel.darkModeTitle")}
-					</Text>
-					<Text
-						style={[
-							styles.preferenceBody,
-							{ color: theme.colors.textSecondary },
-						]}
-						>
-						{translateText("settings.preferencesPanel.darkModeBody")}
-					</Text>
-					<SegmentedButtons
-						density="small"
-						onValueChange={handleThemeModeChange}
-						style={styles.segmentedButtons}
-						value={themeMode}
-						buttons={[
-							{
-								label: translateText("settings.preferencesPanel.system"),
-								value: "system",
-							},
-							{
-								label: translateText("settings.preferencesPanel.light"),
-								value: "light",
-							},
-							{
-								label: translateText("settings.preferencesPanel.dark"),
-								value: "dark",
-							},
-						]}
+					<View style={styles.sectionWrap}>
+						<Text style={styles.sectionTitle}>{translateText("settings.preferences")}</Text>
+						<View style={styles.card}>
+							<View style={styles.settingRow}>
+								<View style={styles.settingCopy}>
+									<Text style={styles.settingLabel}>
+										{translateText("settings.preferencesPanel.followDeviceLanguage")}
+									</Text>
+									<Text style={styles.settingBody}>
+										{isUsingSystemLanguage
+											? translateText("settings.preferencesPanel.languageSystemBody", {
+												language: currentSystemLanguageLabel,
+											})
+											: translateText("settings.preferencesPanel.languageManualBody")}
+									</Text>
+								</View>
+								<Switch
+									trackColor={{ false: COLORS.border, true: COLORS.gold }}
+									thumbColor={COLORS.textPrimary}
+									onValueChange={() => void handleLanguageModeToggle()}
+									value={isUsingSystemLanguage}
+								/>
+							</View>
+
+							<View style={[styles.languageOptions, isUsingSystemLanguage && styles.languageOptionsDisabled]}>
+								<Pressable
+									onPress={() => void handleLanguageChange("es")}
+									disabled={isUsingSystemLanguage}
+									style={({ pressed }) => [
+										styles.languageOption,
+										language === "es" ? styles.languageOptionActive : styles.languageOptionInactive,
+										pressed && { opacity: 0.85 },
+									]}
+								>
+									<Text style={language === "es" ? styles.languageOptionTextActive : styles.languageOptionTextInactive}>
+										{translateText("settings.preferencesPanel.spanish")}
+									</Text>
+								</Pressable>
+								<Pressable
+									onPress={() => void handleLanguageChange("en")}
+									disabled={isUsingSystemLanguage}
+									style={({ pressed }) => [
+										styles.languageOption,
+										language === "en" ? styles.languageOptionActive : styles.languageOptionInactive,
+										pressed && { opacity: 0.85 },
+									]}
+								>
+									<Text style={language === "en" ? styles.languageOptionTextActive : styles.languageOptionTextInactive}>
+										{translateText("settings.preferencesPanel.english")}
+									</Text>
+								</Pressable>
+							</View>
+
+							<View style={styles.settingRow}>
+								<View style={styles.settingCopy}>
+									<Text style={styles.settingLabel}>
+										{translateText("settings.preferencesPanel.notifications", {
+											count: unreadCount,
+										})}
+									</Text>
+								</View>
+								<Switch
+									trackColor={{ false: COLORS.border, true: COLORS.gold }}
+									thumbColor={COLORS.textPrimary}
+									onValueChange={() => void setNotificationsEnabled(!notificationsEnabled)}
+									value={notificationsEnabled}
+								/>
+							</View>
+						</View>
+					</View>
+
+					<View style={styles.sectionWrap}>
+						<Text style={styles.sectionTitle}>{translateText("settings.dailyReportCalculations")}</Text>
+						<View style={styles.card}>
+							<ReportCalculationSettingsForm
+								errors={reportSettingErrors}
+								loading={reportSettingsLoading}
+								onBlurField={onBlurReportSettingField}
+								onFieldChange={setReportSettingField}
+								onReset={() => void handleResetReportSettings()}
+								onSave={() => void handleSaveReportSettings()}
+								touched={reportSettingTouched}
+								values={reportSettingValues}
+							/>
+						</View>
+					</View>
+
+					{isAdmin ? (
+						<View style={styles.sectionWrap}>
+							<Text style={styles.sectionTitle}>{translateText("settings.manageApplicationUsers")}</Text>
+							<View style={styles.card}>
+								<Pressable
+									onPress={() => void handleOpenManageUsers()}
+									style={({ pressed }) => [styles.btnPrimary, pressed && { opacity: 0.8 }]}
+								>
+									<Text style={styles.btnPrimaryText}>{translateText("settings.addApplicationUser")}</Text>
+								</Pressable>
+							</View>
+						</View>
+					) : null}
+
+					<View style={styles.card}>
+						<Text style={styles.aboutEyebrow}>{translateText("settings.about")}</Text>
+						<Text style={styles.aboutTitle}>Barber Flow Mobile</Text>
+						<Text style={styles.aboutSubtitle}>{translateText("settings.aboutSubtitle")}</Text>
+
+						<View style={styles.aboutInfoRow}>
+							<Text style={styles.aboutLabel}>{translateText("settings.version")}</Text>
+							<Text style={styles.aboutValue}>{APP_VERSION}</Text>
+						</View>
+
+						<View style={styles.aboutInfoRowLast}>
+							<Text style={styles.aboutLabel}>{translateText("settings.developer")}</Text>
+							<Text style={styles.aboutValue}>{DEVELOPER_NAME}</Text>
+						</View>
+					</View>
+				</KeyboardAwareScrollView>
+
+				{isAdmin ? (
+					<ApplicationUsersModal
+						visible={isManageUsersModalVisible}
+						onClose={() => {
+							setIsManageUsersModalVisible(false);
+						}}
+						errors={errors}
+						isFormValid={isFormValid}
+						loading={applicationUserLoading}
+						mode={mode}
+						onBlurField={onBlurField}
+						onDelete={handleApplicationUserDelete}
+						onFieldChange={setField}
+						onReset={() => void handleResetApplicationUser()}
+						onSearch={() => void handleApplicationUserSearch()}
+						onSearchQueryChange={setSearchQuery}
+						onSelectResult={handleSelectApplicationUserResult}
+						onSubmit={() => void handleApplicationUserSubmit()}
+						searchQuery={searchQuery}
+						searchResults={applicationUserResults}
+						touched={touched}
+						values={values}
 					/>
-				</View>
-
-				<SettingItem
-					icon="language-outline"
-					label={translateText(
-					"settings.preferencesPanel.followDeviceLanguage",
-					)}
-					onToggle={() => void handleLanguageModeToggle()}
-					value={isUsingSystemLanguage}
-				/>
-
-				<View style={styles.preferenceBlock}>
-					<Text
-						style={[
-							styles.preferenceTitle,
-							{ color: theme.colors.textPrimary },
-						]}
-						>
-						{translateText("settings.preferencesPanel.languageTitle")}
-					</Text>
-					<Text
-						style={[
-							styles.preferenceBody,
-							{ color: theme.colors.textSecondary },
-						]}
-						>
-						{isUsingSystemLanguage
-							? translateText(
-								"settings.preferencesPanel.languageSystemBody",
-								{
-								language: currentSystemLanguageLabel,
-								},
-							)
-							: translateText("settings.preferencesPanel.languageManualBody")}
-					</Text>
-					<SegmentedButtons
-						density="small"
-						onValueChange={handleLanguageChange}
-						style={styles.segmentedButtons}
-						value={language}
-						buttons={[
-							{
-								disabled: isUsingSystemLanguage,
-								label: translateText("settings.preferencesPanel.spanish"),
-								value: "es",
-							},
-							{
-								disabled: isUsingSystemLanguage,
-								label: translateText("settings.preferencesPanel.english"),
-								value: "en",
-							},
-						]}
-					/>
-				</View>
-
-				<SettingItem
-					icon="notifications-outline"
-					label={translateText("settings.preferencesPanel.notifications", {
-					count: unreadCount,
-					})}
-					onToggle={() => void setNotificationsEnabled(!notificationsEnabled)}
-					value={notificationsEnabled}
-				/>
-			</SettingSection>
-
-			<SettingSection
-				title={translateText("settings.dailyReportCalculations")}>
-				<ReportCalculationSettingsForm
-					errors={reportSettingErrors}
-					loading={reportSettingsLoading}
-					onBlurField={onBlurReportSettingField}
-					onFieldChange={setReportSettingField}
-					onReset={() => void handleResetReportSettings()}
-					onSave={() => void handleSaveReportSettings()}
-					touched={reportSettingTouched}
-					values={reportSettingValues}
-				/>
-			</SettingSection>
-
-			{isAdmin ? (
-				<SettingSection
-					title={translateText("settings.manageApplicationUsers")}>
-					<Button
-						mode="contained"
-						onPress={() => setIsManageUsersModalVisible(true)}
-						style={styles.addUserButton}
-					>
-						{translateText("settings.addApplicationUser")}
-					</Button>
-				</SettingSection>
-			) : null}
-
-			<FormCard style={styles.aboutCard}>
-				<Text
-					style={[styles.aboutEyebrow, { color: theme.colors.textSecondary }]}
-				>
-					{translateText("settings.about")}
-				</Text>
-				<Text
-					style={[styles.aboutTitle, { color: theme.colors.textPrimary }]}
-				>
-					Barber Flow Mobile
-				</Text>
-				<Text
-					style={[
-					styles.aboutSubtitle,
-					{ color: theme.colors.textSecondary },
-					]}
-				>
-					{translateText("settings.aboutSubtitle")}
-				</Text>
-
-				<View
-					style={[
-					styles.aboutInfoRow,
-					{
-						borderBottomColor: theme.colors.border,
-					},
-					]}
-				>
-					<View>
-					<Text
-						style={[
-						styles.aboutLabel,
-						{ color: theme.colors.textSecondary },
-						]}
-					>
-						{translateText("settings.version")}
-					</Text>
-					<Text
-						style={[styles.aboutValue, { color: theme.colors.textPrimary }]}
-					>
-						{APP_VERSION}
-					</Text>
-					</View>
-				</View>
-
-				<View style={styles.aboutInfoRow}>
-					<View>
-						<Text
-							style={[
-							styles.aboutLabel,
-							{ color: theme.colors.textSecondary },
-							]}
-						>
-							{translateText("settings.developer")}
-						</Text>
-						<Text
-							style={[styles.aboutValue, { color: theme.colors.textPrimary }]}
-						>
-							{DEVELOPER_NAME}
-						</Text>
-					</View>
-				</View>
-			</FormCard>
-			</KeyboardAwareScrollView>
-			{isAdmin ? (
-				<ApplicationUsersModal
-					visible={isManageUsersModalVisible}
-					onClose={() => {
-						void handleResetApplicationUser();
-						setIsManageUsersModalVisible(false);
-					}}
-					errors={errors}
-					isFormValid={isFormValid}
-					loading={applicationUserLoading}
-					mode={mode}
-					onBlurField={onBlurField}
-					onDelete={handleApplicationUserDelete}
-					onFieldChange={setField}
-					onReset={() => void handleResetApplicationUser()}
-					onSearch={() => void handleApplicationUserSearch()}
-					onSearchQueryChange={setSearchQuery}
-					onSelectResult={handleSelectApplicationUserResult}
-					onSubmit={() => void handleApplicationUserSubmit()}
-					searchQuery={searchQuery}
-					searchResults={applicationUserResults}
-					touched={touched}
-					values={values}
-				/>
-			) : null}
-		</ScreenLayout>
+				) : null}
+			</ScreenLayout>
+		</ImageBackground>
 	);
 };
 
 const styles = StyleSheet.create({
+	screenBg: {
+		flex: 1,
+	},
+	screenOverlay: {
+		...StyleSheet.absoluteFillObject,
+		backgroundColor: COLORS.overlay,
+	},
 	flex: {
 		flex: 1,
 	},
 	scrollContent: {
-		paddingBottom: 32,
+		gap: 18,
+		paddingBottom: 36,
 		paddingTop: 18,
 	},
-	heroCard: {
-		marginBottom: 16,
+	sectionWrap: {
+		gap: 10,
 	},
-	heroEyebrow: {
+	sectionTitle: {
+		color: COLORS.textSecondary,
+		fontSize: 13,
+		fontWeight: "700",
+		letterSpacing: 0.8,
+		marginLeft: 2,
+		textTransform: "uppercase",
+	},
+	card: {
+		backgroundColor: COLORS.surface,
+		borderColor: COLORS.border,
+		borderRadius: 24,
+		borderWidth: 1,
+		paddingHorizontal: 18,
+		paddingVertical: 20,
+	},
+	eyebrow: {
+		color: COLORS.gold,
 		fontSize: 12,
 		fontWeight: "700",
 		letterSpacing: 1,
@@ -581,44 +550,118 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	heroTitle: {
+		color: COLORS.textPrimary,
 		fontSize: 28,
 		fontWeight: "700",
 		marginBottom: 8,
 	},
+	heroTitleUltraCompact: {
+		fontSize: 22,
+	},
 	heroSubtitle: {
+		color: COLORS.textSecondary,
 		fontSize: 14,
 		lineHeight: 21,
 	},
-	heroActions: {
+	heroMetrics: {
 		flexDirection: "row",
-		flexWrap: "wrap",
-		gap: 8,
+		gap: 10,
 		marginTop: 18,
 	},
-	preferenceBlock: {
-		paddingHorizontal: 16,
-		paddingTop: 16,
+	metricPill: {
+		backgroundColor: COLORS.surfaceElevated,
+		borderRadius: 12,
+		flex: 1,
+		paddingHorizontal: 12,
+		paddingVertical: 10,
 	},
-	preferenceTitle: {
+	metricValue: {
+		color: COLORS.textPrimary,
 		fontSize: 16,
 		fontWeight: "700",
-		marginBottom: 4,
 	},
-	preferenceBody: {
-		fontSize: 14,
-		lineHeight: 20,
+	metricLabel: {
+		color: COLORS.textSecondary,
+		fontSize: 12,
+		marginTop: 2,
+	},
+	settingRow: {
+		alignItems: "center",
+		borderBottomColor: COLORS.border,
+		borderBottomWidth: 1,
+		flexDirection: "row",
+		justifyContent: "space-between",
+		paddingBottom: 14,
+		paddingTop: 6,
+	},
+	settingCopy: {
+		flex: 1,
+		paddingRight: 14,
+	},
+	settingLabel: {
+		color: COLORS.textPrimary,
+		fontSize: 15,
+		fontWeight: "600",
+	},
+	settingBody: {
+		color: COLORS.textSecondary,
+		fontSize: 13,
+		lineHeight: 19,
+		marginTop: 4,
+	},
+	languageOptions: {
+		backgroundColor: COLORS.bg,
+		borderColor: COLORS.border,
+		borderRadius: 12,
+		borderWidth: 1,
+		flexDirection: "row",
+		gap: 8,
 		marginBottom: 12,
+		marginTop: 12,
+		padding: 6,
 	},
-	segmentedButtons: {
-		marginBottom: 8,
+	languageOptionsDisabled: {
+		opacity: 0.55,
 	},
-	aboutCard: {
-		marginTop: 8,
+	languageOption: {
+		alignItems: "center",
+		borderRadius: 8,
+		flex: 1,
+		justifyContent: "center",
+		minHeight: 38,
+		paddingHorizontal: 10,
 	},
-	addUserButton: {
-		alignSelf: "flex-start",
+	languageOptionActive: {
+		backgroundColor: COLORS.gold,
+	},
+	languageOptionInactive: {
+		backgroundColor: COLORS.surface,
+	},
+	languageOptionTextActive: {
+		color: COLORS.bg,
+		fontSize: 13,
+		fontWeight: "700",
+	},
+	languageOptionTextInactive: {
+		color: COLORS.textSecondary,
+		fontSize: 13,
+		fontWeight: "600",
+	},
+	btnPrimary: {
+		alignItems: "center",
+		backgroundColor: COLORS.gold,
+		borderRadius: 12,
+		justifyContent: "center",
+		minHeight: 46,
+		paddingHorizontal: 16,
+	},
+	btnPrimaryText: {
+		color: COLORS.bg,
+		fontSize: 15,
+		fontWeight: "700",
 	},
 	aboutEyebrow: {
+		color: COLORS.textSecondary,
 		fontSize: 12,
 		fontWeight: "700",
 		letterSpacing: 1,
@@ -626,20 +669,27 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	aboutTitle: {
+		color: COLORS.textPrimary,
 		fontSize: 22,
 		fontWeight: "700",
 		marginBottom: 8,
 	},
 	aboutSubtitle: {
+		color: COLORS.textSecondary,
 		fontSize: 14,
 		lineHeight: 20,
 		marginBottom: 16,
-	},
+ 	},
 	aboutInfoRow: {
+		borderBottomColor: COLORS.border,
 		borderBottomWidth: 1,
 		paddingVertical: 14,
 	},
+	aboutInfoRowLast: {
+		paddingTop: 14,
+	},
 	aboutLabel: {
+		color: COLORS.textSecondary,
 		fontSize: 12,
 		fontWeight: "700",
 		letterSpacing: 0.8,
@@ -647,6 +697,7 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	aboutValue: {
+		color: COLORS.textPrimary,
 		fontSize: 16,
 		fontWeight: "600",
 	},

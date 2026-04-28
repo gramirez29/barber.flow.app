@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { DailyReportScreen } from "../screens/DailyReportScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { ClientsNavigator } from "./ClientsNavigator";
@@ -35,36 +36,37 @@ export const AppNavigator = () => {
 		{
 			label: string;
 			icon: keyof typeof Ionicons.glyphMap;
+			activeIcon: keyof typeof Ionicons.glyphMap;
 		}
 	> = {
 		Calendar: {
 			label: translateText("navigation.calendar"),
 			icon: "calendar-outline",
+			activeIcon: "calendar",
 		},
 		Clients: {
 			label: translateText("navigation.clients"),
 			icon: "people-outline",
+			activeIcon: "people",
 		},
 		DailyReport: {
 			label: translateText("navigation.dailyReport"),
 			icon: "bar-chart-outline",
+			activeIcon: "bar-chart",
 		},
 		NotificationScreen: {
 			label: translateText("navigation.alerts"),
 			icon: "notifications-outline",
+			activeIcon: "notifications",
 		},
 		SettingsScreen: {
 			label: translateText("navigation.settings"),
 			icon: "settings-outline",
+			activeIcon: "settings",
 		},
 	};
-	const isDarkMode = theme.mode === "dark";
-	const activeIconBackground = isDarkMode
-		? "rgba(96, 165, 250, 0.18)"
-		: "rgba(59, 130, 246, 0.12)";
-	const activeIconBorder = isDarkMode
-		? "rgba(96, 165, 250, 0.32)"
-		: "rgba(59, 130, 246, 0.2)";
+	const activeIconBackground = "rgba(201, 168, 76, 0.18)";
+	const activeIconBorder = "rgba(201, 168, 76, 0.38)";
 
 	return (
 		<Tab.Navigator
@@ -72,26 +74,41 @@ export const AppNavigator = () => {
 			headerShown: false,
 			tabBarHideOnKeyboard: true,
 			tabBarStyle: {
-				backgroundColor: theme.colors.surface,
-				height: 74,
-				paddingBottom: theme.layout.spacing.sm,
-				paddingTop: theme.layout.spacing.sm,
-				borderTopWidth: 0.5,
-				borderTopColor: theme.colors.border,
-				...theme.layout.shadows.card,
+				backgroundColor: "transparent",
+				borderTopWidth: 0,
+				elevation: 0,
+				height: 91,
+				left: 10,
+				overflow: "hidden",
+				paddingBottom: 9,
+				paddingTop: 9,
+				position: "absolute",
+				right: 10,
+				shadowColor: "#000",
+				shadowOffset: { width: 0, height: -2 },
+				shadowOpacity: 0.26,
+				shadowRadius: 10,
 			},
+			tabBarBackground: () => (
+				<LinearGradient
+					colors={["#0B0B0B", "#151515", "#2A2A2A"]}
+					end={{ x: 1, y: 0.5 }}
+					start={{ x: 0, y: 0.5 }}
+					style={styles.tabBarBackground}
+				/>
+			),
 			tabBarItemStyle: {
-				paddingHorizontal: theme.layout.spacing.xs,
+				paddingHorizontal: 3,
 			},
-			tabBarActiveTintColor: theme.colors.tabActive,
-			tabBarInactiveTintColor: theme.colors.tabInactive,
+			tabBarActiveTintColor: "#F3E7C7",
+			tabBarInactiveTintColor: "#C2C2C2",
 			tabBarLabelStyle: {
 				fontSize: 11,
 				fontFamily: fonts.medium,
-				fontWeight: "500",
-				marginTop: theme.layout.spacing.xs,
+				fontWeight: "600",
+				marginTop: 3,
 				marginBottom: 0,
-				letterSpacing: 0.15,
+				letterSpacing: 0.2,
 			},
 			tabBarIconStyle: {
 				marginBottom: 0,
@@ -103,16 +120,13 @@ export const AppNavigator = () => {
 				<View
 					style={[
 						styles.iconShell,
-						{
-						borderRadius: theme.layout.radius.md + 2,
-						},
 						focused && {
 						backgroundColor: activeIconBackground,
 						borderColor: activeIconBorder,
 						},
 					]}
 					>
-					<Ionicons name={metadata.icon} size={22} color={color} />
+					<Ionicons name={focused ? metadata.activeIcon : metadata.icon} size={21} color={color} />
 				</View>
 			);
 			},
@@ -142,15 +156,15 @@ export const AppNavigator = () => {
 				title: tabMetadata.NotificationScreen.label,
 				tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
 				tabBarBadgeStyle: {
-					backgroundColor: theme.colors.notificationBadge,
-					color: theme.colors.surface,
+						backgroundColor: theme.colors.notificationBadge,
+						color: "#FFFFFF",
 					fontSize: 11,
-					fontWeight: "600",
+						fontWeight: "700",
 					minWidth: 18,
 					height: 18,
 					lineHeight: 18,
-					top: 6,
-					right: 10,
+						top: 4,
+						right: 8,
 				},
 			}}
 		/>
@@ -168,8 +182,19 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		borderColor: "transparent",
 		borderWidth: 1,
-		height: 32,
+		borderRadius: 12,
+		height: 34,
 		justifyContent: "center",
-		width: 44,
+		width: 46,
+	},
+	tabBarBackground: {
+		position: "absolute",
+		top: 5,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		borderColor: "rgba(170, 170, 170, 0.5)",
+		borderRadius: 20,
+		borderWidth: StyleSheet.hairlineWidth,
 	},
 });

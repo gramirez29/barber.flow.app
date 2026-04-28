@@ -1,7 +1,9 @@
+import React, { useContext } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StyleSheet, View } from "react-native";
 import { Header } from "./ui/Header";
 import { useNavigation } from "@react-navigation/native";
+import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import type { AppTabParamList } from "../navigation/AppNavigator"; 
 interface ScreenLayoutProps {
@@ -23,6 +25,8 @@ export const ScreenLayout = ({
     }: ScreenLayoutProps) => {
 
         const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
+        const tabBarHeight = useContext(BottomTabBarHeightContext) ?? 0;
+        const contentBottomPadding = tabBarHeight > 0 ? tabBarHeight + 10 : 16;
 
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: backgroundColor }, center && styles.center ]}>
@@ -34,7 +38,7 @@ export const ScreenLayout = ({
                     />
                 )}
 
-                <View style={[styles.content, center && styles.center]}>
+                <View style={[styles.content, { paddingBottom: contentBottomPadding }, center && styles.center]}>
                     {children}
                 </View>
 

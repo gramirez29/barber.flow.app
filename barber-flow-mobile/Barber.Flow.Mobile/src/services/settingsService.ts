@@ -18,11 +18,15 @@ const mapBarberRequest = (
 	values: ApplicationUserSettingsForm,
 ): BarberApiRequest => ({
 	UserName: values.userName.trim(),
-	UserPhone: values.userPhone,
+	UserPhone: values.userPhone || values.barberPhone,
 	UserEmail: values.userEmail.trim(),
 	BarberName: values.barberName.trim(),
 	BarberPhone: values.barberPhone,
+	BarberShopName: values.shopName?.trim() || undefined,
+	BarberShopPhone: values.shopPhone || undefined,
 	Address: values.address?.trim() || undefined,
+	Password: values.password?.trim() || undefined,
+	PhotoUrl: values.profilePhotoUrl || undefined,
 });
 
 const mapBarberResponse = (response: Record<string, unknown>): BarberApiResponse => ({
@@ -32,7 +36,10 @@ const mapBarberResponse = (response: Record<string, unknown>): BarberApiResponse
 	userEmail: ((response.userEmail ?? response.UserEmail) as string | undefined) ?? "",
 	barberName: ((response.barberName ?? response.BarberName) as string | undefined) ?? "",
 	barberPhone: ((response.barberPhone ?? response.BarberPhone) as string | undefined) ?? "",
+	shopName: (response.shopName ?? response.ShopName ?? response.barberShopName ?? response.BarberShopName) as string | undefined,
+	shopPhone: (response.shopPhone ?? response.ShopPhone ?? response.barberShopPhone ?? response.BarberShopPhone) as string | undefined,
 	address: (response.address ?? response.Address) as string | undefined,
+	photoUrl: (response.photoUrl ?? response.PhotoUrl) as string | undefined,
 	createdAt: (response.createdAt ?? response.CreatedAt) as string | undefined,
 	updatedAt: (response.updatedAt ?? response.UpdatedAt) as string | undefined,
 });

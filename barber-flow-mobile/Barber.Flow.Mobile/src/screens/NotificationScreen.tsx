@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { Alert, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { NotificationSection } from "../components/notifications/NotificationSection";
 import { useTranslation } from "../context/LanguageContext";
@@ -19,7 +20,7 @@ const COLORS = {
     textPrimary: "#FFFFFF",
     textSecondary: "#9B9B9B",
     border: "#3A3A3A",
-    overlay: "rgba(0,0,0,0.58)",
+    overlay: "rgba(0,0,0,0.72)",
 } as const;
 
 export const NotificationScreen = () => {
@@ -98,6 +99,7 @@ export const NotificationScreen = () => {
             style={styles.screenBg}
             resizeMode="cover"
         >
+            <StatusBar style="light" translucent backgroundColor="transparent" />
             <View style={styles.screenOverlay} />
             <ScreenLayout
                 title={translateText("notifications.title")}

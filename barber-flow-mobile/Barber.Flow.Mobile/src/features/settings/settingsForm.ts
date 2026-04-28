@@ -11,7 +11,14 @@ import {
 
 export type ApplicationUserFormErrors = Partial<
 	Record<
-		"userName" | "userPhone" | "userEmail" | "barberName" | "barberPhone",
+		| "userName"
+		| "userEmail"
+		| "barberName"
+		| "barberPhone"
+		| "shopName"
+		| "shopPhone"
+		| "address"
+		| "password",
 		string
 	>
 >;
@@ -27,6 +34,10 @@ export const createEmptyApplicationUserForm = (
 	barberId,
 	barberName: "",
 	barberPhone: "",
+	password: "",
+	profilePhotoUrl: "",
+	shopName: "",
+	shopPhone: "",
 	userEmail: "",
 	userName: "",
 	userPhone: "",
@@ -39,31 +50,36 @@ export const mapBarberResponseToForm = (
 	barberId: response.id,
 	barberName: response.barberName,
 	barberPhone: response.barberPhone,
+	password: "",
+	profilePhotoUrl: response.photoUrl ?? "",
+	shopName: response.shopName ?? "",
+	shopPhone: response.shopPhone ?? "",
 	userEmail: response.userEmail,
 	userName: response.userName,
 	userPhone: response.userPhone,
 });
 
+const validatePhoneField = (value: string, requiredKey: string, formatKey: string) => {
+	if (validateRequiredField(value)) {
+		return requiredKey;
+	}
+
+	if (!/^\d{4}-\d{4}$/.test(value)) {
+		return formatKey;
+	}
+
+	return undefined;
+};
+
 export const validateApplicationUserField = (
 	key: keyof ApplicationUserSettingsForm,
 	value: ApplicationUserSettingsForm[keyof ApplicationUserSettingsForm],
+	mode: "create" | "edit",
 ) => {
 	if (key === "userName") {
 		return validateRequiredField(String(value ?? ""))
-			? "validation.nameRequired"
+			? "validation.usernameRequired"
 			: undefined;
-	}
-
-	if (key === "userPhone") {
-		if (validateRequiredField(String(value ?? ""))) {
-			return "validation.phoneRequired";
-		}
-
-		if (!/^\d{4}-\d{4}$/.test(String(value ?? ""))) {
-			return "validation.phoneFormat";
-		}
-
-		return undefined;
 	}
 
 	if (key === "userEmail") {
@@ -77,15 +93,45 @@ export const validateApplicationUserField = (
 	}
 
 	if (key === "barberPhone") {
+		return validatePhoneField(
+			String(value ?? ""),
+			"validation.barberPhoneRequired",
+			"validation.barberPhoneFormat",
+		);
+	}
+
+	if (key === "shopName") {
+		return validateRequiredField(String(value ?? ""))
+			? "validation.shopNameRequired"
+			: undefined;
+	}
+
+	if (key === "shopPhone") {
+		return validatePhoneField(
+			String(value ?? ""),
+			"validation.shopPhoneRequired",
+			"validation.shopPhoneFormat",
+		);
+	}
+
+	if (key === "address") {
+		return validateRequiredField(String(value ?? ""))
+			? "validation.addressRequired"
+			: undefined;
+	}
+
+	if (key === "password") {
+		if (mode === "edit" && !String(value ?? "").trim()) {
+			return undefined;
+		}
+
 		if (validateRequiredField(String(value ?? ""))) {
-			return "validation.barberPhoneRequired";
+			return "validation.passwordRequired";
 		}
 
-		if (!/^\d{4}-\d{4}$/.test(String(value ?? ""))) {
-			return "validation.barberPhoneFormat";
+		if (String(value).trim().length < 6) {
+			return "validation.passwordLength";
 		}
-
-		return undefined;
 	}
 
 	return undefined;
@@ -93,12 +139,16 @@ export const validateApplicationUserField = (
 
 export const buildApplicationUserErrors = (
 	values: ApplicationUserSettingsForm,
+	mode: "create" | "edit",
 ): ApplicationUserFormErrors => ({
-	barberName: validateApplicationUserField("barberName", values.barberName),
-	barberPhone: validateApplicationUserField("barberPhone", values.barberPhone),
-	userEmail: validateApplicationUserField("userEmail", values.userEmail),
-	userName: validateApplicationUserField("userName", values.userName),
-	userPhone: validateApplicationUserField("userPhone", values.userPhone),
+	address: validateApplicationUserField("address", values.address, mode),
+	barberName: validateApplicationUserField("barberName", values.barberName, mode),
+	barberPhone: validateApplicationUserField("barberPhone", values.barberPhone, mode),
+	password: validateApplicationUserField("password", values.password, mode),
+	shopName: validateApplicationUserField("shopName", values.shopName, mode),
+	shopPhone: validateApplicationUserField("shopPhone", values.shopPhone, mode),
+	userEmail: validateApplicationUserField("userEmail", values.userEmail, mode),
+	userName: validateApplicationUserField("userName", values.userName, mode),
 });
 
 export const useApplicationUsersForm = () => {
@@ -112,34 +162,40 @@ export const useApplicationUsersForm = () => {
 	const setField = <K extends keyof ApplicationUserSettingsForm>(
 		key: K,
 		value: ApplicationUserSettingsForm[K],
-		) => {
-			const normalizedValue =
-			key === "userPhone" || key === "barberPhone"
-				? (formatPhoneNumber(
-					String(value ?? ""),
-				) as ApplicationUserSettingsForm[K])
+	) => {
+		const normalizedValue =
+			key === "barberPhone" || key === "shopPhone" || key === "userPhone"
+				? (formatPhoneNumber(String(value ?? "")) as ApplicationUserSettingsForm[K])
 				: value;
 
-			setValues((currentValues) => ({
-			...currentValues,
-			[key]: normalizedValue,
-			}));
+		setValues((currentValues) => {
+			const nextValues = {
+				...currentValues,
+				[key]: normalizedValue,
+			};
 
-			setErrors((currentErrors) => ({
+			if (key === "barberPhone") {
+				nextValues.userPhone = String(normalizedValue ?? "");
+			}
+
+			return nextValues;
+		});
+
+		setErrors((currentErrors) => ({
 			...currentErrors,
-			[key]: validateApplicationUserField(key, normalizedValue),
-			}));
+			[key]: validateApplicationUserField(key, normalizedValue, mode),
+		}));
 	};
 
 	const onBlurField = (key: keyof ApplicationUserSettingsForm) => {
 		setTouched((currentTouched) => ({
-		...currentTouched,
-		[key]: true,
+			...currentTouched,
+			[key]: true,
 		}));
 
 		setErrors((currentErrors) => ({
-		...currentErrors,
-		[key]: validateApplicationUserField(key, values[key]),
+			...currentErrors,
+			[key]: validateApplicationUserField(key, values[key], mode),
 		}));
 	};
 
@@ -149,7 +205,7 @@ export const useApplicationUsersForm = () => {
 	) => {
 		setValues(nextValues);
 		setMode(nextMode);
-		setErrors(buildApplicationUserErrors(nextValues));
+		setErrors(buildApplicationUserErrors(nextValues, nextMode));
 		setTouched({});
 	};
 
@@ -161,26 +217,32 @@ export const useApplicationUsersForm = () => {
 	};
 
 	const validateBeforeSubmit = () => {
-		const nextErrors = buildApplicationUserErrors(values);
+		const nextErrors = buildApplicationUserErrors(values, mode);
 
 		setErrors(nextErrors);
 		setTouched({
+			address: true,
 			barberName: true,
 			barberPhone: true,
+			password: true,
+			shopName: true,
+			shopPhone: true,
 			userEmail: true,
 			userName: true,
-			userPhone: true,
 		});
 
 		return nextErrors;
 	};
 
 	const isFormValid =
-		!validateApplicationUserField("userName", values.userName) &&
-		!validateApplicationUserField("userPhone", values.userPhone) &&
-		!validateApplicationUserField("userEmail", values.userEmail) &&
-		!validateApplicationUserField("barberName", values.barberName) &&
-		!validateApplicationUserField("barberPhone", values.barberPhone);
+		!validateApplicationUserField("userName", values.userName, mode) &&
+		!validateApplicationUserField("userEmail", values.userEmail, mode) &&
+		!validateApplicationUserField("barberName", values.barberName, mode) &&
+		!validateApplicationUserField("barberPhone", values.barberPhone, mode) &&
+		!validateApplicationUserField("shopName", values.shopName, mode) &&
+		!validateApplicationUserField("shopPhone", values.shopPhone, mode) &&
+		!validateApplicationUserField("address", values.address, mode) &&
+		!validateApplicationUserField("password", values.password, mode);
 
 	return {
 		errors,

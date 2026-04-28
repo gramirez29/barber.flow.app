@@ -1,12 +1,11 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import { Button, HelperText, Text, TextInput } from "react-native-paper";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { HelperText, TextInput } from "react-native-paper";
 import type {
 	ReportCalculationSettingErrors,
 	ReportCalculationSettingTouched,
 } from "../../features/settings/reportCalculationsForm";
 import { useTranslation } from "../../context/LanguageContext";
-import { useAppTheme } from "../../theme/ThemeContext";
 import type { ReportCalculationSettings } from "../../types/settings";
 
 interface ReportCalculationSettingsFormProps {
@@ -23,6 +22,28 @@ interface ReportCalculationSettingsFormProps {
 	values: ReportCalculationSettings;
 }
 
+const COLORS = {
+	bg: "#0D0D0D",
+	surface: "#1A1A1A",
+	gold: "#C9A84C",
+	textPrimary: "#FFFFFF",
+	textSecondary: "#9B9B9B",
+	border: "#3A3A3A",
+} as const;
+
+const PAPER_THEME = {
+	colors: {
+		background: COLORS.surface,
+		onBackground: COLORS.textPrimary,
+		onSurface: COLORS.textPrimary,
+		onSurfaceVariant: COLORS.textSecondary,
+		outline: COLORS.border,
+		primary: COLORS.gold,
+		surface: COLORS.surface,
+		text: COLORS.textPrimary,
+	},
+};
+
 export const ReportCalculationSettingsForm = ({
 	errors,
 	loading,
@@ -33,18 +54,13 @@ export const ReportCalculationSettingsForm = ({
 	touched,
 	values,
 }: ReportCalculationSettingsFormProps) => {
-	const { theme } = useAppTheme();
 	const { translateText } = useTranslation();
 
 	return (
 		<View style={styles.container}>
 			<View style={styles.copyBlock}>
-				<Text style={[styles.title, { color: theme.colors.textPrimary }]}>
-					{translateText("settings.reportCalculationForm.title")}
-				</Text>
-				<Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-					{translateText("settings.reportCalculationForm.subtitle")}
-				</Text>
+				<Text style={styles.title}>{translateText("settings.reportCalculationForm.title")}</Text>
+				<Text style={styles.subtitle}>{translateText("settings.reportCalculationForm.subtitle")}</Text>
 			</View>
 
 			<View style={styles.formGroup}>
@@ -60,6 +76,8 @@ export const ReportCalculationSettingsForm = ({
 					onBlur={() => onBlurField("commissionPercentage")}
 					error={Boolean(touched.commissionPercentage && errors.commissionPercentage)}
 					mode="outlined"
+					theme={PAPER_THEME as any}
+					textColor={COLORS.textPrimary}
 					keyboardType="decimal-pad"
 					right={<TextInput.Affix text="%" />}
 					disabled={loading}
@@ -82,6 +100,8 @@ export const ReportCalculationSettingsForm = ({
 					onBlur={() => onBlurField("fixedDailyExpense")}
 					error={Boolean(touched.fixedDailyExpense && errors.fixedDailyExpense)}
 					mode="outlined"
+					theme={PAPER_THEME as any}
+					textColor={COLORS.textPrimary}
 					keyboardType="decimal-pad"
 					left={<TextInput.Affix text="CRC" />}
 					disabled={loading}
@@ -92,12 +112,20 @@ export const ReportCalculationSettingsForm = ({
 			</View>
 
 			<View style={styles.actions}>
-				<Button mode="outlined" onPress={onReset} disabled={loading}>
-					{translateText("common.reset")}
-				</Button>
-				<Button mode="contained" onPress={onSave} disabled={loading}>
-					{translateText("common.save")}
-				</Button>
+				<Pressable
+					onPress={onReset}
+					disabled={loading}
+					style={({ pressed }) => [styles.btnSecondary, loading && styles.btnDisabled, pressed && { opacity: 0.8 }]}
+				>
+					<Text style={styles.btnSecondaryText}>{translateText("common.reset")}</Text>
+				</Pressable>
+				<Pressable
+					onPress={onSave}
+					disabled={loading}
+					style={({ pressed }) => [styles.btnPrimary, loading && styles.btnDisabled, pressed && { opacity: 0.8 }]}
+				>
+					<Text style={styles.btnPrimaryText}>{translateText("common.save")}</Text>
+				</Pressable>
 			</View>
 		</View>
 	);
@@ -105,18 +133,20 @@ export const ReportCalculationSettingsForm = ({
 
 const styles = StyleSheet.create({
 	container: {
-		paddingHorizontal: 16,
-		paddingTop: 16,
+		paddingHorizontal: 0,
+		paddingTop: 0,
 	},
 	copyBlock: {
 		marginBottom: 16,
 	},
 	title: {
+		color: COLORS.textPrimary,
 		fontSize: 16,
 		fontWeight: "700",
 		marginBottom: 4,
 	},
 	subtitle: {
+		color: COLORS.textSecondary,
 		fontSize: 14,
 		lineHeight: 20,
 	},
@@ -125,9 +155,40 @@ const styles = StyleSheet.create({
 	},
 	actions: {
 		flexDirection: "row",
-		flexWrap: "wrap",
 		gap: 8,
-		marginTop: 12,
-		marginBottom: 8,
+		marginTop: 10,
+	},
+	btnPrimary: {
+		alignItems: "center",
+		backgroundColor: COLORS.gold,
+		borderRadius: 12,
+		flex: 1,
+		justifyContent: "center",
+		minHeight: 44,
+		paddingHorizontal: 14,
+	},
+	btnPrimaryText: {
+		color: COLORS.bg,
+		fontSize: 14,
+		fontWeight: "700",
+	},
+	btnSecondary: {
+		alignItems: "center",
+		backgroundColor: COLORS.surface,
+		borderColor: COLORS.border,
+		borderRadius: 12,
+		borderWidth: 1,
+		flex: 1,
+		justifyContent: "center",
+		minHeight: 44,
+		paddingHorizontal: 14,
+	},
+	btnSecondaryText: {
+		color: COLORS.textPrimary,
+		fontSize: 14,
+		fontWeight: "600",
+	},
+	btnDisabled: {
+		opacity: 0.55,
 	},
 });
