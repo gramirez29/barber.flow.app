@@ -1,8 +1,11 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import { Text } from "react-native-paper";
-import { useAppTheme } from "../../theme/ThemeContext";
+import { StyleSheet, Text, View } from "react-native";
 import type { NotificationItem } from "../../types/notifications";
+
+const COLORS = {
+	textPrimary: "#FFFFFF",
+	textSecondary: "#9B9B9B",
+} as const;
 import { NotificationEmptyState } from "./NotificationEmptyState";
 import { NotificationItemCard } from "./NotificationItemCard";
 
@@ -25,15 +28,13 @@ export const NotificationSection = ({
 		onItemPress,
 		title,
 	}: NotificationSectionProps) => {
-	const { theme } = useAppTheme();
-
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
-				<Text style={[styles.title, { color: theme.colors.textPrimary }]}>
+				<Text style={styles.title}>
 					{title}
 				</Text>
-				<Text style={[styles.description, { color: theme.colors.textSecondary }]}>
+				<Text style={styles.description}>
 					{description}
 				</Text>
 			</View>
@@ -61,6 +62,7 @@ const styles = StyleSheet.create({
 		gap: 12,
 	},
 	description: {
+		color: COLORS.textSecondary,
 		fontSize: 14,
 		lineHeight: 20,
 	},
@@ -71,6 +73,7 @@ const styles = StyleSheet.create({
 		gap: 12,
 	},
 	title: {
+		color: COLORS.textPrimary,
 		fontSize: 18,
 		fontWeight: "700",
 	},

@@ -1,11 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, Switch, View } from "react-native";
+import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { HelperText, Text, TextInput } from "react-native-paper";
+import { HelperText, TextInput } from "react-native-paper";
 import { ClientAvatar } from "../ClientAvatar";
-import { FormCard } from "../ui/FormCard";
 import { useTranslation } from "../../context/LanguageContext";
-import { useAppTheme } from "../../theme/ThemeContext";
 import type { Client } from "../../types/clients";
 import {
 	ClientFormErrors,
@@ -13,6 +11,30 @@ import {
 	PAYMENT_METHODS,
 	getClientPaymentMethodLabel,
 } from "../../features/clients/clientForm";
+
+const COLORS = {
+	bg: "#0D0D0D",
+	surface: "#1A1A1A",
+	surfaceElevated: "#252525",
+	gold: "#C9A84C",
+	goldLight: "#E5C878",
+	textPrimary: "#FFFFFF",
+	textSecondary: "#9B9B9B",
+	border: "#3A3A3A",
+	error: "#F87171",
+} as const;
+
+const PAPER_THEME = {
+	colors: {
+		primary: COLORS.gold,
+		onSurfaceVariant: COLORS.textSecondary,
+		background: COLORS.surfaceElevated,
+		outline: COLORS.border,
+		surface: COLORS.surfaceElevated,
+		onSurface: COLORS.textPrimary,
+		error: COLORS.error,
+	},
+} as const;
 
 interface ClientFormProps {
 	client: Client;
@@ -44,7 +66,6 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 	onFieldBlur,
 	onOpenDatePicker,
 }) => {
-	const { theme } = useAppTheme();
 	const { translateText } = useTranslation();
 	const isEditing = Boolean(client.id);
 	const fullName = `${client.firstName} ${client.lastName}`.trim()
@@ -52,50 +73,50 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 
 	return (
 		<View style={styles.container}>
-			<FormCard style={styles.heroCard}>
+			{/* ─── Hero card ─────────────────────────────────────────────── */}
+			<View style={styles.card}>
 				<View style={styles.heroRow}>
 					<ClientAvatar size={92} initials={fullName} />
 
 					<View style={styles.heroTextWrap}>
-						<Text style={[styles.eyebrow, { color: theme.colors.textSecondary }]}>
+						<Text style={styles.eyebrow}>
 							{isEditing
 								? translateText("clients.form.editEyebrow")
 								: translateText("clients.form.createEyebrow")}
 						</Text>
-						<Text style={[styles.heroTitle, { color: theme.colors.textPrimary }]}>
+						<Text style={styles.heroTitle}>
 							{fullName}
 						</Text>
-						<Text style={[styles.heroSubtitle, { color: theme.colors.textSecondary }]}>
+						<Text style={styles.heroSubtitle}>
 							{client.phone || translateText("clients.form.createSubtitle")}
 						</Text>
 						<View style={styles.statusRow}>
 							<View
 								style={[
 									styles.statusPill,
-									{
-										backgroundColor: client.active ? theme.colors.secondary : theme.colors.border,
-									},
+									{ backgroundColor: client.active ? COLORS.gold : COLORS.border },
 								]}
 							>
-								<Text style={[styles.statusPillText, { color: theme.colors.surface }]}> 
+								<Text style={[styles.statusPillText, { color: client.active ? COLORS.bg : COLORS.textSecondary }]}>
 									{client.active
 										? translateText("clients.form.statusActive")
 										: translateText("clients.form.statusInactive")}
 								</Text>
 							</View>
 							{client.id ? (
-								<Text style={[styles.helperLine, { color: theme.colors.textSecondary }]}>{translateText("clients.form.editingExisting")}</Text>
+								<Text style={styles.helperLine}>{translateText("clients.form.editingExisting")}</Text>
 							) : null}
 						</View>
 					</View>
 				</View>
-			</FormCard>
+			</View>
 
-			<FormCard>
-				<Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+			{/* ─── Identity ──────────────────────────────────────────────── */}
+			<View style={styles.card}>
+				<Text style={styles.sectionTitle}>
 					{translateText("clients.form.identityTitle")}
 				</Text>
-				<Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>
+				<Text style={styles.sectionSubtitle}>
 					{translateText("clients.form.identitySubtitle")}
 				</Text>
 
@@ -109,6 +130,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 						mode="outlined"
 						returnKeyType="next"
 						disabled={loading}
+						theme={PAPER_THEME as any}
 					/>
 					<HelperText type="error" visible={Boolean(touched.firstName && errors.firstName)}>
 						{errors.firstName ? translateText(errors.firstName) : undefined}
@@ -124,6 +146,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 						error={Boolean(touched.lastName && errors.lastName)}
 						mode="outlined"
 						disabled={loading}
+						theme={PAPER_THEME as any}
 					/>
 					<HelperText type="error" visible={Boolean(touched.lastName && errors.lastName)}>
 						{errors.lastName ? translateText(errors.lastName) : undefined}
@@ -142,6 +165,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 						placeholder="0000-0000"
 						maxLength={9}
 						disabled={loading}
+						theme={PAPER_THEME as any}
 					/>
 					<HelperText type="error" visible={Boolean(touched.phone && errors.phone)}>
 						{errors.phone ? translateText(errors.phone) : undefined}
@@ -159,18 +183,20 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 						keyboardType="email-address"
 						autoCapitalize="none"
 						disabled={loading}
+						theme={PAPER_THEME as any}
 					/>
 					<HelperText type="error" visible={Boolean(touched.email && errors.email)}>
 						{errors.email ? translateText(errors.email) : undefined}
 					</HelperText>
 				</View>
-			</FormCard>
+			</View>
 
-			<FormCard>
-				<Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+			{/* ─── Profile details ───────────────────────────────────────── */}
+			<View style={styles.card}>
+				<Text style={styles.sectionTitle}>
 					{translateText("clients.form.profileDetailsTitle")}
 				</Text>
-				<Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>
+				<Text style={styles.sectionSubtitle}>
 					{translateText("clients.form.profileDetailsSubtitle")}
 				</Text>
 
@@ -181,25 +207,20 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 						onChangeText={(value) => onFieldChange("address", value)}
 						mode="outlined"
 						disabled={loading}
+						theme={PAPER_THEME as any}
 					/>
 				</View>
 
 				<View style={styles.formGroup}>
 					<Pressable
 						onPress={onOpenDatePicker}
-						style={[
-						styles.dateField,
-						{
-							backgroundColor: theme.colors.primaryInput,
-							borderColor: theme.colors.border,
-						},
-						]}
+						style={styles.dateField}
 						disabled={loading}
 					>
-						<Text style={[styles.dateLabel, { color: theme.colors.textSecondary }]}>
+						<Text style={styles.dateLabel}>
 							{translateText("clients.form.birthday")}
 						</Text>
-						<Text style={[styles.dateValue, { color: theme.colors.textPrimary }]}>
+						<Text style={styles.dateValue}>
 							{formatBirthday(translateText, client.birthday)}
 						</Text>
 					</Pressable>
@@ -214,60 +235,52 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 						multiline
 						numberOfLines={3}
 						disabled={loading}
+						theme={PAPER_THEME as any}
 					/>
 				</View>
-			</FormCard>
+			</View>
 
-			<FormCard>
-				<Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+			{/* ─── Preferences ───────────────────────────────────────────── */}
+			<View style={styles.card}>
+				<Text style={styles.sectionTitle}>
 					{translateText("clients.form.preferencesTitle")}
 				</Text>
-				<Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>
+				<Text style={styles.sectionSubtitle}>
 					{translateText("clients.form.preferencesSubtitle")}
 				</Text>
 
 				<View style={styles.formGroup}>
-					<Text style={[styles.fieldLabel, { color: theme.colors.textSecondary }]}>
+					<Text style={styles.fieldLabel}>
 						{translateText("clients.form.paymentMethod")}
 					</Text>
-					<View
-						style={[
-							styles.pickerWrap,
-							{
-								backgroundColor: theme.colors.primaryInput,
-								borderColor: theme.colors.border,
-							},
-						]}
-					>
+					<View style={styles.pickerWrap}>
 						<Picker
 							selectedValue={client.paymentMethod}
 							onValueChange={(value) => onFieldChange("paymentMethod", value as Client["paymentMethod"])}
 							enabled={!loading}
+							style={{ color: COLORS.textPrimary, backgroundColor: COLORS.surfaceElevated }}
+							itemStyle={{ color: COLORS.textPrimary, backgroundColor: COLORS.surfaceElevated }}
+							dropdownIconColor={COLORS.gold}
 						>
 							{PAYMENT_METHODS.map((paymentMethod) => (
 								<Picker.Item
-								key={paymentMethod}
-								label={getClientPaymentMethodLabel(paymentMethod, translateText)}
-								value={paymentMethod}
+									key={paymentMethod}
+									label={getClientPaymentMethodLabel(paymentMethod, translateText)}
+									value={paymentMethod}
+									color={COLORS.textPrimary}
+									style={{ color: COLORS.textPrimary, backgroundColor: COLORS.surfaceElevated }}
 								/>
 							))}
 						</Picker>
 					</View>
 				</View>
 
-				<View
-					style={[
-						styles.switchRow,
-						{
-						borderColor: theme.colors.border,
-						},
-					]}
-					>
+				<View style={styles.switchRow}>
 					<View style={styles.switchTextWrap}>
-						<Text style={[styles.switchTitle, { color: theme.colors.textPrimary }]}>
+						<Text style={styles.switchTitle}>
 							{translateText("clients.form.activeTitle")}
 						</Text>
-						<Text style={[styles.switchDescription, { color: theme.colors.textSecondary }]}>
+						<Text style={styles.switchDescription}>
 							{translateText("clients.form.activeDescription")}
 						</Text>
 					</View>
@@ -275,9 +288,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 						value={Boolean(client.active)}
 						onValueChange={(value) => onFieldChange("active", value)}
 						disabled={loading}
+						trackColor={{ false: COLORS.border, true: COLORS.gold }}
+						thumbColor={client.active ? COLORS.goldLight : COLORS.textSecondary}
 					/>
 				</View>
-			</FormCard>
+			</View>
 		</View>
 	);
 };
@@ -287,8 +302,13 @@ const styles = StyleSheet.create({
 		width: "100%",
 		gap: 16,
 	},
-	heroCard: {
-		paddingVertical: 20,
+	// ─── Card
+	card: {
+		backgroundColor: COLORS.surface,
+		borderColor: COLORS.border,
+		borderRadius: 20,
+		borderWidth: 1,
+		padding: 20,
 	},
 	heroRow: {
 		alignItems: "center",
@@ -300,16 +320,19 @@ const styles = StyleSheet.create({
 		gap: 4,
 	},
 	eyebrow: {
+		color: COLORS.gold,
 		fontSize: 12,
 		fontWeight: "700",
 		letterSpacing: 1,
 		textTransform: "uppercase",
 	},
 	heroTitle: {
+		color: COLORS.textPrimary,
 		fontSize: 24,
 		fontWeight: "700",
 	},
 	heroSubtitle: {
+		color: COLORS.textSecondary,
 		fontSize: 14,
 		lineHeight: 20,
 	},
@@ -330,14 +353,17 @@ const styles = StyleSheet.create({
 		fontWeight: "700",
 	},
 	helperLine: {
+		color: COLORS.textSecondary,
 		fontSize: 12,
 	},
 	sectionTitle: {
+		color: COLORS.textPrimary,
 		fontSize: 20,
 		fontWeight: "700",
 		marginBottom: 4,
 	},
 	sectionSubtitle: {
+		color: COLORS.textSecondary,
 		fontSize: 14,
 		lineHeight: 20,
 		marginBottom: 16,
@@ -346,22 +372,27 @@ const styles = StyleSheet.create({
 		marginBottom: 8,
 	},
 	dateField: {
+		backgroundColor: COLORS.surfaceElevated,
+		borderColor: COLORS.border,
 		borderRadius: 12,
 		borderWidth: 1,
 		paddingHorizontal: 16,
 		paddingVertical: 14,
 	},
 	dateLabel: {
+		color: COLORS.textSecondary,
 		fontSize: 12,
 		fontWeight: "600",
 		marginBottom: 6,
 		textTransform: "uppercase",
 	},
 	dateValue: {
+		color: COLORS.textPrimary,
 		fontSize: 16,
 		fontWeight: "500",
 	},
 	fieldLabel: {
+		color: COLORS.textSecondary,
 		fontSize: 12,
 		fontWeight: "700",
 		letterSpacing: 0.5,
@@ -369,12 +400,16 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	pickerWrap: {
+		backgroundColor: COLORS.surfaceElevated,
+		borderColor: COLORS.border,
 		borderRadius: 12,
 		borderWidth: 1,
 		overflow: "hidden",
 	},
 	switchRow: {
 		alignItems: "center",
+		backgroundColor: COLORS.surfaceElevated,
+		borderColor: COLORS.border,
 		borderRadius: 16,
 		borderWidth: 1,
 		flexDirection: "row",
@@ -387,11 +422,13 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	switchTitle: {
+		color: COLORS.textPrimary,
 		fontSize: 16,
 		fontWeight: "600",
 		marginBottom: 4,
 	},
 	switchDescription: {
+		color: COLORS.textSecondary,
 		fontSize: 13,
 		lineHeight: 18,
 	},

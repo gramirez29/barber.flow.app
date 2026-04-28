@@ -9,12 +9,20 @@ import type { CompositeNavigationProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { CalendarStackParamList } from "../navigation/CalendarNavigator";
 import type { AppTabParamList } from "../navigation/AppNavigator";
-import { Text } from "react-native-paper";
+import { Text, View } from "react-native";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { AppointmentForm } from "../components/calendar/AppointmentForm";
-import { FormCard } from "../components/ui/FormCard";
 import { useTranslation } from "../context/LanguageContext";
-import { useAppTheme } from "../theme/ThemeContext";
+
+const COLORS = {
+	bg: "#0D0D0D",
+	surface: "#1A1A1A",
+	surfaceElevated: "#252525",
+	gold: "#C9A84C",
+	textPrimary: "#FFFFFF",
+	textSecondary: "#9B9B9B",
+	border: "#3A3A3A",
+} as const;
 import { useAppointmentStore } from "../features/appointments/appointment.store";
 import type {
   Appointment,
@@ -41,7 +49,6 @@ export const AppointmentFormScreen = () => {
 	const navigation = useNavigation<CompositeNavigationProp<NativeStackNavigationProp<CalendarStackParamList>, BottomTabNavigationProp<AppTabParamList>>>();
 	const route = useRoute<AppointmentFormRoute>();
 	const insets = useSafeAreaInsets();
-	const { theme } = useAppTheme();
 	const { translateText } = useTranslation();
 	const { appointments, addAppointment, updateAppointment } =
 		useAppointmentStore();
@@ -142,7 +149,7 @@ export const AppointmentFormScreen = () => {
 	return (
 		<ScreenLayout
 			title={title}
-			backgroundColor={theme.colors.background}
+			backgroundColor={COLORS.bg}
 			hideHeaderActions
 		>
 			<KeyboardAwareScrollView
@@ -159,10 +166,8 @@ export const AppointmentFormScreen = () => {
 				keyboardShouldPersistTaps="handled"
 				showsVerticalScrollIndicator={false}
 			>
-				<FormCard>
-					<Text
-						style={[styles.dateText, { color: theme.colors.textSecondary }]}
-					>
+				<View style={styles.formCard}>
+					<Text style={styles.dateText}>
 						{translateText("calendar.appointmentModal.dateSelected", {
 						date: effectiveDate,
 						})}
@@ -184,7 +189,7 @@ export const AppointmentFormScreen = () => {
 						}))
 						}
 					/>
-				</FormCard>
+				</View>
 			</KeyboardAwareScrollView>
 		</ScreenLayout>
 	);
@@ -197,8 +202,21 @@ const styles = StyleSheet.create({
 	scrollContent: {
 		paddingTop: 10,
 	},
+	formCard: {
+		backgroundColor: COLORS.surface,
+		borderRadius: 20,
+		borderWidth: 1,
+		borderColor: COLORS.border,
+		padding: 20,
+		shadowColor: COLORS.gold,
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.08,
+		shadowRadius: 12,
+		elevation: 4,
+	},
 	dateText: {
 		fontSize: 14,
 		marginBottom: 14,
+		color: COLORS.textSecondary,
 	},
 });

@@ -1,10 +1,6 @@
 import React, { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
-	Button,
-	HelperText,
-	SegmentedButtons,
-	Text,
 	TextInput,
 } from "react-native-paper";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
@@ -16,8 +12,32 @@ import {
 } from "../../features/appointments/appointments.types";
 import type { AppointmentFormErrors } from "../../features/appointments/useAppointmentForm";
 import { useTranslation } from "../../context/LanguageContext";
-import { useAppTheme } from "../../theme/ThemeContext";
 import { formatPhoneNumber } from "../../utils/formatUtil";
+
+const COLORS = {
+	bg: "#0D0D0D",
+	surface: "#1A1A1A",
+	surfaceElevated: "#252525",
+	gold: "#C9A84C",
+	goldLight: "#E5C878",
+	textPrimary: "#FFFFFF",
+	textSecondary: "#9B9B9B",
+	border: "#3A3A3A",
+	error: "#F87171",
+	errorBg: "rgba(248,113,113,0.10)",
+} as const;
+
+const PAPER_THEME = {
+	colors: {
+		primary: COLORS.gold,
+		onSurfaceVariant: COLORS.textSecondary,
+		background: COLORS.surfaceElevated,
+		outline: COLORS.border,
+		surface: COLORS.surfaceElevated,
+		onSurface: COLORS.textPrimary,
+		error: COLORS.error,
+	},
+} as const;
 
 interface AppointmentFormProps {
 	draft: AppointmentDraft;
@@ -45,7 +65,6 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 	onCancel,
 	onPaymentMethodTouched,
 }) => {
-	const { theme } = useAppTheme();
 	const { translateText } = useTranslation();
 	const [isTimePickerVisible, setTimePickerVisible] = useState(false);
 
@@ -57,45 +76,27 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 	return (
 		<>
 			<View style={styles.formGroup}>
-				<Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+				<Text style={styles.sectionLabel}>
 					{translateText("calendar.appointmentModal.status")}
 				</Text>
-				<SegmentedButtons
-					density="small"
-					onValueChange={(value) =>
-						onFieldChange("status", value as AppointmentDraft["status"])
-					}
-					value={draft.status ?? "scheduled"}
-					buttons={[
-						{
-							label: translateText(
-								"calendar.appointmentModal.statuses.scheduled",
-							),
-							value: "scheduled",
-						},
-						{
-							label: translateText(
-								"calendar.appointmentModal.statuses.confirmed",
-							),
-							value: "confirmed",
-						},
-						{
-							label: translateText(
-								"calendar.appointmentModal.statuses.completed",
-							),
-							value: "completed",
-						},
-						{
-							label: translateText(
-								"calendar.appointmentModal.statuses.cancelled",
-							),
-							value: "cancelled",
-						},
-					]}
-				/>
-				<HelperText type="info" visible={draft.status === "completed"}>
-					{translateText("calendar.appointmentModal.completedInfo")}
-				</HelperText>
+				<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillRow}>
+					{(["scheduled", "confirmed", "completed", "cancelled"] as AppointmentDraft["status"][]).map((s) => (
+						<Pressable
+							key={s}
+							style={[styles.pill, (draft.status ?? "scheduled") === s && styles.pillActive]}
+							onPress={() => onFieldChange("status", s)}
+						>
+							<Text style={[(draft.status ?? "scheduled") === s ? styles.pillTextActive : styles.pillText]}>
+								{translateText(`calendar.appointmentModal.statuses.${s}`)}
+							</Text>
+						</Pressable>
+					))}
+				</ScrollView>
+				{draft.status === "completed" && (
+					<Text style={styles.helperInfo}>
+						{translateText("calendar.appointmentModal.completedInfo")}
+					</Text>
+				)}
 			</View>
 
 			<View style={styles.formGroup}>
@@ -106,10 +107,13 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					onBlur={() => onFieldBlur("clientName")}
 					error={Boolean(touched.clientName && errors.clientName)}
 					mode="outlined"
+					theme={PAPER_THEME as any}
 				/>
-				<HelperText type="error" visible={Boolean(touched.clientName && errors.clientName)}>
-					{errors.clientName ? translateText(errors.clientName) : undefined}
-				</HelperText>
+				{Boolean(touched.clientName && errors.clientName) && (
+					<Text style={styles.helperError}>
+						{errors.clientName ? translateText(errors.clientName) : undefined}
+					</Text>
+				)}
 			</View>
 
 			<View style={styles.formGroup}>
@@ -125,10 +129,13 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					keyboardType="phone-pad"
 					placeholder="0000-0000"
 					maxLength={9}
+					theme={PAPER_THEME as any}
 				/>
-				<HelperText type="error" visible={Boolean(touched.phone && errors.phone)}>
-					{errors.phone ? translateText(errors.phone) : undefined}
-				</HelperText>
+				{Boolean(touched.phone && errors.phone) && (
+					<Text style={styles.helperError}>
+						{errors.phone ? translateText(errors.phone) : undefined}
+					</Text>
+				)}
 			</View>
 
 			<View style={styles.formGroup}>
@@ -140,6 +147,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					placeholder={translateText(
 						"calendar.appointmentModal.servicePlaceholder",
 					)}
+					theme={PAPER_THEME as any}
 				/>
 			</View>
 
@@ -162,51 +170,40 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					keyboardType="decimal-pad"
 					placeholder="0.00"
 					left={<TextInput.Affix text="CRC" />}
+					theme={PAPER_THEME as any}
 				/>
-				<HelperText type="error" visible={Boolean(touched.servicePrice && errors.servicePrice)}>
-					{errors.servicePrice ? translateText(errors.servicePrice) : undefined}
-				</HelperText>
+				{Boolean(touched.servicePrice && errors.servicePrice) && (
+					<Text style={styles.helperError}>
+						{errors.servicePrice ? translateText(errors.servicePrice) : undefined}
+					</Text>
+				)}
 			</View>
 
 			<View style={styles.formGroup}>
-				<Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+				<Text style={styles.sectionLabel}>
 					{translateText("calendar.appointmentModal.paymentMethod")}
 				</Text>
-				<SegmentedButtons
-					density="small"
-					onValueChange={(value) => {
-						onFieldChange(
-						"paymentMethodUsed",
-						value as AppointmentDraft["paymentMethodUsed"],
-						);
-						onPaymentMethodTouched?.();
-					}}
-					value={draft.paymentMethodUsed ?? ""}
-					buttons={APPOINTMENT_PAYMENT_METHOD_OPTIONS.map((option) => ({
-						label: getAppointmentPaymentMethodLabel(option, translateText),
-						value: option,
-					}))}
-				/>
-				<HelperText type="info" visible={Boolean(draft.paymentMethodUsed)}>
-					{draft.paymentMethodUsed
-						? getAppointmentPaymentMethodLabel(
-							draft.paymentMethodUsed,
-							translateText,
-						)
-						: translateText(
-							"calendar.appointmentModal.paymentMethodPlaceholder",
-						)}
-				</HelperText>
-				<HelperText
-					type="error"
-					visible={Boolean(
-						touched.paymentMethodUsed && errors.paymentMethodUsed,
-					)}
-					>
-					{errors.paymentMethodUsed
-						? translateText(errors.paymentMethodUsed)
-						: undefined}
-				</HelperText>
+				<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillRow}>
+					{APPOINTMENT_PAYMENT_METHOD_OPTIONS.map((option) => (
+						<Pressable
+							key={option}
+							style={[styles.pill, draft.paymentMethodUsed === option && styles.pillActive]}
+							onPress={() => {
+								onFieldChange("paymentMethodUsed", option);
+								onPaymentMethodTouched?.();
+							}}
+						>
+							<Text style={[draft.paymentMethodUsed === option ? styles.pillTextActive : styles.pillText]}>
+								{getAppointmentPaymentMethodLabel(option, translateText)}
+							</Text>
+						</Pressable>
+					))}
+				</ScrollView>
+				{Boolean(touched.paymentMethodUsed && errors.paymentMethodUsed) && (
+					<Text style={styles.helperError}>
+						{errors.paymentMethodUsed ? translateText(errors.paymentMethodUsed) : undefined}
+					</Text>
+				)}
 			</View>
 
 			<View style={styles.formGroup}>
@@ -225,10 +222,13 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 						onPress={() => setTimePickerVisible(true)}
 						/>
 					}
+					theme={PAPER_THEME as any}
 				/>
-				<HelperText type="error" visible={Boolean(touched.time && errors.time)}>
-					{errors.time ? translateText(errors.time) : undefined}
-				</HelperText>
+				{Boolean(touched.time && errors.time) && (
+					<Text style={styles.helperError}>
+						{errors.time ? translateText(errors.time) : undefined}
+					</Text>
+				)}
 			</View>
 
 			<View style={styles.formGroup}>
@@ -242,23 +242,36 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					placeholder={translateText(
 						"calendar.appointmentModal.notesPlaceholder",
 					)}
+					theme={PAPER_THEME as any}
 				/>
 			</View>
 
 			<View style={styles.actions}>
-				<Button mode="contained" onPress={onSubmit}>
-					{isEditMode
-						? translateText("calendar.appointmentModal.saveChanges")
-						: translateText("calendar.appointmentModal.saveAppointment")}
-				</Button>
-				<Button mode="contained" onPress={onCancel}>
-					{translateText("calendar.appointmentModal.cancel")}
-				</Button>
+				<Pressable
+					style={({ pressed }) => [styles.goldBtn, pressed && styles.goldBtnPressed]}
+					onPress={onSubmit}
+				>
+					<Text style={styles.goldBtnText}>
+						{isEditMode
+							? translateText("calendar.appointmentModal.saveChanges")
+							: translateText("calendar.appointmentModal.saveAppointment")}
+					</Text>
+				</Pressable>
+				<Pressable
+					style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
+					onPress={onCancel}
+				>
+					<Text style={styles.cancelBtnText}>
+						{translateText("calendar.appointmentModal.cancel")}
+					</Text>
+				</Pressable>
 			</View>
 
 			<DateTimePickerModal
 				isVisible={isTimePickerVisible}
 				mode="time"
+				themeVariant="dark"
+				accentColor="#8A8A8E"
 				onConfirm={handleTimeConfirm}
 				onCancel={() => setTimePickerVisible(false)}
 			/>
@@ -271,16 +284,92 @@ const styles = StyleSheet.create({
 		marginBottom: 8,
 	},
 	sectionLabel: {
-		fontSize: 12,
+		fontSize: 11,
 		fontWeight: "700",
-		letterSpacing: 0.8,
-		marginBottom: 8,
+		letterSpacing: 1,
+		marginBottom: 10,
 		textTransform: "uppercase",
+		color: COLORS.textSecondary,
+	},
+	pillRow: {
+		flexDirection: "row",
+		marginBottom: 4,
+	},
+	pill: {
+		paddingHorizontal: 14,
+		paddingVertical: 7,
+		borderRadius: 20,
+		borderWidth: 1,
+		borderColor: COLORS.border,
+		marginRight: 8,
+		backgroundColor: COLORS.surfaceElevated,
+	},
+	pillActive: {
+		backgroundColor: COLORS.gold,
+		borderColor: COLORS.gold,
+	},
+	pillText: {
+		color: COLORS.textSecondary,
+		fontSize: 13,
+		fontWeight: "500",
+	},
+	pillTextActive: {
+		color: COLORS.bg,
+		fontSize: 13,
+		fontWeight: "700",
+	},
+	helperError: {
+		color: COLORS.error,
+		fontSize: 12,
+		marginTop: 3,
+		marginLeft: 4,
+	},
+	helperInfo: {
+		color: COLORS.textSecondary,
+		fontSize: 12,
+		marginTop: 3,
+		marginLeft: 4,
 	},
 	actions: {
 		flexDirection: "row",
 		justifyContent: "flex-end",
 		gap: 10,
-		marginTop: 16,
+		marginTop: 20,
+	},
+	goldBtn: {
+		flex: 1,
+		backgroundColor: COLORS.gold,
+		paddingVertical: 14,
+		borderRadius: 12,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	goldBtnPressed: {
+		backgroundColor: COLORS.goldLight,
+	},
+	goldBtnText: {
+		color: COLORS.bg,
+		fontSize: 15,
+		fontWeight: "700",
+		letterSpacing: 0.4,
+	},
+	cancelBtn: {
+		flex: 1,
+		backgroundColor: "transparent",
+		paddingVertical: 14,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: COLORS.border,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	cancelBtnPressed: {
+		borderColor: COLORS.gold,
+	},
+	cancelBtnText: {
+		color: COLORS.textSecondary,
+		fontSize: 15,
+		fontWeight: "600",
+		letterSpacing: 0.4,
 	},
 });
