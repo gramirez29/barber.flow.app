@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, ImageBackground, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import type { CompositeNavigationProp } from "@react-navigation/native";
 import { DrawerActions, useIsFocused, useNavigation } from "@react-navigation/native";
+import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { format } from "date-fns";
@@ -25,6 +26,9 @@ type ClientsScreenNavigation = CompositeNavigationProp<
 >;
 
 const DATE_FORMAT = "yyyy-MM-dd";
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
+type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number];
 
 const COLORS = {
 	bg: "#0D0D0D",
@@ -56,9 +60,16 @@ export const ClientsScreen: React.FC = () => {
     const isFocused = useIsFocused();
     const { translateText } = useTranslation();
     const insets = useSafeAreaInsets();
-    const [clients, setClients] = useState<Client[]>([]);
+    const tabBarHeight = useContext(BottomTabBarHeightContext) ?? 0;
+    const [allClients, setAllClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState<PageSizeOption>(10);
+
+    // TODO: when backend returns PaginatedResult<Client>, derive totalPages and displayedClients from the response
+    const totalPages = Math.ceil(allClients.length / pageSize);
+    const displayedClients = allClients.slice((page - 1) * pageSize, page * pageSize);
 
     useEffect(() => {
         if (!isFocused) {
@@ -71,10 +82,13 @@ export const ClientsScreen: React.FC = () => {
                 setLoading(true);
 
                 try {
-                    const nextClients = await clientsService.find(searchQuery.trim() || undefined);
+                    // Pagination params are forwarded to the backend already.
+                    // TODO: when backend returns PaginatedResult<Client>, update setAllClients to set only the items slice
+                    //       and derive totalPages from the response totalCount instead.
+                    const nextClients = await clientsService.find(searchQuery.trim() || undefined, { page, pageSize });
 
                     if (isActive) {
-                        setClients(nextClients ?? []);
+                        setAllClients(nextClients ?? []);
                     }
                 } catch (error: unknown) {
                     if (isActive) {
@@ -97,7 +111,17 @@ export const ClientsScreen: React.FC = () => {
             isActive = false;
             clearTimeout(timeoutId);
         };
-    }, [isFocused, searchQuery, translateText]);
+    }, [isFocused, page, pageSize, searchQuery, translateText]);
+
+    const handleSearchChange = (text: string) => {
+        setSearchQuery(text);
+        if (page !== 1) setPage(1);
+    };
+
+    const handlePageSizeChange = (size: PageSizeOption) => {
+        setPageSize(size);
+        setPage(1);
+    };
 
     const handleSelectClient = (selectedClient: Client) => {
         navigation.navigate("ClientForm", {
@@ -142,7 +166,7 @@ export const ClientsScreen: React.FC = () => {
                 onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
             >
                 <FlatList
-                    data={clients}
+                    data={displayedClients}
                     keyExtractor={(item) => item.id ?? `${item.firstName}-${item.lastName}-${item.phone}`}
                     ListHeaderComponent={
                         <View style={styles.heroCard}>
@@ -162,7 +186,7 @@ export const ClientsScreen: React.FC = () => {
                                     placeholder={translateText("clients.list.searchPlaceholder")}
                                     placeholderTextColor={COLORS.textSecondary}
                                     value={searchQuery}
-                                    onChangeText={setSearchQuery}
+                                    onChangeText={handleSearchChange}
                                     style={styles.searchInput}
                                     autoCapitalize="none"
                                     autoCorrect={false}
@@ -173,6 +197,30 @@ export const ClientsScreen: React.FC = () => {
                             <Text style={styles.helper}>
                                 {translateText("clients.list.helper")}
                             </Text>
+
+                            <View style={styles.pageSizeRow}>
+                                <Text style={styles.pageSizeLabel}>
+                                    {translateText("clients.list.pageSize")}
+                                </Text>
+                                <View style={styles.pageSizeChips}>
+                                    {PAGE_SIZE_OPTIONS.map(size => (
+                                        <Pressable
+                                            key={size}
+                                            onPress={() => handlePageSizeChange(size)}
+                                            style={[styles.pageSizeChip, pageSize === size && styles.pageSizeChipActive]}
+                                        >
+                                            <Text style={[styles.pageSizeChipText, pageSize === size && styles.pageSizeChipTextActive]}>
+                                                {size}
+                                            </Text>
+                                        </Pressable>
+                                    ))}
+                                </View>
+                                {!loading && allClients.length > 0 && (
+                                    <Text style={styles.totalCount}>
+                                        {translateText("clients.list.totalCount", { count: String(allClients.length) })}
+                                    </Text>
+                                )}
+                            </View>
                         </View>
                     }
                     ListEmptyComponent={
@@ -189,19 +237,47 @@ export const ClientsScreen: React.FC = () => {
                         { paddingBottom: Math.max(112, insets.bottom + 112) },
                     ]}
                     keyboardShouldPersistTaps="handled"
-                    renderItem={({ item }) => (
+                    renderItem={({ item, index }) => (
                         <ClientListItem
                             client={item}
                             onPress={handleSelectClient}
                             onSchedule={handleScheduleAppointment}
+                            isFirst={index === 0}
+                            isLast={index === displayedClients.length - 1}
                         />
                     )}
+                    ItemSeparatorComponent={() => <View style={styles.listDivider} />}
+                    ListFooterComponent={
+                        !loading && totalPages > 1 ? (
+                            <View style={styles.paginationRow}>
+                                <Pressable
+                                    onPress={() => setPage(p => Math.max(1, p - 1))}
+                                    disabled={page === 1}
+                                    style={[styles.pageBtn, page === 1 && styles.pageBtnDisabled]}
+                                    accessibilityLabel={translateText("clients.list.prevPage")}
+                                >
+                                    <Ionicons name="chevron-back" size={20} color={page === 1 ? COLORS.textSecondary : COLORS.gold} />
+                                </Pressable>
+                                <Text style={styles.pageInfo}>
+                                    {translateText("clients.list.page", { current: String(page), total: String(totalPages) })}
+                                </Text>
+                                <Pressable
+                                    onPress={() => setPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={page === totalPages}
+                                    style={[styles.pageBtn, page === totalPages && styles.pageBtnDisabled]}
+                                    accessibilityLabel={translateText("clients.list.nextPage")}
+                                >
+                                    <Ionicons name="chevron-forward" size={20} color={page === totalPages ? COLORS.textSecondary : COLORS.gold} />
+                                </Pressable>
+                            </View>
+                        ) : null
+                    }
                     showsVerticalScrollIndicator={false}
                 />
 
                 {/* ─── Floating Action Button ───────────────────────────── */}
                 <Pressable
-                    style={[styles.fab, { bottom: Math.max(24, insets.bottom + 24) }]}
+                    style={[styles.fab, { bottom: Math.max(24, insets.bottom + tabBarHeight + 24) }]}
                     onPress={handleCreateClient}
                     accessibilityLabel={translateText("clients.buttons.newClient")}
                 >
@@ -278,9 +354,86 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         marginTop: 12,
     },
+    // ─── Page size selector
+    pageSizeRow: {
+        alignItems: "center",
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginTop: 14,
+    },
+    pageSizeLabel: {
+        color: COLORS.textSecondary,
+        fontSize: 12,
+        fontWeight: "600",
+        letterSpacing: 0.5,
+        textTransform: "uppercase",
+    },
+    pageSizeChips: {
+        flexDirection: "row",
+        gap: 6,
+    },
+    pageSizeChip: {
+        borderColor: COLORS.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+    },
+    pageSizeChipActive: {
+        backgroundColor: "rgba(201, 168, 76, 0.12)",
+        borderColor: COLORS.gold,
+    },
+    pageSizeChipText: {
+        color: COLORS.textSecondary,
+        fontSize: 13,
+        fontWeight: "600",
+    },
+    pageSizeChipTextActive: {
+        color: COLORS.gold,
+    },
+    totalCount: {
+        color: COLORS.textSecondary,
+        fontSize: 12,
+        marginLeft: "auto",
+        opacity: 0.75,
+    },
     loadingWrap: {
         alignItems: "center",
         paddingVertical: 32,
+    },
+    // ─── List divider
+    listDivider: {
+        backgroundColor: "#3A3A3A",
+        height: 1,
+        marginLeft: 78,
+    },
+    // ─── Pagination controls
+    paginationRow: {
+        alignItems: "center",
+        flexDirection: "row",
+        gap: 20,
+        justifyContent: "center",
+        marginBottom: 8,
+        marginTop: 16,
+    },
+    pageBtn: {
+        alignItems: "center",
+        borderColor: COLORS.border,
+        borderRadius: 10,
+        borderWidth: 1,
+        height: 40,
+        justifyContent: "center",
+        width: 40,
+    },
+    pageBtnDisabled: {
+        opacity: 0.35,
+    },
+    pageInfo: {
+        color: COLORS.textPrimary,
+        fontSize: 14,
+        fontWeight: "600",
+        textAlign: "center",
     },
     // ─── FAB
     fab: {

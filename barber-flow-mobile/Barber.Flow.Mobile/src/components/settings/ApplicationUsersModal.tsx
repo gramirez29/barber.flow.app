@@ -71,7 +71,7 @@ export const ApplicationUsersModal: React.FC<ApplicationUsersModalProps> = ({
 	return (
 		<Modal
 			animationType="slide"
-			presentationStyle={Platform.OS === "ios" ? "pageSheet" : "fullScreen"}
+			presentationStyle={Platform.OS === "ios" ? "pageSheet" : undefined}
 			transparent
 			visible={visible}
 			onRequestClose={onClose}

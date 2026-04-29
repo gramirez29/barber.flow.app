@@ -15,11 +15,27 @@ public class InMemoryClientRepository : IClientRepository
         var client2 = new Client { FirstName = "Maria", LastName = "Gomez", Phone = "7777-1111", Email = "maria.gomez@example.com", Address = "Calle 45", PaymentMethod = "Sinpe Movil", Active = true };
         var client3 = new Client { FirstName = "Carlos", LastName = "Lopez", Phone = "6666-2222", Email = "carlos.lopez@example.com", Address = "Calle 67", PaymentMethod = "Credit Card", Active = true };
         var client4 = new Client { FirstName = "Guillermo", LastName = "Ramirez", Phone = "7018-9220", Email = "guillermo.ramirez@example.com", Address = "Caballo Blanco", PaymentMethod = "Sinpe Movil", Active = true };
+        var client5 = new Client { FirstName = "Valeria", LastName = "Ramirez", Phone = "7018-9220", Email = "valeria.ramirez@example.com", Address = "Tres Rios", PaymentMethod = "Cash", Active = true };
+        var client6 = new Client { FirstName = "Diana", LastName = "Navarro", Phone = "7018-9220", Email = "diana.navarro@example.com", Address = "Heredia", PaymentMethod = "Sinpe Movil", Active = true };
+        var client7 = new Client { FirstName = "Marianela", LastName = "Navarro", Phone = "7018-9220", Email = "marianela.navarro@example.com", Address = "Arenilla", PaymentMethod = "Sinpe Movil", Active = true };
+        var client8 = new Client { FirstName = "Felipe", LastName = "Ramirez", Phone = "7018-9220", Email = "felipe.ramirez@example.com", Address = "Arenilla", PaymentMethod = "Cash", Active = true };
+        var client9 = new Client { FirstName = "Diego", LastName = "Ureña", Phone = "7018-9220", Email = "diego.urena@example.com", Address = "Paraiso", PaymentMethod = "Sinpe Movil", Active = true };
+        var client10 = new Client { FirstName = "Jorge", LastName = "Ortega", Phone = "7018-9220", Email = "jorge.ortega@example.com", Address = "Turrialba", PaymentMethod = "Sinpe Movil", Active = true };
+        var client11 = new Client { FirstName = "Pedro", LastName = "Gonzales", Phone = "7018-9220", Email = "pedro.gonzales@example.com", Address = "Tres Rios", PaymentMethod = "Sinpe Movil", Active = true };
+        var client12 = new Client { FirstName = "Jonathan", LastName = "Moya", Phone = "7018-9220", Email = "jonathan.moya@example.com", Address = "Pitahaya", PaymentMethod = "Credit Card", Active = true };
 
         _store[client1.Id] = client1;
         _store[client2.Id] = client2;
         _store[client3.Id] = client3;
         _store[client4.Id] = client4;
+        _store[client5.Id] = client5;
+        _store[client6.Id] = client6;
+        _store[client7.Id] = client7;
+        _store[client8.Id] = client8;
+        _store[client9.Id] = client9;
+        _store[client10.Id] = client10;
+        _store[client11.Id] = client11;
+        _store[client12.Id] = client12;
     }
 
     public Task<Client> CreateAsync(Client client, CancellationToken ct = default)
@@ -69,9 +85,10 @@ public class InMemoryClientRepository : IClientRepository
     {
         var clients = _store.Values.AsEnumerable();
 
+		// If no query is provided, return all clients: It could change if we want to get aproximation results
         if (string.IsNullOrWhiteSpace(query))
         {
-            return Task.FromResult(Enumerable.Empty<Client>());
+            return Task.FromResult(clients);
         }
         
         query = query.Trim().ToLowerInvariant();

@@ -1,3 +1,8 @@
+export interface PaginationParams {
+    page: number;
+    pageSize: number;
+}
+
 export interface Client {
     id?: string;
     photoUrl?: string;

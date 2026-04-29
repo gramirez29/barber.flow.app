@@ -513,6 +513,7 @@ const styles = StyleSheet.create({
 	screenOverlay: {
 		...StyleSheet.absoluteFillObject,
 		backgroundColor: COLORS.overlay,
+		pointerEvents: "none",
 	},
 	flex: {
 		flex: 1,

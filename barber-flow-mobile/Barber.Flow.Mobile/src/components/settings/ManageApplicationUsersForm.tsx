@@ -375,7 +375,7 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
 							onPress={() => void handlePickFromGallery()}
 							style={({ pressed }) => [styles.photoBtnSecondary, isCompact && styles.photoBtnCompact, pressed && { opacity: 0.8 }]}
 						>
-							<Text style={styles.photoBtnSecondaryText}>{translateText("settings.manageUsersForm.uploadPhoto")}</Text>
+						<Text adjustsFontSizeToFit numberOfLines={1} style={styles.photoBtnSecondaryText}>{translateText("settings.manageUsersForm.uploadPhoto")}</Text>
 						</Pressable>
 					</View>
 				</View>
@@ -620,6 +620,7 @@ const styles = StyleSheet.create({
 		color: COLORS.textPrimary,
 		fontSize: 14,
 		fontWeight: "600",
+		textAlign: "center",
 	},
 	photoBtnCompact: {
 		flex: 0,
