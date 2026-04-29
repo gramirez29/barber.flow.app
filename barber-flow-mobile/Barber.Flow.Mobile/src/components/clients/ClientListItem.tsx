@@ -11,95 +11,114 @@ const COLORS = {
 	textPrimary: "#FFFFFF",
 	textSecondary: "#9B9B9B",
 	border: "#3A3A3A",
+	ripple: "rgba(201, 168, 76, 0.08)",
 } as const;
+
+const RADIUS = 16;
 
 interface ClientListItemProps {
 	client: Client;
 	onPress: (client: Client) => void;
 	onSchedule: (client: Client) => void;
+	isFirst?: boolean;
+	isLast?: boolean;
 }
 
-export const ClientListItem = ({ client, onPress, onSchedule }: ClientListItemProps) => {
+export const ClientListItem = ({ client, onPress, onSchedule, isFirst, isLast }: ClientListItemProps) => {
 	const { translateText } = useTranslation();
 	const fullName = `${client.firstName} ${client.lastName}`.trim();
 
 	return (
-		<View style={styles.card}>
-			<View style={styles.contentRow}>
-				<Pressable
-					onPress={() => onPress(client)}
-					style={styles.pressableContent}
-				>
-					<View style={styles.mainContent}>
-						<ClientAvatar initials={fullName} size={64} uri={client.photoUrl} />
+		<View
+			style={[
+				styles.item,
+				isFirst && styles.itemFirst,
+				isLast && styles.itemLast,
+			]}
+		>
+			<Pressable
+				onPress={() => onPress(client)}
+				style={({ pressed }) => [styles.pressableContent, pressed && styles.pressablePressed]}
+				android_ripple={{ color: COLORS.ripple }}
+			>
+				<ClientAvatar initials={fullName} size={46} uri={client.photoUrl} />
+				<View style={styles.copyWrap}>
+					<Text style={styles.name} numberOfLines={1}>{fullName}</Text>
+					<Text style={styles.metaPhone} numberOfLines={1}>{client.phone}</Text>
+					<Text style={styles.metaEmail} numberOfLines={1}>
+						{client.email || translateText("clients.list.noEmail")}
+					</Text>
+				</View>
+			</Pressable>
 
-						<View style={styles.copyWrap}>
-							<Text style={styles.name} numberOfLines={1}>
-								{fullName}
-							</Text>
-							<Text style={styles.meta} numberOfLines={1}>
-								{client.phone}
-							</Text>
-							<Text style={styles.meta} numberOfLines={1}>
-								{client.email || translateText("clients.list.noEmail")}
-							</Text>
-						</View>
-					</View>
-				</Pressable>
-
-				<Pressable
-					accessibilityLabel={translateText("clients.buttons.scheduleAppointmentA11y", { clientName: fullName })}
-					onPress={() => onSchedule(client)}
-					style={styles.scheduleButton}
-				>
-					<Ionicons name="calendar-outline" size={22} color={COLORS.gold} />
-				</Pressable>
-			</View>
+			<Pressable
+				accessibilityLabel={translateText("clients.buttons.scheduleAppointmentA11y", { clientName: fullName })}
+				onPress={() => onSchedule(client)}
+				style={styles.scheduleButton}
+				android_ripple={{ color: COLORS.ripple, borderless: true, radius: 22 }}
+			>
+				<Ionicons name="calendar-outline" size={20} color={COLORS.gold} />
+			</Pressable>
 		</View>
 	);
 };
 
 const styles = StyleSheet.create({
-	card: {
+	item: {
+		alignItems: "center",
 		backgroundColor: COLORS.surface,
 		borderColor: COLORS.border,
-		borderRadius: 20,
-		borderWidth: 1,
-		marginBottom: 12,
+		borderLeftWidth: 1,
+		borderRightWidth: 1,
+		flexDirection: "row",
 		overflow: "hidden",
 	},
-	contentRow: {
-		alignItems: "center",
-		flexDirection: "row",
+	itemFirst: {
+		borderTopLeftRadius: RADIUS,
+		borderTopRightRadius: RADIUS,
+		borderTopWidth: 1,
 	},
-	mainContent: {
+	itemLast: {
+		borderBottomLeftRadius: RADIUS,
+		borderBottomRightRadius: RADIUS,
+		borderBottomWidth: 1,
+	},
+	pressableContent: {
 		alignItems: "center",
+		flex: 1,
 		flexDirection: "row",
 		gap: 16,
-		paddingLeft: 16,
-		paddingVertical: 14,
+		paddingHorizontal: 16,
+		paddingVertical: 12,
+	},
+	pressablePressed: {
+		backgroundColor: "rgba(255, 255, 255, 0.04)",
 	},
 	copyWrap: {
 		flex: 1,
-		gap: 4,
-	},
-	meta: {
-		color: COLORS.textSecondary,
-		fontSize: 14,
-		lineHeight: 20,
+		gap: 2,
 	},
 	name: {
 		color: COLORS.textPrimary,
-		fontSize: 17,
+		fontSize: 16,
 		fontWeight: "700",
+		letterSpacing: 0.15,
 	},
-	pressableContent: {
-		flex: 1,
+	metaPhone: {
+		color: COLORS.textSecondary,
+		fontSize: 13,
+		lineHeight: 18,
+	},
+	metaEmail: {
+		color: COLORS.textSecondary,
+		fontSize: 12,
+		lineHeight: 17,
+		opacity: 0.75,
 	},
 	scheduleButton: {
 		alignItems: "center",
 		justifyContent: "center",
-		marginHorizontal: 12,
-		padding: 8,
+		marginRight: 8,
+		padding: 12,
 	},
 });

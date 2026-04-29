@@ -35,7 +35,7 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
         ]}
     >
         <LinearGradient
-            colors={["#080808", "#0F0F0F", "#1E1E1E"]}
+            colors={["#080808", "#C9A84C", "#1E1E1E"]}
             end={{ x: 1, y: 0.5 }}
             start={{ x: 0, y: 0.5 }}
             style={styles.gradient}
@@ -55,7 +55,9 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
                 </View>
 
                 <View style={styles.titleWrap}>
-                    <Text style={styles.eyebrow}>Barber Flow</Text>
+                    <Text style={styles.eyebrow}>
+						Barber Flow
+					</Text>
                     <Text style={styles.title} numberOfLines={1}>{title}</Text>
                     <Text style={styles.subtitle} numberOfLines={1}>{roleLabel}</Text>
                 </View>
@@ -103,7 +105,7 @@ const styles = StyleSheet.create({
         gap: 2,
     },
     eyebrow: {
-        color: "#C9A84C",
+        color: "#1E1E1E",
         fontSize: 10,
         fontWeight: "700",
         letterSpacing: 0.9,
@@ -111,14 +113,14 @@ const styles = StyleSheet.create({
         textTransform: "uppercase",
     },
     title: {
-        color: "#FAFAFA",
+        color: "#2D2D2D",
         fontSize: 19,
         fontWeight: "700",
         lineHeight: 24,
         textAlign: "center",
     },
     subtitle: {
-        color: "#B9B9B9",
+        color: "#1E1E1E",
         fontSize: 11,
         fontWeight: "500",
         textAlign: "center",
