@@ -1,8 +1,11 @@
 import React from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { openClientMessagePicker, openClientPhoneCall } from "../../utils/contactActions";
 import { Picker } from "@react-native-picker/picker";
 import { HelperText, TextInput } from "react-native-paper";
 import { ClientAvatar } from "../ClientAvatar";
+import { AvatarPicker } from "../AvatarPicker";
 import { useTranslation } from "../../context/LanguageContext";
 import type { Client } from "../../types/clients";
 import {
@@ -44,6 +47,8 @@ interface ClientFormProps {
 	onFieldChange: <K extends keyof Client>(key: K, value: Client[K]) => void;
 	onFieldBlur: (key: keyof Client) => void;
 	onOpenDatePicker: () => void;
+	/** Called with the local file URI after the user picks/takes a photo */
+	onPhotoChange?: (uri: string) => void;
 }
 
 const formatBirthday = (
@@ -65,6 +70,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 	onFieldChange,
 	onFieldBlur,
 	onOpenDatePicker,
+	onPhotoChange,
 }) => {
 	const { translateText } = useTranslation();
 	const isEditing = Boolean(client.id);
@@ -76,7 +82,18 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 			{/* ─── Hero card ─────────────────────────────────────────────── */}
 			<View style={styles.card}>
 				<View style={styles.heroRow}>
-					<ClientAvatar size={92} initials={fullName} />
+					{isEditing && onPhotoChange ? (
+						<AvatarPicker
+							variant="compact"
+							size={92}
+							uri={client.photoUrl}
+							initials={fullName}
+							loading={loading}
+							onChangePhoto={onPhotoChange}
+						/>
+					) : (
+						<ClientAvatar size={92} uri={client.photoUrl} initials={fullName} />
+					)}
 
 					<View style={styles.heroTextWrap}>
 						<Text style={styles.eyebrow}>
@@ -110,6 +127,89 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 					</View>
 				</View>
 			</View>
+
+			{/* ─── Contact ───────────────────────────────────────────── */}
+		{isEditing ? (
+			<View style={styles.card}>
+				<Text style={styles.sectionTitle}>
+					{translateText("clients.form.contactTitle")}
+				</Text>
+				<Text style={styles.sectionSubtitle}>
+					{translateText("clients.form.contactSubtitle")}
+				</Text>
+
+				<View style={styles.contactRow}>
+					<Pressable
+						style={({ pressed }) => [styles.contactBtn, pressed && styles.contactBtnPressed]}
+						onPress={() => {
+							const labels = {
+								callUnavailableMessage: translateText("contactActions.callUnavailableMessage"),
+								callUnavailableOpen: translateText("contactActions.callUnavailableOpen"),
+								callUnavailableTitle: translateText("contactActions.callUnavailableTitle"),
+								cancel: translateText("contactActions.cancel"),
+								chooseContactMethod: translateText("contactActions.chooseContactMethod"),
+								hello: translateText("contactActions.hello"),
+								helloName: translateText("contactActions.helloName"),
+								sendMessage: translateText("contactActions.sendMessage"),
+								smsLabel: translateText("contactActions.smsLabel"),
+								smsUnavailableMessage: translateText("contactActions.smsUnavailableMessage"),
+								smsUnavailableOpen: translateText("contactActions.smsUnavailableOpen"),
+								smsUnavailableTitle: translateText("contactActions.smsUnavailableTitle"),
+								whatsappLabel: translateText("contactActions.whatsappLabel"),
+								whatsappUnavailableMessage: translateText("contactActions.whatsappUnavailableMessage"),
+								whatsappUnavailableOpen: translateText("contactActions.whatsappUnavailableOpen"),
+								whatsappUnavailableTitle: translateText("contactActions.whatsappUnavailableTitle"),
+							};
+							void openClientPhoneCall(client.phone ?? "", labels);
+						}}
+					>
+						<View style={styles.contactBtnInner}>
+							<View style={[styles.contactIconWrap, styles.contactIconCall]}>
+								<Ionicons name="call" size={20} color={COLORS.bg} />
+							</View>
+							<Text style={styles.contactBtnLabel}>
+								{translateText("clients.form.callButton")}
+							</Text>
+						</View>
+					</Pressable>
+
+					<Pressable
+						style={({ pressed }) => [styles.contactBtn, pressed && styles.contactBtnPressed]}
+						onPress={() => {
+							const labels = {
+								callUnavailableMessage: translateText("contactActions.callUnavailableMessage"),
+								callUnavailableOpen: translateText("contactActions.callUnavailableOpen"),
+								callUnavailableTitle: translateText("contactActions.callUnavailableTitle"),
+								cancel: translateText("contactActions.cancel"),
+								chooseContactMethod: translateText("contactActions.chooseContactMethod"),
+								hello: translateText("contactActions.hello"),
+								helloName: translateText("contactActions.helloName"),
+								sendMessage: translateText("contactActions.sendMessage"),
+								smsLabel: translateText("contactActions.smsLabel"),
+								smsUnavailableMessage: translateText("contactActions.smsUnavailableMessage"),
+								smsUnavailableOpen: translateText("contactActions.smsUnavailableOpen"),
+								smsUnavailableTitle: translateText("contactActions.smsUnavailableTitle"),
+								whatsappLabel: translateText("contactActions.whatsappLabel"),
+								whatsappUnavailableMessage: translateText("contactActions.whatsappUnavailableMessage"),
+								whatsappUnavailableOpen: translateText("contactActions.whatsappUnavailableOpen"),
+								whatsappUnavailableTitle: translateText("contactActions.whatsappUnavailableTitle"),
+							};
+							const clientName = `${client.firstName} ${client.lastName}`.trim();
+							openClientMessagePicker(client.phone ?? "", labels, clientName || undefined);
+						}}
+					>
+						<View style={styles.contactBtnInner}>
+							<View style={[styles.contactIconWrap, styles.contactIconMessage]}>
+								<Ionicons name="chatbubble" size={18} color={COLORS.gold} />
+							</View>
+							<Text style={styles.contactBtnLabel}>
+								{translateText("clients.form.messageButton")}
+							</Text>
+						</View>
+					</Pressable>
+				</View>
+			</View>
+		) : null}
 
 			{/* ─── Identity ──────────────────────────────────────────────── */}
 			<View style={styles.card}>
@@ -293,7 +393,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 					/>
 				</View>
 			</View>
-		</View>
+	</View>
 	);
 };
 
@@ -431,5 +531,45 @@ const styles = StyleSheet.create({
 		color: COLORS.textSecondary,
 		fontSize: 13,
 		lineHeight: 18,
+	},
+	// ─── Contact
+	contactRow: {
+		flexDirection: "row",
+		gap: 12,
+	},
+	contactBtn: {
+		backgroundColor: COLORS.surfaceElevated,
+		borderColor: COLORS.border,
+		borderRadius: 16,
+		borderWidth: 1,
+		flex: 1,
+		paddingVertical: 16,
+	},
+	contactBtnPressed: {
+		opacity: 0.65,
+	},
+	contactBtnInner: {
+		alignItems: "center",
+		gap: 10,
+	},
+	contactIconWrap: {
+		alignItems: "center",
+		borderRadius: 999,
+		height: 44,
+		justifyContent: "center",
+		width: 44,
+	},
+	contactIconCall: {
+		backgroundColor: COLORS.gold,
+	},
+	contactIconMessage: {
+		backgroundColor: "rgba(201,168,76,0.15)",
+		borderColor: COLORS.gold,
+		borderWidth: 1,
+	},
+	contactBtnLabel: {
+		color: COLORS.textPrimary,
+		fontSize: 14,
+		fontWeight: "600",
 	},
 });

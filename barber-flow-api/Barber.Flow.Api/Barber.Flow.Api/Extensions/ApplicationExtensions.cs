@@ -1,4 +1,5 @@
-﻿using Barber.Flow.Application.Services.Auth;
+﻿using Barber.Flow.Application.Services.Appointments;
+using Barber.Flow.Application.Services.Auth;
 using Barber.Flow.Application.Services.Sample.Queries;
 using Barber.Flow.Domain.Interfaces;
 using Barber.Flow.Infrastructure.Services.Auth;
@@ -49,6 +50,9 @@ public static class ApplicationExtensions
 
         services.AddScoped<IReportService, ReportService>();
         services.AddSingleton<IReportRepository, InMemoryReportRepository>();
+
+        services.AddScoped<IAppointmentService, AppointmentService>();
+        services.AddSingleton<IAppointmentRepository, InMemoryAppointmentRepository>();
 
         services.AddScoped<IValidator<BarberRequest>, BarberRequestValidator>();
 

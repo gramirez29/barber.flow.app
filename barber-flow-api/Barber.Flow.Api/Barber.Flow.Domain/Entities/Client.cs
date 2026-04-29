@@ -22,6 +22,8 @@ public class Client
 
     public bool Active { get; set; } = true;
 
+    public string? PhotoUrl { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

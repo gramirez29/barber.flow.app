@@ -21,7 +21,7 @@ export const lightTheme = {
 		primaryInput: "#FFFFFF",
 		primaryTextInput: "#6B7280",
 		error: "#DC2626",
-		badgePrimary: "#22a559",
+		badgePrimary: "#000000",
 	},
 	layout: {
 		spacing: { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 },

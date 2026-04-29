@@ -30,7 +30,8 @@ public class InMemoryUserRepository() : IUserRepository
 
     public Task<User> CreateAsync(User user, CancellationToken cancellation = default)
     {
-        throw new NotImplementedException();
+        _store[user.UserName] = user;
+        return Task.FromResult(user);
     }
 
     public Task<bool> DeleteAsync(string id, CancellationToken cancellation = default)
@@ -63,6 +64,15 @@ public class InMemoryUserRepository() : IUserRepository
     public Task<User?> UpdateAsync(string id, User user, CancellationToken cancellation = default)
     {
         throw new NotImplementedException();
+    }
+
+    public Task<bool> UpdatePasswordAsync(string userName, string newPassword, CancellationToken cancellation = default)
+    {
+        var existing = _store.Values.FirstOrDefault(u =>
+            string.Equals(u.UserName, userName, StringComparison.OrdinalIgnoreCase));
+        if (existing == null) return Task.FromResult(false);
+        existing.Password = newPassword;
+        return Task.FromResult(true);
     }
 
     private string BuildJwtToken(string username)

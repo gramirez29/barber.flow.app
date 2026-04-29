@@ -50,6 +50,9 @@ public class InMemoryBarberRepository : IBarberRepository
         existing.BarberName = barber.BarberName;
         existing.BarberPhone = barber.BarberPhone;
         existing.Address = barber.Address;
+        existing.BarberShopName = barber.BarberShopName;
+        existing.BarberShopPhone = barber.BarberShopPhone;
+        existing.PhotoUrl = barber.PhotoUrl;
         existing.UpdatedAt = DateTime.UtcNow;
         _store[id] = existing;
         return Task.FromResult<Domain.Entities.Barber?>(existing);
@@ -66,7 +69,7 @@ public class InMemoryBarberRepository : IBarberRepository
         return Task.FromResult(b);
     }
 
-    public Task<IEnumerable<Domain.Entities.Barber>> FindAsync(string? query = null, CancellationToken ct = default)
+    public Task<IEnumerable<Domain.Entities.Barber>> FindAsync(string? query = null, int? page = null, int? pageSize = null, CancellationToken ct = default)
     {
         var list = _store.Values.AsEnumerable();
         if (!string.IsNullOrWhiteSpace(query))
@@ -76,6 +79,10 @@ public class InMemoryBarberRepository : IBarberRepository
                                     || (b.UserName ?? string.Empty).ToLowerInvariant().Contains(q)
                                     || (b.UserEmail ?? string.Empty).ToLowerInvariant().Contains(q)
                                     || (b.BarberName ?? string.Empty).ToLowerInvariant().Contains(q));
+        }
+        if (page.HasValue && pageSize.HasValue)
+        {
+            list = list.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
         }
         return Task.FromResult(list);
     }

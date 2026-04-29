@@ -52,6 +52,7 @@ interface AppointmentFormProps {
 	onSubmit: () => void;
 	onCancel: () => void;
 	onPaymentMethodTouched?: () => void;
+	onOpenClientSearch?: () => void;
 }
 
 export const AppointmentForm: React.FC<AppointmentFormProps> = ({
@@ -64,6 +65,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 	onSubmit,
 	onCancel,
 	onPaymentMethodTouched,
+	onOpenClientSearch,
 }) => {
 	const { translateText } = useTranslation();
 	const [isTimePickerVisible, setTimePickerVisible] = useState(false);
@@ -107,6 +109,14 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					onBlur={() => onFieldBlur("clientName")}
 					error={Boolean(touched.clientName && errors.clientName)}
 					mode="outlined"
+					right={
+						onOpenClientSearch ? (
+							<TextInput.Icon
+								icon="account-search-outline"
+								onPress={onOpenClientSearch}
+							/>
+						) : undefined
+					}
 					theme={PAPER_THEME as any}
 				/>
 				{Boolean(touched.clientName && errors.clientName) && (

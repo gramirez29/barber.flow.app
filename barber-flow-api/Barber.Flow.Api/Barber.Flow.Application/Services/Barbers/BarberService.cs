@@ -17,9 +17,9 @@ public class BarberService(IBarberRepository repo) : IBarberService
         return _repo.DeleteAsync(id, cancellationToken);
     }
 
-    public Task<IEnumerable<Domain.Entities.Barber>> FindAsync(string? query = null, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<Domain.Entities.Barber>> FindAsync(string? query = null, int? page = null, int? pageSize = null, CancellationToken cancellationToken = default)
     {
-        return _repo.FindAsync(query, cancellationToken);
+        return _repo.FindAsync(query, page, pageSize, cancellationToken);
     }
 
     public Task<Domain.Entities.Barber?> GetByIdAsync(string id, CancellationToken cancellationToken = default)

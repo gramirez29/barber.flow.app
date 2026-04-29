@@ -9,4 +9,6 @@ public interface IUserRepository
         Task<bool> DeleteAsync(string id, CancellationToken cancellation = default);
     
         Task<Entities.User?> GetAuthenticationUserAsync(string userName, string password, CancellationToken cancellation = default);
+
+        Task<bool> UpdatePasswordAsync(string userName, string newPassword, CancellationToken cancellation = default);
 }

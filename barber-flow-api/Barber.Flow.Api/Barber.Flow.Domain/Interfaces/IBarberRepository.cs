@@ -10,7 +10,7 @@ public interface IBarberRepository
 
     Task<Entities.Barber?> GetByIdAsync(string id, CancellationToken cancellation = default);
 
-    Task<IEnumerable<Entities.Barber>> FindAsync(string? query = null, CancellationToken cancellation = default);
+    Task<IEnumerable<Entities.Barber>> FindAsync(string? query = null, int? page = null, int? pageSize = null, CancellationToken cancellation = default);
 
     Task<string> GetNextIdAsync(CancellationToken cancellation = default);
 }

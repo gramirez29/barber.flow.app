@@ -77,6 +77,14 @@
 		home: "Home",
 		settings: "Settings",
 	},
+	avatarPicker: {
+		cameraPermissionRequired:
+			"Camera permission is required to take a profile photo.",
+		fromGallery: "Gallery",
+		galleryPermissionRequired:
+			"Gallery permission is required to select a profile photo.",
+		takePhoto: "Take photo",
+	},
 	settings: {
 		about: "About",
 		aboutSubtitle:
@@ -267,6 +275,10 @@
 			selectDate: "Select date",
 			statusActive: "Active",
 			statusInactive: "Inactive",
+			contactTitle: "Contact",
+			contactSubtitle: "Reach out directly to this client.",
+			callButton: "Call",
+			messageButton: "Message",
 		},
 		paymentMethods: {
 			cash: "Cash",
@@ -417,11 +429,14 @@
 		callUnavailableMessage: "This client does not have a valid phone number.",
 		callUnavailableOpen: "Your device could not open the phone dialer.",
 		callUnavailableTitle: "Call unavailable",
+		cancel: "Cancel",
 		chooseContactMethod: "Choose how to contact this client.",
 		sendMessage: "Send message",
+		smsLabel: "Text message",
 		smsUnavailableMessage: "This client does not have a valid phone number.",
 		smsUnavailableOpen: "Your device could not open the SMS app.",
 		smsUnavailableTitle: "SMS unavailable",
+		whatsappLabel: "WhatsApp",
 		whatsappUnavailableMessage: "This client does not have a valid phone number.",
 		whatsappUnavailableOpen:
 		"WhatsApp is not installed or could not be opened on this device.",

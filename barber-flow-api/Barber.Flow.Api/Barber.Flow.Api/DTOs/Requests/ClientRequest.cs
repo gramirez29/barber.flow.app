@@ -9,5 +9,6 @@ public record ClientRequest(
     DateTime? Birthday,
     string? Preferences,
     string? PaymentMethod,
-    bool Active
+    bool Active,
+    string? PhotoUrl
 );

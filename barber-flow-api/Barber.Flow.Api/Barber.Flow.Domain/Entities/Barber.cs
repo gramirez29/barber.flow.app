@@ -16,6 +16,12 @@ public class Barber
 
     public string? Address { get; set; }
 
+    public string? BarberShopName { get; set; }
+
+    public string? BarberShopPhone { get; set; }
+
+    public string? PhotoUrl { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

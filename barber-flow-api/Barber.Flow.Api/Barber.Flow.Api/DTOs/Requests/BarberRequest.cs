@@ -6,5 +6,9 @@ public record BarberRequest(
     string UserEmail,
     string BarberName,
     string BarberPhone,
-    string? Address
+    string? Address,
+    string? BarberShopName,
+    string? BarberShopPhone,
+    string? PhotoUrl,
+    string? Password
 );
