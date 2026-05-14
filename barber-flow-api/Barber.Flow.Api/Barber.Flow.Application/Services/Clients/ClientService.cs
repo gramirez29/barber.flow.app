@@ -17,9 +17,9 @@ public class ClientService(IClientRepository repo) : IClientService
         return _repo.DeleteAsync(id, cancellationToken);
     }
 
-    public Task<IEnumerable<Client>> FindAsync(string? query = null, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, CancellationToken cancellationToken = default)
     {
-        return _repo.FindAsync(query, cancellationToken);
+        return _repo.FindAsync(query, page, pageSize, cancellationToken);
     }
 
     public Task<Client?> GetByIdAsync(string id, CancellationToken cancellationToken = default)

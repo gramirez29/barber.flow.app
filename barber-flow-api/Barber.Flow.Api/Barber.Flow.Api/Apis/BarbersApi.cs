@@ -1,6 +1,7 @@
 using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Barbers;
+using Barber.Flow.Application.Services.Users;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -52,6 +53,7 @@ public static class BarbersApi
     private static async Task<IResult> CreateBarberAsync(
         BarberRequest request,
         IBarberService barberService,
+        IUserService userService,
         IValidator<BarberRequest> validator,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
@@ -81,11 +83,28 @@ public static class BarbersApi
             BarberName = request.BarberName,
             BarberPhone = request.BarberPhone,
             Address = request.Address,
+            BarberShopName = request.BarberShopName,
+            BarberShopPhone = request.BarberShopPhone,
+            PhotoUrl = request.PhotoUrl,
             CreatedBy = userId ?? string.Empty,
             UpdatedBy = userId ?? string.Empty
         };
 
         var created = await barberService.CreateAsync(barber, cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            var newUser = new Domain.Entities.User
+            {
+                UserName = request.UserName,
+                Password = request.Password,
+                Name = request.BarberName,
+                Email = request.UserEmail,
+                Role = "Barber"
+            };
+            await userService.CreateAsync(newUser, cancellationToken);
+        }
+
         var dto = Map(created);
         return TypedResults.Ok(dto);
     }
@@ -94,6 +113,7 @@ public static class BarbersApi
         string id,
         BarberRequest request,
         IBarberService barberService,
+        IUserService userService,
         IValidator<BarberRequest> validator,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
@@ -123,17 +143,26 @@ public static class BarbersApi
             BarberName = request.BarberName,
             BarberPhone = request.BarberPhone,
             Address = request.Address,
+            BarberShopName = request.BarberShopName,
+            BarberShopPhone = request.BarberShopPhone,
+            PhotoUrl = request.PhotoUrl,
             UpdatedBy = userId ?? string.Empty
         };
 
         var updated = await barberService.UpdateAsync(id, barber, cancellationToken);
         if (updated == null) return TypedResults.NotFound();
+
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            await userService.UpdatePasswordAsync(request.UserName, request.Password, cancellationToken);
+        }
+
         return TypedResults.Ok(Map(updated));
     }
 
-    private static async Task<IResult> FindBarbersAsync([FromQuery] string? query, IBarberService barberService)
+    private static async Task<IResult> FindBarbersAsync([FromQuery] string? query, [FromQuery] int? page, [FromQuery] int? pageSize, IBarberService barberService)
     {
-        var list = await barberService.FindAsync(query);
+        var list = await barberService.FindAsync(query, page, pageSize);
         return TypedResults.Ok(list.Select(Map));
     }
 
@@ -157,7 +186,7 @@ public static class BarbersApi
         }
 
         var ok = await barberService.DeleteAsync(id, cancellationToken);
-        return ok ? TypedResults.Ok() : TypedResults.NotFound();
+        return ok ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
     private static async Task<IResult> NextIdAsync(IBarberService barberService)
@@ -174,6 +203,9 @@ public static class BarbersApi
         b.BarberName,
         b.BarberPhone,
         b.Address,
+        b.BarberShopName,
+        b.BarberShopPhone,
+        b.PhotoUrl,
         b.CreatedAt,
         b.UpdatedAt
     );

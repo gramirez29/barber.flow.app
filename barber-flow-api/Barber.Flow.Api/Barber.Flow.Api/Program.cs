@@ -36,4 +36,5 @@ app.MapClientsApi();
 app.MapBarbersApi();
 app.MapReportsApi();
 app.MapUsersApi();
+app.MapAppointmentsApi();
 app.Run();

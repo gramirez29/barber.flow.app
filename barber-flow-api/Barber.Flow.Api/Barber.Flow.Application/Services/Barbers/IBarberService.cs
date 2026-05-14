@@ -8,7 +8,7 @@ public interface IBarberService
 
     Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<Domain.Entities.Barber>> FindAsync(string? query = null, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Domain.Entities.Barber>> FindAsync(string? query = null, int? page = null, int? pageSize = null, CancellationToken cancellationToken = default);
 
     Task<Domain.Entities.Barber?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
 

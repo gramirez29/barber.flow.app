@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Platform, StyleSheet } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,7 +12,10 @@ import type { AppTabParamList } from "../navigation/AppNavigator";
 import { Text, View } from "react-native";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { AppointmentForm } from "../components/calendar/AppointmentForm";
+import { ClientSearchModal } from "../components/clients/ClientSearchModal";
 import { useTranslation } from "../context/LanguageContext";
+import { clientsService } from "../services/clientService";
+import type { Client } from "../types/clients";
 
 const COLORS = {
 	bg: "#0D0D0D",
@@ -81,6 +84,52 @@ export const AppointmentFormScreen = () => {
 			initialDraft: params.initialDraft,
 			enabled: true,
 		});
+
+	const [clientSearchVisible, setClientSearchVisible] = useState(false);
+	const [clientSearchQuery, setClientSearchQuery] = useState("");
+	const [clientSearchResults, setClientSearchResults] = useState<Client[]>([]);
+	const [clientSearchLoading, setClientSearchLoading] = useState(false);
+
+	const fetchClientSearchResults = useCallback(async (query: string) => {
+		setClientSearchLoading(true);
+		try {
+			const results = await clientsService.find(query.trim() || undefined);
+			setClientSearchResults(results ?? []);
+		} catch {
+			setClientSearchResults([]);
+		} finally {
+			setClientSearchLoading(false);
+		}
+	}, []);
+
+	const handleOpenClientSearch = useCallback(() => {
+		setClientSearchQuery("");
+		setClientSearchResults([]);
+		setClientSearchVisible(true);
+	}, []);
+
+	const handleClientSearchChange = useCallback((value: string) => {
+		setClientSearchQuery(value);
+	}, []);
+
+	useEffect(() => {
+		if (!clientSearchVisible) return;
+		const timer = setTimeout(() => {
+			void fetchClientSearchResults(clientSearchQuery);
+		}, 300);
+		return () => clearTimeout(timer);
+	}, [clientSearchQuery, clientSearchVisible, fetchClientSearchResults]);
+
+	const handleApplyClientSearch = useCallback(() => {
+		void fetchClientSearchResults(clientSearchQuery);
+	}, [clientSearchQuery, fetchClientSearchResults]);
+
+	const handleSelectClient = useCallback((client: Client) => {
+		const fullName = `${client.firstName} ${client.lastName}`.trim();
+		setField("clientName", fullName);
+		setField("phone", client.phone);
+		setClientSearchVisible(false);
+	}, [setField]);
 
 	const title = useMemo(
 		() =>
@@ -182,6 +231,7 @@ export const AppointmentFormScreen = () => {
 						onFieldBlur={onBlurField}
 						onSubmit={handleSubmit}
 						onCancel={handleCancel}
+						onOpenClientSearch={handleOpenClientSearch}
 						onPaymentMethodTouched={() =>
 						setTouched((currentTouched: Record<string, boolean>) => ({
 							...currentTouched,
@@ -191,6 +241,16 @@ export const AppointmentFormScreen = () => {
 					/>
 				</View>
 			</KeyboardAwareScrollView>
+			<ClientSearchModal
+				clients={clientSearchResults}
+				loading={clientSearchLoading}
+				search={clientSearchQuery}
+				visible={clientSearchVisible}
+				onApplyFilter={handleApplyClientSearch}
+				onClose={() => setClientSearchVisible(false)}
+				onSearchChange={handleClientSearchChange}
+				onSelectClient={handleSelectClient}
+			/>
 		</ScreenLayout>
 	);
 };

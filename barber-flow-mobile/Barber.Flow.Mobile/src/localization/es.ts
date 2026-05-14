@@ -77,6 +77,14 @@
 		home: "Inicio",
 		settings: "Ajustes",
 	},
+	avatarPicker: {
+		cameraPermissionRequired:
+			"Se requiere permiso de cámara para tomar una foto de perfil.",
+		fromGallery: "Galería",
+		galleryPermissionRequired:
+			"Se requiere permiso de galería para seleccionar una foto de perfil.",
+		takePhoto: "Tomar foto",
+	},
 	settings: {
 		about: "Acerca de",
 		aboutSubtitle:
@@ -267,6 +275,10 @@
 			selectDate: "Seleccionar fecha",
 			statusActive: "Activo",
 			statusInactive: "Inactivo",
+			contactTitle: "Contacto",
+			contactSubtitle: "Comunícate directamente con este cliente.",
+			callButton: "Llamar",
+			messageButton: "Mensaje",
 		},
 		paymentMethods: {
 			cash: "Efectivo",
@@ -412,11 +424,14 @@
 		callUnavailableMessage: "Este cliente no tiene un número de teléfono válido.",
 		callUnavailableOpen: "Tu dispositivo no pudo abrir el marcador telefónico.",
 		callUnavailableTitle: "Llamada no disponible",
+		cancel: "Cancelar",
 		chooseContactMethod: "Elige cómo contactar a este cliente.",
 		sendMessage: "Enviar mensaje",
+		smsLabel: "Mensaje de texto",
 		smsUnavailableMessage: "Este cliente no tiene un número de teléfono válido.",
 		smsUnavailableOpen: "Tu dispositivo no pudo abrir la app de SMS.",
 		smsUnavailableTitle: "SMS no disponible",
+		whatsappLabel: "WhatsApp",
 		whatsappUnavailableMessage: "Este cliente no tiene un número de teléfono válido.",
 		whatsappUnavailableOpen:
 		"WhatsApp no está instalado o no pudo abrirse en este dispositivo.",

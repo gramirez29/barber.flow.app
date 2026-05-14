@@ -1,5 +1,5 @@
 ﻿using Barber.Flow.Api.DTOs.Requests;
-using Barber.Flow.Application.Services.Barbers;
+using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Users;
 
 namespace Barber.Flow.Api.Apis;
@@ -22,6 +22,10 @@ public static class UsersApi
     private static async Task<IResult> GetAuthenticationUserAsync(AuthRequest req, IUserService userService)
     {
         var user = await userService.GetAuthenticationUserAsync(req.UserName, req.Password);
-        return user == null ? TypedResults.BadRequest(new { message = "Invalid credentials" }) : TypedResults.Ok(user);
+        if (user == null)
+            return TypedResults.BadRequest(new { message = "Invalid credentials" });
+
+        var response = new UserResponse(user.Id, user.Name, user.Email, user.UserName, user.Role, user.Token);
+        return TypedResults.Ok(response);
     }
 }

@@ -34,11 +34,13 @@ export const ClientAvatar: React.FC<ClientAvatarProps> = ({ size = 96, uri, init
 			style={[
 				styles.avatarWrap,
 				{
-				backgroundColor: theme.colors.surface,
-				borderColor: theme.colors.border,
-				width: size,
-				height: size,
-				borderRadius: size / 2,
+					backgroundColor: theme.colors.surface,
+					//borderColor: theme.colors.border,
+					width: size,
+					height: size,
+					borderRadius: size / 2,
+					borderColor: "#C9A84C",
+					borderWidth: 2
 				},
 			]}
 		>
@@ -58,7 +60,7 @@ export const ClientAvatar: React.FC<ClientAvatarProps> = ({ size = 96, uri, init
 				style={{ width: size - 22, height: size - 22, borderRadius: (size - 22) / 2 }}
 				resizeMode="cover"
 			/>
-			<View
+			{/* <View
 				style={[
 					styles.initialsBadge,
 					{
@@ -69,7 +71,7 @@ export const ClientAvatar: React.FC<ClientAvatarProps> = ({ size = 96, uri, init
 				<Text style={styles.initialsText}>
 					{getInitials(initials)}
 				</Text>
-			</View>
+			</View> */}
 		</View>
 		</View>
 	);

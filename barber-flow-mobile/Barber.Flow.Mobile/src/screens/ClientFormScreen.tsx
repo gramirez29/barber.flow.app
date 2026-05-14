@@ -103,8 +103,8 @@ export const ClientFormScreen = () => {
 			nextErrors.email
 		) {
 			Alert.alert(
-			translateText("common.save"),
-			translateText("clients.alerts.validation"),
+				translateText("common.save"),
+				translateText("clients.alerts.validation"),
 			);
 			return;
 		}
@@ -206,6 +206,7 @@ export const ClientFormScreen = () => {
 					onFieldChange={handleFieldChange}
 					onFieldBlur={onBlurField}
 					onOpenDatePicker={openDatePicker}
+					onPhotoChange={(uri) => setField("photoUrl", uri)}
 				/>
 
 				<View style={styles.actions}>

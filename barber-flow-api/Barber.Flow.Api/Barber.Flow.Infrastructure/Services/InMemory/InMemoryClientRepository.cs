@@ -64,6 +64,7 @@ public class InMemoryClientRepository : IClientRepository
         existing.Preferences = client.Preferences;
         existing.PaymentMethod = client.PaymentMethod;
         existing.Active = client.Active;
+        existing.PhotoUrl = client.PhotoUrl;
         existing.UpdatedAt = DateTime.UtcNow;
         _store[id] = existing;
         
@@ -81,13 +82,15 @@ public class InMemoryClientRepository : IClientRepository
         return Task.FromResult(client);
     }
 
-    public Task<IEnumerable<Client>> FindAsync(string? query = null, CancellationToken ct = default)
+    public Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, CancellationToken ct = default)
     {
         var clients = _store.Values.AsEnumerable();
 
 		// If no query is provided, return all clients: It could change if we want to get aproximation results
         if (string.IsNullOrWhiteSpace(query))
         {
+            if (page.HasValue && pageSize.HasValue)
+                clients = clients.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
             return Task.FromResult(clients);
         }
         
@@ -97,6 +100,9 @@ public class InMemoryClientRepository : IClientRepository
             client.LastName.ToLowerInvariant().Contains(query, StringComparison.InvariantCultureIgnoreCase) ||
             (client.Phone ?? string.Empty).Contains(query,  StringComparison.InvariantCultureIgnoreCase));
         
+        if (page.HasValue && pageSize.HasValue)
+            clients = clients.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
+
         return Task.FromResult(clients);
     }
 }

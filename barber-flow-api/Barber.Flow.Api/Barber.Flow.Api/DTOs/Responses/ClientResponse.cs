@@ -11,6 +11,7 @@ public record ClientResponse(
     string? Preferences,
     string? PaymentMethod,
     bool Active,
+    string? PhotoUrl,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );

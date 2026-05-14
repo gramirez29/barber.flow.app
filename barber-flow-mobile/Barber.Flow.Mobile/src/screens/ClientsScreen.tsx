@@ -67,7 +67,7 @@ export const ClientsScreen: React.FC = () => {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState<PageSizeOption>(10);
 
-    // TODO: when backend returns PaginatedResult<Client>, derive totalPages and displayedClients from the response
+    // Backend returns the full filtered list; local slice handles pagination.
     const totalPages = Math.ceil(allClients.length / pageSize);
     const displayedClients = allClients.slice((page - 1) * pageSize, page * pageSize);
 
@@ -82,10 +82,8 @@ export const ClientsScreen: React.FC = () => {
                 setLoading(true);
 
                 try {
-                    // Pagination params are forwarded to the backend already.
-                    // TODO: when backend returns PaginatedResult<Client>, update setAllClients to set only the items slice
-                    //       and derive totalPages from the response totalCount instead.
-                    const nextClients = await clientsService.find(searchQuery.trim() || undefined, { page, pageSize });
+                    // Backend returns all matching clients; pagination is handled locally.
+                    const nextClients = await clientsService.find(searchQuery.trim() || undefined);
 
                     if (isActive) {
                         setAllClients(nextClients ?? []);
@@ -111,7 +109,7 @@ export const ClientsScreen: React.FC = () => {
             isActive = false;
             clearTimeout(timeoutId);
         };
-    }, [isFocused, page, pageSize, searchQuery, translateText]);
+    }, [isFocused, searchQuery, translateText]);
 
     const handleSearchChange = (text: string) => {
         setSearchQuery(text);

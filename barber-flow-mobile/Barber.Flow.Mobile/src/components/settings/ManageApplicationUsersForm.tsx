@@ -1,15 +1,13 @@
 import React from "react";
 import {
 	ActivityIndicator,
-	Alert,
-	Image,
 	Pressable,
 	StyleSheet,
 	Text,
 	useWindowDimensions,
 	View,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
+import { AvatarPicker } from "../AvatarPicker";
 import { HelperText, TextInput } from "react-native-paper";
 import { useTranslation } from "../../context/LanguageContext";
 import type { ApplicationUserSettingsForm, BarberApiResponse } from "../../types/settings";
@@ -86,53 +84,6 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
 	const { width } = useWindowDimensions();
 	const isCompact = width < 380;
 	const isUltraCompact = width <= 360;
-
-	const handlePickFromGallery = async () => {
-		const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-		if (!permission.granted) {
-			Alert.alert(
-				translateText("common.open"),
-				translateText("settings.manageUsersForm.galleryPermissionRequired"),
-			);
-			return;
-		}
-
-		const result = await ImagePicker.launchImageLibraryAsync({
-			allowsEditing: true,
-			aspect: [1, 1],
-			mediaTypes: ImagePicker.MediaTypeOptions.Images,
-			quality: 0.85,
-		});
-
-		if (!result.canceled && result.assets.length > 0) {
-			onFieldChange("profilePhotoUrl", result.assets[0].uri);
-		}
-	};
-
-	const handleTakePhoto = async () => {
-		const permission = await ImagePicker.requestCameraPermissionsAsync();
-
-		if (!permission.granted) {
-			Alert.alert(
-				translateText("common.open"),
-				translateText("settings.manageUsersForm.cameraPermissionRequired"),
-			);
-			return;
-		}
-
-		const result = await ImagePicker.launchCameraAsync({
-			allowsEditing: true,
-			aspect: [1, 1],
-			cameraType: ImagePicker.CameraType.front,
-			mediaTypes: ImagePicker.MediaTypeOptions.Images,
-			quality: 0.85,
-		});
-
-		if (!result.canceled && result.assets.length > 0) {
-			onFieldChange("profilePhotoUrl", result.assets[0].uri);
-		}
-	};
 
 	return (
 		<View style={[styles.container, isCompact && styles.containerCompact, isUltraCompact && styles.containerUltraCompact]}>
@@ -356,28 +307,13 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
 
 				<View style={styles.photoCard}>
 					<Text style={styles.photoTitle}>{translateText("settings.manageUsersForm.photoTitle")}</Text>
-					<Image
-						source={
-							values.profilePhotoUrl
-								? { uri: values.profilePhotoUrl }
-								: require("../../../assets/images/no-image.jpg")
-						}
-						style={styles.photoPreview}
+					<AvatarPicker
+						variant="full"
+						uri={values.profilePhotoUrl ?? undefined}
+						size={88}
+						loading={loading}
+						onChangePhoto={(photoUri) => onFieldChange("profilePhotoUrl", photoUri)}
 					/>
-					<View style={[styles.photoActions, isCompact && styles.photoActionsCompact]}>
-						<Pressable
-							onPress={() => void handleTakePhoto()}
-							style={({ pressed }) => [styles.photoBtnPrimary, isCompact && styles.photoBtnCompact, pressed && { opacity: 0.8 }]}
-						>
-							<Text style={styles.photoBtnPrimaryText}>{translateText("settings.manageUsersForm.takePhoto")}</Text>
-						</Pressable>
-						<Pressable
-							onPress={() => void handlePickFromGallery()}
-							style={({ pressed }) => [styles.photoBtnSecondary, isCompact && styles.photoBtnCompact, pressed && { opacity: 0.8 }]}
-						>
-						<Text adjustsFontSizeToFit numberOfLines={1} style={styles.photoBtnSecondaryText}>{translateText("settings.manageUsersForm.uploadPhoto")}</Text>
-						</Pressable>
-					</View>
 				</View>
 
 				<View style={styles.actions}>
@@ -574,56 +510,6 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		fontWeight: "600",
 		marginBottom: 10,
-	},
-	photoPreview: {
-		alignSelf: "center",
-		backgroundColor: COLORS.bg,
-		borderRadius: 44,
-		height: 88,
-		marginBottom: 12,
-		width: 88,
-	},
-	photoActions: {
-		flexDirection: "row",
-		gap: 8,
-		marginTop: 2,
-	},
-	photoActionsCompact: {
-		flexDirection: "column",
-	},
-	photoBtnPrimary: {
-		alignItems: "center",
-		backgroundColor: COLORS.gold,
-		borderRadius: 12,
-		flex: 1,
-		justifyContent: "center",
-		minHeight: 42,
-		paddingHorizontal: 12,
-	},
-	photoBtnPrimaryText: {
-		color: COLORS.bg,
-		fontSize: 14,
-		fontWeight: "700",
-	},
-	photoBtnSecondary: {
-		alignItems: "center",
-		backgroundColor: COLORS.surface,
-		borderColor: COLORS.border,
-		borderRadius: 12,
-		borderWidth: 1,
-		flex: 1,
-		justifyContent: "center",
-		minHeight: 42,
-		paddingHorizontal: 12,
-	},
-	photoBtnSecondaryText: {
-		color: COLORS.textPrimary,
-		fontSize: 14,
-		fontWeight: "600",
-		textAlign: "center",
-	},
-	photoBtnCompact: {
-		flex: 0,
 	},
 	actions: {
 		flexDirection: "column",

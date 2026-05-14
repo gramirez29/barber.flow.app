@@ -65,6 +65,7 @@ public static class ClientsApi
             Preferences = request.Preferences,
             PaymentMethod = request.PaymentMethod,
             Active = request.Active,
+            PhotoUrl = request.PhotoUrl,
             CreatedBy = userId!,
             UpdatedBy = userId!
         };
@@ -96,6 +97,7 @@ public static class ClientsApi
             Preferences = request.Preferences,
             PaymentMethod = request.PaymentMethod,
             Active = request.Active,
+            PhotoUrl = request.PhotoUrl,
             UpdatedBy = userId!
         };
 
@@ -108,9 +110,9 @@ public static class ClientsApi
         return TypedResults.Ok(Map(updated));
     }
 
-    private static async Task<IResult> FindClientsAsync([FromQuery] string? query, IClientService clientService)
+    private static async Task<IResult> FindClientsAsync([FromQuery] string? query, [FromQuery] int? page, [FromQuery] int? pageSize, IClientService clientService)
     {
-        var list = await clientService.FindAsync(query);
+        var list = await clientService.FindAsync(query, page, pageSize);
         return TypedResults.Ok(list.Select(Map));
     }
 
@@ -123,7 +125,7 @@ public static class ClientsApi
     private static async Task<IResult> DeleteClientAsync(string id, IClientService clientService)
     {
         var ok = await clientService.DeleteAsync(id);
-        return ok ? TypedResults.Ok() : TypedResults.NotFound();
+        return ok ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
     private static ClientResponse Map(Client client) =>
@@ -139,6 +141,7 @@ public static class ClientsApi
             client.Preferences,
             client.PaymentMethod,
             client.Active,
+            client.PhotoUrl,
             client.CreatedAt,
             client.UpdatedAt
         );
