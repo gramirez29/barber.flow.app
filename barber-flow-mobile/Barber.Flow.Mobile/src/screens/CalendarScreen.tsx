@@ -150,6 +150,7 @@ export const CalendarScreen: React.FC = () => {
 	const {
 		appointments,
 		getAppointmentsByDate,
+		fetchAppointments,
 	} = useAppointmentStore();
 
 	const today = format(new Date(), DATE_FORMAT);
@@ -157,6 +158,10 @@ export const CalendarScreen: React.FC = () => {
 	const [selectedDate, setSelectedDate] = useState(today);
 	const [visibleMonth, setVisibleMonth] = useState(today);
 	const locale = getIntlLocale(language);
+
+	useEffect(() => {
+		void fetchAppointments();
+	}, [fetchAppointments]);
 
 	useEffect(() => {
 		LocaleConfig.defaultLocale = language;

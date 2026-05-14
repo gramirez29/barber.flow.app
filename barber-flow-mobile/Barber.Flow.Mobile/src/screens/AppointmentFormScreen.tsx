@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { getErrorMessage } from "../utils/errors";
 import { Alert, Platform, StyleSheet } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -85,6 +86,7 @@ export const AppointmentFormScreen = () => {
 			enabled: true,
 		});
 
+	const [isSaving, setIsSaving] = useState(false);
 	const [clientSearchVisible, setClientSearchVisible] = useState(false);
 	const [clientSearchQuery, setClientSearchQuery] = useState("");
 	const [clientSearchResults, setClientSearchResults] = useState<Client[]>([]);
@@ -143,7 +145,7 @@ export const AppointmentFormScreen = () => {
 		navigation.goBack();
 	};
 
-	const handleSubmit = () => {
+const handleSubmit = async () => {
 		if (params.mode === "edit") {
 			if (!params.appointmentId) {
 				Alert.alert(title, translateText("common.somethingWentWrong"));
@@ -163,36 +165,44 @@ export const AppointmentFormScreen = () => {
 			return;
 		}
 
-		if (params.mode === "edit" && params.appointmentId) {
-			updateAppointment(params.appointmentId, normalizedDraft);
-		} else {
-			addAppointment(normalizedDraft);
+		setIsSaving(true);
+		try {
+			if (params.mode === "edit" && params.appointmentId) {
+				await updateAppointment(params.appointmentId, normalizedDraft);
+			} else {
+				await addAppointment(normalizedDraft);
+			}
+		} catch (error) {
+			Alert.alert(title, getErrorMessage(error) || translateText("common.somethingWentWrong"));
+			setIsSaving(false);
+			return;
 		}
+		setIsSaving(false);
 
 		if (afterSave === "goToCalendarDay") {
-		const parentTabNavigation = navigation.getParent?.() as
-			| BottomTabNavigationProp<AppTabParamList>
-			| undefined;
+			const parentTabNavigation = navigation.getParent?.() as
+				| BottomTabNavigationProp<AppTabParamList>
+				| undefined;
 
-		if (typeof navigation.popToTop === "function") {
-			navigation.popToTop();
-		} else {
-			navigation.goBack();
+			if (typeof navigation.popToTop === "function") {
+				navigation.popToTop();
+			} else {
+				navigation.goBack();
+			}
+
+			parentTabNavigation?.navigate("Calendar", {
+				screen: "CalendarHome",
+				params: {
+					date: normalizedDraft.date,
+					initialView: "day",
+					source: "clientSaved",
+				},
+			});
+
+			return;
 		}
 
-		parentTabNavigation?.navigate("Calendar", {
-			screen: "CalendarHome",
-			params: {
-			date: normalizedDraft.date,
-			initialView: "day",
-			source: "clientSaved",
-			},
-		});
-
-		return;
-    }
-
-    navigation.goBack();
+		navigation.goBack();
 	};
 
 	return (
@@ -231,6 +241,7 @@ export const AppointmentFormScreen = () => {
 						onFieldBlur={onBlurField}
 						onSubmit={handleSubmit}
 						onCancel={handleCancel}
+						isSaving={isSaving}
 						onOpenClientSearch={handleOpenClientSearch}
 						onPaymentMethodTouched={() =>
 						setTouched((currentTouched: Record<string, boolean>) => ({

@@ -17,8 +17,13 @@ export const APP_ENV =
 	expoExtra?.APP_ENV ??
 	"development";
 
+const BASE_URL_DEFAULT =
+	APP_ENV === "development"
+		? "http://192.168.0.27:7016"
+		: "https://barberflowapp-develop.up.railway.app";
+
 export const BASE_URL =
-	(process.env.BARBERFLOW_API_URL as string | undefined) ?? expoExtra?.BASE_URL ?? "https://barberflowapp-develop.up.railway.app";
+	(process.env.BARBERFLOW_API_URL as string | undefined) ?? expoExtra?.BASE_URL ?? BASE_URL_DEFAULT;
 
 // Admin username (single admin). Can be configured via env or Expo extra.
 export const ADMIN_USERNAME =

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
 	TextInput,
 } from "react-native-paper";
@@ -51,6 +51,7 @@ interface AppointmentFormProps {
 	onFieldBlur: (key: keyof AppointmentDraft) => void;
 	onSubmit: () => void;
 	onCancel: () => void;
+	isSaving?: boolean;
 	onPaymentMethodTouched?: () => void;
 	onOpenClientSearch?: () => void;
 }
@@ -64,6 +65,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 	onFieldBlur,
 	onSubmit,
 	onCancel,
+	isSaving,
 	onPaymentMethodTouched,
 	onOpenClientSearch,
 }) => {
@@ -258,14 +260,19 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
 			<View style={styles.actions}>
 				<Pressable
-					style={({ pressed }) => [styles.goldBtn, pressed && styles.goldBtnPressed]}
-					onPress={onSubmit}
+					style={({ pressed }) => [styles.goldBtn, pressed && !isSaving && styles.goldBtnPressed, isSaving && styles.goldBtnDisabled]}
+					onPress={isSaving ? undefined : onSubmit}
+					disabled={isSaving}
 				>
-					<Text style={styles.goldBtnText}>
-						{isEditMode
-							? translateText("calendar.appointmentModal.saveChanges")
-							: translateText("calendar.appointmentModal.saveAppointment")}
-					</Text>
+					{isSaving ? (
+						<ActivityIndicator size="small" color="#000" />
+					) : (
+						<Text style={styles.goldBtnText}>
+							{isEditMode
+								? translateText("calendar.appointmentModal.saveChanges")
+								: translateText("calendar.appointmentModal.saveAppointment")}
+						</Text>
+					)}
 				</Pressable>
 				<Pressable
 					style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
@@ -356,6 +363,9 @@ const styles = StyleSheet.create({
 	},
 	goldBtnPressed: {
 		backgroundColor: COLORS.goldLight,
+	},
+	goldBtnDisabled: {
+		opacity: 0.6,
 	},
 	goldBtnText: {
 		color: COLORS.bg,
