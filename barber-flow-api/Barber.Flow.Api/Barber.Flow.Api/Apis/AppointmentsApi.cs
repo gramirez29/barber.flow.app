@@ -40,8 +40,8 @@ public static class AppointmentsApi
             .WithName(nameof(DeleteAppointmentAsync))
             .WithTags(AppointmentTag);
 
-        api.MapGet("/nextId", NextIdAsync)
-            .WithName(nameof(NextIdAsync))
+        api.MapGet("/nextBarberId", NextBarberIdAsync)
+            .WithName(nameof(NextBarberIdAsync))
             .WithTags(AppointmentTag);
 
         return api;
@@ -156,7 +156,7 @@ public static class AppointmentsApi
         return ok ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
-    private static async Task<IResult> NextIdAsync(IAppointmentService appointmentService)
+    private static async Task<IResult> NextBarberIdAsync(IAppointmentService appointmentService)
     {
         var id = await appointmentService.GetNextIdAsync();
         return TypedResults.Ok(new { nextId = id });
