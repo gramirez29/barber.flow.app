@@ -11,6 +11,7 @@ interface AppointmentState {
 	appointments: Appointment[];
 	isLoading: boolean;
 	fetchAppointments: (params?: AppointmentSearchParams) => Promise<void>;
+	fetchAppointmentsByDateRange: (startDate: string, endDate: string, status?: string) => Promise<void>;
 	addAppointment: (appointment: AppointmentDraft) => Promise<Appointment>;
 	getCompletedAppointmentsByDate: (date: string) => Appointment[];
 	moveAppointment: (id: string, newDate: string) => Promise<void>;
@@ -39,6 +40,29 @@ export const useAppointmentStore = create<AppointmentState>()(
 				try {
 					const appointments = await appointmentService.find(params);
 					set({ appointments: sortAppointments(appointments) });
+				} finally {
+					set({ isLoading: false });
+				}
+			},
+
+			fetchAppointmentsByDateRange: async (startDate, endDate, status?) => {
+				set({ isLoading: true });
+				try {
+					const fetched = await appointmentService.find({ date: startDate, endDate, status });
+					const outside = get().appointments.filter(
+						(a) => a.date < startDate || a.date > endDate,
+					);
+					if (status) {
+						// Keep in-range appointments that don't match the filtered status
+						const inRangeOtherStatus = get().appointments.filter(
+							(a) => a.date >= startDate && a.date <= endDate && a.status !== status,
+						);
+						set({ appointments: sortAppointments([...outside, ...inRangeOtherStatus, ...fetched]) });
+					} else {
+						set({ appointments: sortAppointments([...outside, ...fetched]) });
+					}
+				} catch (error) {
+					console.error("[AppointmentStore] fetchAppointmentsByDateRange failed:", error);
 				} finally {
 					set({ isLoading: false });
 				}

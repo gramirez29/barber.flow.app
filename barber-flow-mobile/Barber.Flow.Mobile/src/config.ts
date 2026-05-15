@@ -19,7 +19,7 @@ export const APP_ENV =
 
 const BASE_URL_DEFAULT =
 	APP_ENV === "development"
-		? "http://192.168.0.27:7016"
+		? "http://192.168.68.59:7016"
 		: "https://barberflowapp-develop.up.railway.app";
 
 export const BASE_URL =

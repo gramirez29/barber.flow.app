@@ -12,6 +12,7 @@ public interface IAppointmentRepository
 
     Task<IEnumerable<Entities.Appointments>> FindAsync(
         string? date = null,
+        string? endDate = null,
         string? status = null,
         string? query = null,
         int? page = null,

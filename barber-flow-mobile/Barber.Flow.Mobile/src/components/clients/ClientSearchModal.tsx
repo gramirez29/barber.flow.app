@@ -18,6 +18,7 @@ import {
 	openClientPhoneCall,
 } from "../../utils/contactActions";
 import { useTranslation } from "../../context/LanguageContext";
+import { useDialog } from "../../context/DialogContext";
 
 const COLORS = {
 	bg: "#0D0D0D",
@@ -51,6 +52,7 @@ export const ClientSearchModal: React.FC<ClientSearchModalProps> = ({
 	onSelectClient,
 }) => {
 	const { translateText } = useTranslation();
+	const { showAlert } = useDialog();
 	const contactActionLabels = {
 		callUnavailableMessage: translateText("contactActions.callUnavailableMessage"),
 		callUnavailableOpen: translateText("contactActions.callUnavailableOpen"),
@@ -168,7 +170,7 @@ export const ClientSearchModal: React.FC<ClientSearchModalProps> = ({
 
 								<View style={styles.cardActions}>
 									<Pressable
-										onPress={() => void openClientPhoneCall(item.phone, contactActionLabels)}
+										onPress={() => void openClientPhoneCall(item.phone, contactActionLabels, showAlert)}
 										style={({ pressed }) => [
 											styles.actionBtn,
 											pressed && styles.actionBtnPressed,
@@ -182,7 +184,7 @@ export const ClientSearchModal: React.FC<ClientSearchModalProps> = ({
 
 									<Pressable
 										onPress={() =>
-											openClientMessagePicker(item.phone, contactActionLabels, fullName)
+											openClientMessagePicker(item.phone, contactActionLabels, showAlert, fullName)
 										}
 										style={({ pressed }) => [
 											styles.actionBtn,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
 	ActivityIndicator,
 	Pressable,
@@ -84,6 +84,7 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
 	const { width } = useWindowDimensions();
 	const isCompact = width < 380;
 	const isUltraCompact = width <= 360;
+	const [showPassword, setShowPassword] = useState(false);
 
 	return (
 		<View style={[styles.container, isCompact && styles.containerCompact, isUltraCompact && styles.containerUltraCompact]}>
@@ -297,8 +298,15 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
 						mode="outlined"
 						theme={PAPER_THEME as any}
 						textColor={COLORS.textPrimary}
-						secureTextEntry
+						secureTextEntry={!showPassword}
 						disabled={loading}
+						right={
+							<TextInput.Icon
+								icon={showPassword ? "eye-off" : "eye"}
+								onPress={() => setShowPassword((v) => !v)}
+								color={showPassword ? COLORS.gold : COLORS.textSecondary}
+							/>
+						}
 					/>
 					<HelperText type="error" visible={Boolean(touched.password && errors.password)}>
 						{errors.password ? translateText(errors.password) : undefined}

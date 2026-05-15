@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, ImageBackground, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, ImageBackground, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import type { CompositeNavigationProp } from "@react-navigation/native";
 import { DrawerActions, useIsFocused, useNavigation } from "@react-navigation/native";
@@ -15,6 +15,7 @@ import { useTranslation } from "../context/LanguageContext";
 import type { AppointmentDraft, AppointmentPaymentMethod } from "../features/appointments/appointments.types";
 import { clientsService } from "../services/clientService";
 import { getErrorMessage } from '../utils/errors';
+import { useDialog } from '../context/DialogContext';
 import { ScreenLayout } from "../components/ScreenLayout";
 import type { Client } from "../types/clients";
 import type { AppTabParamList } from "../navigation/AppNavigator";
@@ -59,6 +60,7 @@ export const ClientsScreen: React.FC = () => {
     const navigation = useNavigation<ClientsScreenNavigation>();
     const isFocused = useIsFocused();
     const { translateText } = useTranslation();
+    const { showAlert } = useDialog();
     const insets = useSafeAreaInsets();
     const tabBarHeight = useContext(BottomTabBarHeightContext) ?? 0;
     const [allClients, setAllClients] = useState<Client[]>([]);
@@ -90,7 +92,7 @@ export const ClientsScreen: React.FC = () => {
                     }
                 } catch (error: unknown) {
                     if (isActive) {
-                        Alert.alert(
+                        showAlert(
                             translateText("common.search"),
                             getErrorMessage(error) || translateText("clients.alerts.listLoadFailed"),
                         );
@@ -109,7 +111,7 @@ export const ClientsScreen: React.FC = () => {
             isActive = false;
             clearTimeout(timeoutId);
         };
-    }, [isFocused, searchQuery, translateText]);
+    }, [isFocused, searchQuery, translateText, showAlert]);
 
     const handleSearchChange = (text: string) => {
         setSearchQuery(text);

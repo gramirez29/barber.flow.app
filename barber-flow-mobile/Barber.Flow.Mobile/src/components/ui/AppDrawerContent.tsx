@@ -5,7 +5,6 @@ import {
 	StyleSheet,
 	TouchableOpacity,
 	Image,
-	Alert,
 } from "react-native";
 import { DrawerContentScrollView, type DrawerContentComponentProps } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,6 +13,7 @@ import { useAuthStore } from "../../store/auth.store";
 import { authService } from "../../services/authService";
 import { useAppTheme } from "../../theme/ThemeContext";
 import { useTranslation } from "../../context/LanguageContext";
+import { useDialog } from "../../context/DialogContext";
 const pkg = require("../../../package.json");
 
 const DRAWER_COLORS = {
@@ -42,6 +42,7 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 	const user = useAuthStore((s) => s.user);
 	const { theme } = useAppTheme();
 	const { translateText } = useTranslation();
+	const { showAlert } = useDialog();
 
 	const name = user?.name ?? translateText("header.guest");
 	const email = user?.email ?? "";
@@ -52,7 +53,7 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 	const initials = getInitials(identity);
 
 	const handleLogout = () => {
-		Alert.alert(translateText("drawer.logoutTitle"), translateText("drawer.logoutMessage"), [
+		showAlert(translateText("drawer.logoutTitle"), translateText("drawer.logoutMessage"), [
 		{ text: translateText("drawer.cancel"), style: "cancel" },
 		{
 			text: translateText("drawer.logout"),
@@ -72,7 +73,7 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 	};
 
 	const openHelp = () => {
-		Alert.alert(
+		showAlert(
 		translateText("drawer.helpTitle"),
 		translateText("drawer.helpMessage"),
 		);

@@ -8,6 +8,7 @@ import type {
 
 export interface AppointmentSearchParams {
   date?: string;
+  endDate?: string;
   status?: string;
   query?: string;
   page?: number;
@@ -76,6 +77,7 @@ export const appointmentService = {
   find: async (params?: AppointmentSearchParams): Promise<Appointment[]> => {
     const query = new URLSearchParams();
     if (params?.date) query.set("date", params.date);
+    if (params?.endDate) query.set("endDate", params.endDate);
     if (params?.status) query.set("status", params.status);
     if (params?.query) query.set("query", params.query);
     if (params?.page != null) query.set("page", String(params.page));

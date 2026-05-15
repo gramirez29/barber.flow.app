@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { ImageBackground, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, ImageBackground, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Calendar, LocaleConfig } from "react-native-calendars";
-import { addDays, format, startOfWeek } from "date-fns";
+import { addDays, endOfMonth, format, parseISO, startOfMonth, startOfWeek } from "date-fns";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { DrawerActions } from "@react-navigation/core";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -149,8 +149,9 @@ export const CalendarScreen: React.FC = () => {
 	const { language, translateText } = useTranslation();
 	const {
 		appointments,
+		isLoading,
 		getAppointmentsByDate,
-		fetchAppointments,
+		fetchAppointmentsByDateRange,
 	} = useAppointmentStore();
 
 	const today = format(new Date(), DATE_FORMAT);
@@ -159,9 +160,35 @@ export const CalendarScreen: React.FC = () => {
 	const [visibleMonth, setVisibleMonth] = useState(today);
 	const locale = getIntlLocale(language);
 
+	const lastFetchedMonthRef = useRef("");
+	const lastFetchedWeekRef = useRef("");
+	const lastFetchedDayRef = useRef("");
+
+	const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate]);
+
 	useEffect(() => {
-		void fetchAppointments();
-	}, [fetchAppointments]);
+		if (viewMode !== "month") return;
+		const monthStart = format(startOfMonth(parseISO(visibleMonth)), DATE_FORMAT);
+		if (lastFetchedMonthRef.current === monthStart) return;
+		lastFetchedMonthRef.current = monthStart;
+		const monthEnd = format(endOfMonth(parseISO(visibleMonth)), DATE_FORMAT);
+		void fetchAppointmentsByDateRange(monthStart, monthEnd);
+	}, [viewMode, visibleMonth, fetchAppointmentsByDateRange]);
+
+	useEffect(() => {
+		if (viewMode !== "week") return;
+		const weekStart = weekDates[0];
+		if (lastFetchedWeekRef.current === weekStart) return;
+		lastFetchedWeekRef.current = weekStart;
+		void fetchAppointmentsByDateRange(weekStart, weekDates[6]);
+	}, [viewMode, weekDates, fetchAppointmentsByDateRange]);
+
+	useEffect(() => {
+		if (viewMode !== "day") return;
+		if (lastFetchedDayRef.current === selectedDate) return;
+		lastFetchedDayRef.current = selectedDate;
+		void fetchAppointmentsByDateRange(selectedDate, selectedDate);
+	}, [viewMode, selectedDate, fetchAppointmentsByDateRange]);
 
 	useEffect(() => {
 		LocaleConfig.defaultLocale = language;
@@ -191,7 +218,6 @@ export const CalendarScreen: React.FC = () => {
 	}, [navigation, route.params, today]);
 
 	const selectedAppointments = getAppointmentsByDate(selectedDate);
-	const weekDates = getWeekDates(selectedDate);
 	const weekAgenda = weekDates.map((date) => ({
 		date,
 		appointments: getAppointmentsByDate(date),
@@ -364,10 +390,11 @@ export const CalendarScreen: React.FC = () => {
 							<View>
 								<Text style={styles.sectionLabel}>{translateText("calendar.monthView")}</Text>
 								<Text style={styles.sectionTitle}>{formatLongDate(visibleMonth, locale)}</Text>
-							</View>
-							<Pressable onPress={() => openCreateModal(selectedDate)}>
-								<Text style={styles.goldLink}>{translateText("calendar.schedule")}</Text>
-							</Pressable>
+							{isLoading && <ActivityIndicator size="small" color={COLORS.gold} style={{ marginTop: 4 }} />}
+						</View>
+						<Pressable onPress={() => openCreateModal(selectedDate)}>
+							<Text style={styles.goldLink}>{translateText("calendar.schedule")}</Text>
+						</Pressable>
 						</View>
 
 						<Calendar
@@ -417,6 +444,7 @@ export const CalendarScreen: React.FC = () => {
 								<Text style={styles.sectionTitle}>
 									{translateText("calendar.weekOf", { date: formatLongDate(selectedDate, locale) })}
 								</Text>
+								{isLoading && <ActivityIndicator size="small" color={COLORS.gold} style={{ marginTop: 4 }} />}
 							</View>
 							<Pressable onPress={() => openCreateModal(selectedDate)}>
 								<Text style={styles.goldLink}>{translateText("calendar.schedule")}</Text>
@@ -470,6 +498,7 @@ export const CalendarScreen: React.FC = () => {
 							<View>
 								<Text style={styles.sectionLabel}>{translateText("calendar.viewDay")}</Text>
 								<Text style={styles.sectionTitle}>{formatLongDate(selectedDate, locale)}</Text>
+								{isLoading && <ActivityIndicator size="small" color={COLORS.gold} style={{ marginTop: 4 }} />}
 							</View>
 							<Pressable
 								style={({ pressed }) => [styles.goldBtn, pressed && styles.goldBtnPressed]}

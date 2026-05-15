@@ -127,6 +127,7 @@ public static class AppointmentsApi
 
     private static async Task<IResult> FindAppointmentsAsync(
         [FromQuery] string? date,
+        [FromQuery] string? endDate,
         [FromQuery] string? status,
         [FromQuery] string? query,
         [FromQuery] int? page,
@@ -134,7 +135,7 @@ public static class AppointmentsApi
         IAppointmentService appointmentService,
         CancellationToken cancellationToken = default)
     {
-        var list = await appointmentService.FindAsync(date, status, query, page, pageSize, cancellationToken);
+        var list = await appointmentService.FindAsync(date, endDate, status, query, page, pageSize, cancellationToken);
         return TypedResults.Ok(list.Select(Map));
     }
 

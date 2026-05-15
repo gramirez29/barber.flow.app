@@ -7,6 +7,7 @@ import { HelperText, TextInput } from "react-native-paper";
 import { ClientAvatar } from "../ClientAvatar";
 import { AvatarPicker } from "../AvatarPicker";
 import { useTranslation } from "../../context/LanguageContext";
+import { useDialog } from "../../context/DialogContext";
 import type { Client } from "../../types/clients";
 import {
 	ClientFormErrors,
@@ -73,6 +74,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 	onPhotoChange,
 }) => {
 	const { translateText } = useTranslation();
+	const { showAlert } = useDialog();
 	const isEditing = Boolean(client.id);
 	const fullName = `${client.firstName} ${client.lastName}`.trim()
 		|| translateText("clients.form.createTitleFallback");
@@ -160,7 +162,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 								whatsappUnavailableOpen: translateText("contactActions.whatsappUnavailableOpen"),
 								whatsappUnavailableTitle: translateText("contactActions.whatsappUnavailableTitle"),
 							};
-							void openClientPhoneCall(client.phone ?? "", labels);
+							void openClientPhoneCall(client.phone ?? "", labels, showAlert);
 						}}
 					>
 						<View style={styles.contactBtnInner}>
@@ -195,7 +197,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 								whatsappUnavailableTitle: translateText("contactActions.whatsappUnavailableTitle"),
 							};
 							const clientName = `${client.firstName} ${client.lastName}`.trim();
-							openClientMessagePicker(client.phone ?? "", labels, clientName || undefined);
+							openClientMessagePicker(client.phone ?? "", labels, showAlert, clientName || undefined);
 						}}
 					>
 						<View style={styles.contactBtnInner}>

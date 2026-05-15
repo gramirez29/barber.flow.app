@@ -1,4 +1,7 @@
-import { ActionSheetIOS, Alert, Linking, Platform } from "react-native";
+import { ActionSheetIOS, Linking, Platform } from "react-native";
+import type { DialogButton } from '../context/DialogContext';
+
+type ShowAlert = (title: string, message?: string, buttons?: DialogButton[]) => void;
 
 type ContactActionLabels = {
 	callUnavailableMessage: string;
@@ -50,11 +53,12 @@ const openUrl = async (
 	url: string,
 	errorTitle: string,
 	errorMessage: string,
+	showAlert: ShowAlert,
 ) => {
 	const supported = await Linking.canOpenURL(url);
 
 	if (!supported) {
-		Alert.alert(errorTitle, errorMessage);
+		showAlert(errorTitle, errorMessage);
 		return;
 	}
 
@@ -64,11 +68,12 @@ const openUrl = async (
 export const openClientPhoneCall = async (
 	phone: string,
 	labels: ContactActionLabels,
+	showAlert: ShowAlert,
 ) => {
 	const digits = sanitizePhoneNumber(phone);
 
 	if (!digits) {
-		Alert.alert(labels.callUnavailableTitle, labels.callUnavailableMessage);
+		showAlert(labels.callUnavailableTitle, labels.callUnavailableMessage);
 		return;
 	}
 
@@ -77,21 +82,23 @@ export const openClientPhoneCall = async (
 			`tel:${digits}`,
 			labels.callUnavailableTitle,
 			labels.callUnavailableOpen,
+			showAlert,
 		);
 	} catch {
-		Alert.alert(labels.callUnavailableTitle, labels.callUnavailableOpen);
+		showAlert(labels.callUnavailableTitle, labels.callUnavailableOpen);
 	}
 };
 
 const openClientSms = async (
 	phone: string,
 	labels: ContactActionLabels,
+	showAlert: ShowAlert,
 	clientName?: string,
 ) => {
 	const digits = sanitizePhoneNumber(phone);
 
 	if (!digits) {
-		Alert.alert(labels.smsUnavailableTitle, labels.smsUnavailableMessage);
+		showAlert(labels.smsUnavailableTitle, labels.smsUnavailableMessage);
 		return;
 	}
 
@@ -100,21 +107,23 @@ const openClientSms = async (
 			buildSmsUrl(digits, buildMessage(labels, clientName)),
 			labels.smsUnavailableTitle,
 			labels.smsUnavailableOpen,
+			showAlert,
 		);
 	} catch {
-		Alert.alert(labels.smsUnavailableTitle, labels.smsUnavailableOpen);
+		showAlert(labels.smsUnavailableTitle, labels.smsUnavailableOpen);
 	}
 };
 
 const openClientWhatsApp = async (
 	phone: string,
 	labels: ContactActionLabels,
+	showAlert: ShowAlert,
 	clientName?: string,
 ) => {
 	const whatsappPhone = buildWhatsAppPhoneNumber(phone);
 
 	if (!whatsappPhone) {
-		Alert.alert(
+		showAlert(
 			labels.whatsappUnavailableTitle,
 			labels.whatsappUnavailableMessage,
 		);
@@ -128,9 +137,10 @@ const openClientWhatsApp = async (
 			url,
 			labels.whatsappUnavailableTitle,
 			labels.whatsappUnavailableOpen,
+			showAlert,
 		);
 	} catch {
-		Alert.alert(
+		showAlert(
 			labels.whatsappUnavailableTitle,
 			labels.whatsappUnavailableOpen,
 		);
@@ -140,6 +150,7 @@ const openClientWhatsApp = async (
 export const openClientMessagePicker = (
 	phone: string,
 	labels: ContactActionLabels,
+	showAlert: ShowAlert,
 	clientName?: string,
 ) => {
 	if (Platform.OS === "ios") {
@@ -152,11 +163,11 @@ export const openClientMessagePicker = (
 			},
 			(buttonIndex) => {
 				if (buttonIndex === 1) {
-					void openClientWhatsApp(phone, labels, clientName);
+					void openClientWhatsApp(phone, labels, showAlert, clientName);
 				}
 
 				if (buttonIndex === 2) {
-					void openClientSms(phone, labels, clientName);
+					void openClientSms(phone, labels, showAlert, clientName);
 				}
 			},
 		);
@@ -164,20 +175,20 @@ export const openClientMessagePicker = (
 		return;
 	}
 
-	Alert.alert(labels.sendMessage, labels.chooseContactMethod, [
+	showAlert(labels.sendMessage, labels.chooseContactMethod, [
 		{
 			style: "cancel",
 			text: labels.cancel,
 		},
 		{
 			onPress: () => {
-				void openClientWhatsApp(phone, labels, clientName);
+				void openClientWhatsApp(phone, labels, showAlert, clientName);
 			},
 			text: labels.whatsappLabel,
 		},
 		{
 			onPress: () => {
-				void openClientSms(phone, labels, clientName);
+				void openClientSms(phone, labels, showAlert, clientName);
 			},
 			text: labels.smsLabel,
 		},

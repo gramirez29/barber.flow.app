@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getErrorMessage } from "../utils/errors";
-import { Alert, Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
@@ -33,6 +33,7 @@ import type {
   AppointmentDraft,
 } from "../features/appointments/appointments.types";
 import { useAppointmentForm } from "../features/appointments/useAppointmentForm";
+import { useDialog } from "../context/DialogContext";
 
 export type AppointmentFormParams = {
   mode: "create" | "edit";
@@ -54,6 +55,7 @@ export const AppointmentFormScreen = () => {
 	const route = useRoute<AppointmentFormRoute>();
 	const insets = useSafeAreaInsets();
 	const { translateText } = useTranslation();
+	const { showAlert } = useDialog();
 	const { appointments, addAppointment, updateAppointment } =
 		useAppointmentStore();
 
@@ -148,12 +150,12 @@ export const AppointmentFormScreen = () => {
 const handleSubmit = async () => {
 		if (params.mode === "edit") {
 			if (!params.appointmentId) {
-				Alert.alert(title, translateText("common.somethingWentWrong"));
+				showAlert(title, translateText("common.somethingWentWrong"));
 				return;
 			}
 
 			if (!editingAppointment) {
-				Alert.alert(title, translateText("common.somethingWentWrong"));
+				showAlert(title, translateText("common.somethingWentWrong"));
 				navigation.goBack();
 				return;
 			}
@@ -173,7 +175,7 @@ const handleSubmit = async () => {
 				await addAppointment(normalizedDraft);
 			}
 		} catch (error) {
-			Alert.alert(title, getErrorMessage(error) || translateText("common.somethingWentWrong"));
+			showAlert(title, getErrorMessage(error) || translateText("common.somethingWentWrong"));
 			setIsSaving(false);
 			return;
 		}
