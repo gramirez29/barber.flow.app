@@ -1,7 +1,7 @@
 import type { DrawerNavigationProp } from "@react-navigation/drawer";
 import type { DrawerParamList } from "../navigation/DrawerNavigator";
 import React, { useCallback, useMemo, useState } from "react";
-import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import {
 	useNavigation,
@@ -54,6 +54,8 @@ export const DailyReportScreen = () => {
 	const navigation = useNavigation<DrawerNavigationProp<DrawerParamList>>();
 	const { language, translateText } = useTranslation();
 	const appointments = useAppointmentStore((state) => state.appointments);
+	const isLoading = useAppointmentStore((state) => state.isLoading);
+	const fetchAppointmentsByDateRange = useAppointmentStore((state) => state.fetchAppointmentsByDateRange);
 	const [selectedDate, setSelectedDate] = useState(
 		format(new Date(), "yyyy-MM-dd"),
 	);
@@ -63,22 +65,24 @@ export const DailyReportScreen = () => {
 
 	useFocusEffect(
 		useCallback(() => {
-		let active = true;
+			let active = true;
 
-		const loadReportSettings = async () => {
-			const nextSettings =
-			await settingsService.getReportCalculationSettings();
-			if (active) {
-				setReportSettings(nextSettings);
-			}
-		};
+			const load = async () => {
+				const [nextSettings] = await Promise.all([
+					settingsService.getReportCalculationSettings(),
+					fetchAppointmentsByDateRange(selectedDate, selectedDate, "completed"),
+				]);
+				if (active) {
+					setReportSettings(nextSettings);
+				}
+			};
 
-		void loadReportSettings();
+			void load();
 
-		return () => {
-			active = false;
-		};
-		}, []),
+			return () => {
+				active = false;
+			};
+		}, [selectedDate, fetchAppointmentsByDateRange]),
 	);
 
 	const report = useMemo(
@@ -190,7 +194,11 @@ export const DailyReportScreen = () => {
 						{metricCards.map((card) => (
 							<View key={card.label} style={styles.metricCard}>
 								<Text style={styles.metricLabel}>{card.label}</Text>
-								<Text style={styles.metricValue}>{card.value}</Text>
+								{isLoading ? (
+									<ActivityIndicator size="small" color={COLORS.gold} style={styles.metricLoader} />
+								) : (
+									<Text style={styles.metricValue}>{card.value}</Text>
+								)}
 							</View>
 						))}
 					</View>
@@ -507,6 +515,10 @@ const styles = StyleSheet.create({
 		color: COLORS.textPrimary,
 		fontSize: 24,
 		fontWeight: "700",
+	},
+	metricLoader: {
+		alignSelf: "flex-start",
+		marginTop: 4,
 	},
 	// ─── Breakdown ────────────────────────────────────────────────────
 	breakdownRow: {

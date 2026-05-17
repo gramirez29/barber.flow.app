@@ -7,6 +7,7 @@ import { LanguageProvider } from './src/context/LanguageContext';
 import { NotificationProvider } from './src/context/NotificationContext';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { createNavigationTheme, createPaperTheme } from './src/theme/themes';
+import { DialogProvider } from './src/context/DialogContext';
 
 function Main() {
 	const { theme } = useAppTheme();
@@ -15,12 +16,14 @@ function Main() {
 
 	return (
 		<PaperProvider theme={paperTheme}>
-			<NavigationContainer theme={navigationTheme}>
-				<NotificationProvider>
-					<StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
-					<RootNavigator />
-				</NotificationProvider>
-			</NavigationContainer>
+			<DialogProvider>
+				<NavigationContainer theme={navigationTheme}>
+					<NotificationProvider>
+						<StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
+						<RootNavigator />
+					</NotificationProvider>
+				</NavigationContainer>
+			</DialogProvider>
 		</PaperProvider>
 	);
 }

@@ -1,3 +1,4 @@
+using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
 using System.Collections.Concurrent;
 
@@ -7,6 +8,55 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
 {
     private readonly ConcurrentDictionary<string, Domain.Entities.Appointments> _store = new();
     private int _seq = 0;
+
+    public InMemoryAppointmentRepository()
+    {
+        var appt1 = new Domain.Entities.Appointments
+        {
+            Id = GenerateId(),
+            ClientName = "Juan Perez",
+            Phone = "8888-0000",
+            Date = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd"),
+            Time = "10:00",
+            Status = "scheduled",
+            ServiceName = "Haircut",
+            PaymentMethodUsed = "card",
+            ServicePrice = 1500.00m,
+            Notes = "First time client"
+        };
+
+        var appt2 = new Domain.Entities.Appointments
+        {
+            Id = GenerateId(),
+            ClientName = "Maria Gomez",
+            Phone = "7777-1111",
+            Date = DateTime.UtcNow.AddDays(2).ToString("yyyy-MM-dd"),
+            Time = "14:00",
+            Status = "completed",
+            ServiceName = "Shave",
+            PaymentMethodUsed = "transfer",
+            ServicePrice = 3500.00m,
+            Notes = "Prefers close shave"
+        };
+
+        var appt3 = new Domain.Entities.Appointments
+        {
+            Id = GenerateId(),
+            ClientName = "Felipe Ramirez",
+            Phone = "7018-8298",
+            Date = DateTime.UtcNow.AddDays(2).ToString("yyyy-MM-dd"),
+            Time = "15:00",
+            Status = "completed",
+            ServiceName = "Shave",
+            PaymentMethodUsed = "cash",
+            ServicePrice = 10000.00m,
+            Notes = "Prefers close shave"
+        };
+
+        _store[appt1.Id] = appt1;
+        _store[appt2.Id] = appt2;
+        _store[appt3.Id] = appt3;
+    }
 
     private string GenerateId()
     {
@@ -32,7 +82,10 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
     public Task<Domain.Entities.Appointments?> UpdateAsync(string id, Domain.Entities.Appointments appointment, CancellationToken cancellation = default)
     {
         if (!_store.TryGetValue(id, out var existing))
+        {
             return Task.FromResult<Domain.Entities.Appointments?>(null);
+
+        }
 
         existing.ClientName = appointment.ClientName;
         existing.Phone = appointment.Phone;
@@ -62,6 +115,7 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
 
     public Task<IEnumerable<Domain.Entities.Appointments>> FindAsync(
         string? date = null,
+        string? endDate = null,
         string? status = null,
         string? query = null,
         int? page = null,
@@ -71,7 +125,19 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
         var list = _store.Values.AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(date))
-            list = list.Where(a => a.Date == date.Trim());
+        {
+            var start = date.Trim();
+            if (!string.IsNullOrWhiteSpace(endDate))
+            {
+                var end = endDate.Trim();
+                list = list.Where(a => string.Compare(a.Date, start, StringComparison.Ordinal) >= 0
+                                    && string.Compare(a.Date, end, StringComparison.Ordinal) <= 0);
+            }
+            else
+            {
+                list = list.Where(a => a.Date == start);
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(status))
             list = list.Where(a => a.Status.Equals(status.Trim(), StringComparison.OrdinalIgnoreCase));

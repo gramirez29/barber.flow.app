@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Alert, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { NotificationSection } from "../components/notifications/NotificationSection";
@@ -10,6 +10,7 @@ import type { NotificationItem } from "../types/notifications";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import type { AppTabParamList } from "../navigation/AppNavigator";
 import { getErrorMessage } from "../utils/errors";
+import { useDialog } from "../context/DialogContext";
 
 const COLORS = {
     bg: "#0D0D0D",
@@ -26,6 +27,7 @@ const COLORS = {
 export const NotificationScreen = () => {
     const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
     const { translateText } = useTranslation();
+    const { showAlert } = useDialog();
     const {
         dismissNotification,
         isLoading,
@@ -86,7 +88,7 @@ export const NotificationScreen = () => {
         try {
             await refreshNotifications();
         } catch (error: unknown) {
-            Alert.alert(
+            showAlert(
                 translateText("notifications.alerts.refreshFailedTitle"),
                 getErrorMessage(error) || translateText("notifications.alerts.refreshFailed"),
             );

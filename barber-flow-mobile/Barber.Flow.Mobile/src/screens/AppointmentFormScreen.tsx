@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Platform, StyleSheet } from "react-native";
+import { getErrorMessage } from "../utils/errors";
+import { Platform, Pressable, StyleSheet } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
@@ -30,8 +31,12 @@ import { useAppointmentStore } from "../features/appointments/appointment.store"
 import type {
   Appointment,
   AppointmentDraft,
+  AppointmentStatus,
 } from "../features/appointments/appointments.types";
 import { useAppointmentForm } from "../features/appointments/useAppointmentForm";
+import { useDialog } from "../context/DialogContext";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { format } from "date-fns";
 
 export type AppointmentFormParams = {
   mode: "create" | "edit";
@@ -53,6 +58,7 @@ export const AppointmentFormScreen = () => {
 	const route = useRoute<AppointmentFormRoute>();
 	const insets = useSafeAreaInsets();
 	const { translateText } = useTranslation();
+	const { showAlert } = useDialog();
 	const { appointments, addAppointment, updateAppointment } =
 		useAppointmentStore();
 
@@ -85,10 +91,13 @@ export const AppointmentFormScreen = () => {
 			enabled: true,
 		});
 
+	const [isSaving, setIsSaving] = useState(false);
 	const [clientSearchVisible, setClientSearchVisible] = useState(false);
 	const [clientSearchQuery, setClientSearchQuery] = useState("");
 	const [clientSearchResults, setClientSearchResults] = useState<Client[]>([]);
 	const [clientSearchLoading, setClientSearchLoading] = useState(false);
+	const [movePickerStep, setMovePickerStep] = useState<"date" | "time" | null>(null);
+	const [pendingMoveDate, setPendingMoveDate] = useState<string | null>(null);
 
 	const fetchClientSearchResults = useCallback(async (query: string) => {
 		setClientSearchLoading(true);
@@ -139,19 +148,110 @@ export const AppointmentFormScreen = () => {
 		[params.mode, translateText],
 	);
 
+	const handleStatusChange = useCallback((next: AppointmentStatus) => {
+		const current = draft.status ?? "scheduled";
+
+		var title = translateText("appointments.alerts.appointmentAlertTitle");
+
+		if (next === "confirmed") {
+			const appointmentDateTime = new Date(`${draft.date}T${draft.time || "00:00"}:00`);
+			const hoursUntilAppointment = (appointmentDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
+			if (hoursUntilAppointment > 24) {
+				showAlert(title, translateText("appointments.alerts.hoursUntilAppointmentIsConfirmed"));
+				return;
+			}
+
+			if (current === "completed") {
+				showAlert(title, translateText("appointments.alerts.noCompletedIfNotConfirmed"));
+				return;
+			}
+		}
+
+		if (next === "scheduled") {
+				if (current === "completed") {
+				showAlert(title, translateText("appointments.alerts.noScheduledIfCompleted"));
+				return;
+			}
+		}
+
+		if (next === "completed" || next === "confirmed") {
+			if (current === "cancelled") {
+				showAlert(title, translateText("appointments.alerts.noCancelledIfCompleted"));
+				return;
+			}
+		}
+
+		if (next === "completed" && current !== "confirmed") {
+			showAlert(title, translateText("appointments.alerts.noCompletedIfNotConfirmed"));
+			return;
+		}
+
+		if (next === "cancelled") {
+			//if (current === "confirmed" || current === "completed") { 
+			if (current === "completed") {
+				showAlert(title, translateText("appointments.alerts.noCancelledIfCompleted"));
+				return;
+			}
+			showAlert(
+				title,
+				translateText("appointments.alerts.areYouSureCancelAppointment"),
+				[
+					{ text: translateText("appointments.alerts.yesAlertResponse"), onPress: () => setField("status", "cancelled") },
+					{ text: translateText("appointments.alerts.noAlertResponse"), style: "cancel" },
+				],
+			);
+			return;
+		}
+
+		setField("status", next);
+	}, [draft.status, draft.date, draft.time, showAlert, setField, translateText]);
+
+	const handleMovePress = useCallback(() => {
+		const current = draft.status ?? "scheduled";
+		if (current === "completed" || current === "cancelled") {
+			showAlert(
+				translateText("appointments.alerts.moveAppointmentDialogTitle"),
+				translateText("appointments.alerts.noMoveAppointmentConfirmation"),
+			);
+			return;
+		}
+		showAlert(
+			translateText("appointments.alerts.moveAppointmentDialogTitle"),
+			translateText("appointments.alerts.areYouSureMoveAppointment"),
+			[
+				{ text: translateText("appointments.alerts.yesAlertResponse"), onPress: () => setMovePickerStep("date") },
+				{ text: translateText("appointments.alerts.noAlertResponse"), style: "cancel" },
+			],
+		);
+	}, [draft.status, showAlert, translateText]);
+
+	const handleMoveDateConfirm = useCallback((date: Date) => {
+		setPendingMoveDate(format(date, "yyyy-MM-dd"));
+		setMovePickerStep("time");
+	}, []);
+
+	const handleMoveTimeConfirm = useCallback((time: Date) => {
+		if (pendingMoveDate) {
+			setField("date", pendingMoveDate);
+			setField("time", format(time, "HH:mm"));
+		}
+		setPendingMoveDate(null);
+		setMovePickerStep(null);
+	}, [pendingMoveDate, setField]);
+
 	const handleCancel = () => {
 		navigation.goBack();
 	};
 
-	const handleSubmit = () => {
+const handleSubmit = async () => {
 		if (params.mode === "edit") {
 			if (!params.appointmentId) {
-				Alert.alert(title, translateText("common.somethingWentWrong"));
+				showAlert(title, translateText("common.somethingWentWrong"));
 				return;
 			}
 
 			if (!editingAppointment) {
-				Alert.alert(title, translateText("common.somethingWentWrong"));
+				showAlert(title, translateText("common.somethingWentWrong"));
 				navigation.goBack();
 				return;
 			}
@@ -163,36 +263,44 @@ export const AppointmentFormScreen = () => {
 			return;
 		}
 
-		if (params.mode === "edit" && params.appointmentId) {
-			updateAppointment(params.appointmentId, normalizedDraft);
-		} else {
-			addAppointment(normalizedDraft);
+		setIsSaving(true);
+		try {
+			if (params.mode === "edit" && params.appointmentId) {
+				await updateAppointment(params.appointmentId, normalizedDraft);
+			} else {
+				await addAppointment(normalizedDraft);
+			}
+		} catch (error) {
+			showAlert(title, getErrorMessage(error) || translateText("common.somethingWentWrong"));
+			setIsSaving(false);
+			return;
 		}
+		setIsSaving(false);
 
 		if (afterSave === "goToCalendarDay") {
-		const parentTabNavigation = navigation.getParent?.() as
-			| BottomTabNavigationProp<AppTabParamList>
-			| undefined;
+			const parentTabNavigation = navigation.getParent?.() as
+				| BottomTabNavigationProp<AppTabParamList>
+				| undefined;
 
-		if (typeof navigation.popToTop === "function") {
-			navigation.popToTop();
-		} else {
-			navigation.goBack();
+			if (typeof navigation.popToTop === "function") {
+				navigation.popToTop();
+			} else {
+				navigation.goBack();
+			}
+
+			parentTabNavigation?.navigate("Calendar", {
+				screen: "CalendarHome",
+				params: {
+					date: normalizedDraft.date,
+					initialView: "day",
+					source: "clientSaved",
+				},
+			});
+
+			return;
 		}
 
-		parentTabNavigation?.navigate("Calendar", {
-			screen: "CalendarHome",
-			params: {
-			date: normalizedDraft.date,
-			initialView: "day",
-			source: "clientSaved",
-			},
-		});
-
-		return;
-    }
-
-    navigation.goBack();
+		navigation.goBack();
 	};
 
 	return (
@@ -218,7 +326,7 @@ export const AppointmentFormScreen = () => {
 				<View style={styles.formCard}>
 					<Text style={styles.dateText}>
 						{translateText("calendar.appointmentModal.dateSelected", {
-						date: effectiveDate,
+						date: draft.date,
 						})}
 					</Text>
 
@@ -231,7 +339,9 @@ export const AppointmentFormScreen = () => {
 						onFieldBlur={onBlurField}
 						onSubmit={handleSubmit}
 						onCancel={handleCancel}
+						isSaving={isSaving}
 						onOpenClientSearch={handleOpenClientSearch}
+						onStatusChange={handleStatusChange}
 						onPaymentMethodTouched={() =>
 						setTouched((currentTouched: Record<string, boolean>) => ({
 							...currentTouched,
@@ -240,6 +350,21 @@ export const AppointmentFormScreen = () => {
 						}
 					/>
 				</View>
+				{params.mode === "edit" && (draft.status === "scheduled" || draft.status === "confirmed") && (
+					<View style={styles.moveCard}>
+						<Text style={styles.moveCardEyebrow}>{translateText("appointments.alerts.moveAppointmentDialogTitle")}</Text>
+						<Text style={styles.moveCardTitle}>{translateText("appointments.alerts.reassignDateTimeAppointment")}</Text>
+						<Text style={styles.moveCardSubtitle}>
+							{translateText("appointments.alerts.moveThisAppointmentToOtherSchedule").toLocaleLowerCase()}.
+						</Text>
+						<Pressable
+							style={({ pressed }) => [styles.goldBtn, pressed && styles.goldBtnPressed]}
+							onPress={handleMovePress}
+						>
+							<Text style={styles.goldBtnText}>{translateText("appointments.alerts.moveAppointmentCta")}</Text>
+						</Pressable>
+					</View>
+				)}
 			</KeyboardAwareScrollView>
 			<ClientSearchModal
 				clients={clientSearchResults}
@@ -250,6 +375,22 @@ export const AppointmentFormScreen = () => {
 				onClose={() => setClientSearchVisible(false)}
 				onSearchChange={handleClientSearchChange}
 				onSelectClient={handleSelectClient}
+			/>
+			<DateTimePickerModal
+				isVisible={movePickerStep === "date"}
+				mode="date"
+				themeVariant="dark"
+				accentColor="#8A8A8E"
+				onConfirm={handleMoveDateConfirm}
+				onCancel={() => setMovePickerStep(null)}
+			/>
+			<DateTimePickerModal
+				isVisible={movePickerStep === "time"}
+				mode="time"
+				themeVariant="dark"
+				accentColor="#8A8A8E"
+				onConfirm={handleMoveTimeConfirm}
+				onCancel={() => { setPendingMoveDate(null); setMovePickerStep(null); }}
 			/>
 		</ScreenLayout>
 	);
@@ -278,5 +419,51 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		marginBottom: 14,
 		color: COLORS.textSecondary,
+	},
+	moveCard: {
+		backgroundColor: COLORS.surface,
+		borderRadius: 20,
+		borderWidth: 1,
+		borderColor: COLORS.border,
+		padding: 20,
+		marginTop: 12,
+		shadowColor: COLORS.gold,
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.08,
+		shadowRadius: 12,
+		elevation: 4,
+	},
+	moveCardEyebrow: {
+		fontSize: 11,
+		fontWeight: "700",
+		letterSpacing: 1,
+		textTransform: "uppercase",
+		color: COLORS.gold,
+		marginBottom: 6,
+	},
+	moveCardTitle: {
+		fontSize: 18,
+		fontWeight: "700",
+		color: COLORS.textPrimary,
+		marginBottom: 4,
+	},
+	moveCardSubtitle: {
+		fontSize: 13,
+		color: COLORS.textSecondary,
+		marginBottom: 16,
+	},
+	goldBtn: {
+		backgroundColor: COLORS.gold,
+		borderRadius: 12,
+		paddingVertical: 14,
+		alignItems: "center",
+	},
+	goldBtnPressed: {
+		opacity: 0.85,
+	},
+	goldBtnText: {
+		color: COLORS.bg,
+		fontWeight: "700",
+		fontSize: 15,
 	},
 });

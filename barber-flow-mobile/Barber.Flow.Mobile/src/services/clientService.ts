@@ -24,7 +24,7 @@ import type { Client, PaginationParams } from "../types/clients";
             params.set("page", String(pagination.page));
             params.set("pageSize", String(pagination.pageSize));
         }
-        const qs = params.size > 0 ? `?${params.toString()}` : "";
+        const qs = params.toString() ? `?${params.toString()}` : "";
         return apiFetch(`/api/clients/search${qs}`, { method: "GET" });
     },
     };

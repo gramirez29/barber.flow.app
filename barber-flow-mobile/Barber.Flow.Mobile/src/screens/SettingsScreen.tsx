@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import {
-	Alert,
 	ImageBackground,
 	Platform,
 	Pressable,
@@ -25,6 +24,7 @@ import { settingsService } from "../services/settingsService";
 import { useAuthStore } from "../store/auth.store";
 import { useLanguage, useTranslation } from "../context/LanguageContext";
 import { getErrorMessage } from "../utils/errors";
+import { useDialog } from "../context/DialogContext";
 import {
 	DEFAULT_REPORT_CALCULATION_SETTINGS,
 	type BarberApiResponse,
@@ -49,6 +49,7 @@ const COLORS = {
 } as const;
 
 export const SettingsScreen = () => {
+	const { showAlert } = useDialog();
 	const { width } = useWindowDimensions();
 	const isUltraCompact = width <= 360;
 	const user = useAuthStore((state) => state.user);
@@ -113,11 +114,9 @@ export const SettingsScreen = () => {
 		try {
 			const nextId = await settingsService.getNextBarberId();
 			setField("barberId", nextId);
-		} catch (error: unknown) {
-			Alert.alert(
-				translateText("common.search"),
-				getErrorMessage(error) || translateText("settings.alerts.nextIdFailed"),
-			);
+		} catch {
+			// Non-critical: just leave the barberId field empty if the API is unreachable.
+			// Showing an Alert here would conflict with the Modal opening on Android.
 		} finally {
 			setApplicationUserLoading(false);
 		}
@@ -153,7 +152,7 @@ export const SettingsScreen = () => {
 			nextErrors.shopPhone ||
 			nextErrors.address
 		) {
-			Alert.alert(
+			showAlert(
 				translateText("common.save"),
 				translateText("settings.alerts.validation"),
 			);
@@ -165,7 +164,7 @@ export const SettingsScreen = () => {
 		try {
 			if (mode === "edit" && values.barberId) {
 				const updated = await settingsService.updateApplicationUser(values.barberId, values);
-				Alert.alert(
+				showAlert(
 					translateText("common.update"),
 					translateText("settings.alerts.applicationUserUpdated", { id: updated.id }),
 				);
@@ -176,7 +175,7 @@ export const SettingsScreen = () => {
 					...values,
 					barberId: barberIdToUse,
 				});
-				Alert.alert(
+				showAlert(
 					translateText("common.save"),
 					translateText("settings.alerts.applicationUserCreated", { id: created.id }),
 				);
@@ -187,7 +186,7 @@ export const SettingsScreen = () => {
 			setApplicationUserResults([]);
 			setSearchQuery("");
 		} catch (error: unknown) {
-			Alert.alert(
+			showAlert(
 				translateText("common.delete"),
 				getErrorMessage(error) || translateText("settings.alerts.saveFailed"),
 			);
@@ -200,7 +199,7 @@ export const SettingsScreen = () => {
 		const query = searchQuery.trim() || (mode === "edit" ? values.barberId?.trim() : "");
 
 		if (!query) {
-			Alert.alert(
+			showAlert(
 				translateText("common.search"),
 				translateText("settings.alerts.searchHint"),
 			);
@@ -212,8 +211,15 @@ export const SettingsScreen = () => {
 		try {
 			if (/^CRB-/i.test(query)) {
 				const found = await settingsService.getApplicationUserById(query);
-				setApplicationUserResults([found]);
-				loadValues(mapBarberResponseToForm(found), "edit");
+				if (!found) {
+					showAlert(
+						translateText("settings.alerts.searchFailed"),
+						translateText("settings.alerts.noApplicationUserSearchResult"),
+					);
+				} else {
+					setApplicationUserResults([found]);
+					loadValues(mapBarberResponseToForm(found), "edit");
+				}
 			} else {
 				const results = await settingsService.findApplicationUsers(query);
 				setApplicationUserResults(results);
@@ -221,14 +227,14 @@ export const SettingsScreen = () => {
 				if (results.length === 1) {
 					loadValues(mapBarberResponseToForm(results[0]), "edit");
 				} else if (results.length === 0) {
-					Alert.alert(
+					showAlert(
 						translateText("settings.alerts.searchFailed"),
 						translateText("settings.alerts.noApplicationUserSearchResult"),
 					);
 				}
 			}
 		} catch (error: unknown) {
-			Alert.alert(
+			showAlert(
 				translateText("common.search"),
 				getErrorMessage(error) || translateText("settings.alerts.searchFailed"),
 			);
@@ -239,7 +245,7 @@ export const SettingsScreen = () => {
 
 	const handleApplicationUserDelete = async () => {
 		if (!values.barberId || mode !== "edit") {
-			Alert.alert(
+			showAlert(
 				translateText("common.delete"),
 				translateText("settings.alerts.noApplicationUserSelected"),
 			);
@@ -248,7 +254,7 @@ export const SettingsScreen = () => {
 
 		const barberId = values.barberId;
 
-		Alert.alert(translateText("common.delete"), translateText("settings.alerts.confirmDeleteUser", { id: barberId }), [
+		showAlert(translateText("common.delete"), translateText("settings.alerts.confirmDeleteUser", { id: barberId }), [
 			{ text: translateText("common.cancel"), style: "cancel" },
 			{
 				onPress: async () => {
@@ -256,13 +262,13 @@ export const SettingsScreen = () => {
 
 					try {
 						await settingsService.deleteApplicationUser(barberId);
-						Alert.alert(
+						showAlert(
 							translateText("common.delete"),
 							translateText("settings.alerts.applicationUserDeleted", { id: barberId }),
 						);
 						await handleResetApplicationUser();
 					} catch (error: unknown) {
-						Alert.alert(
+						showAlert(
 							translateText("common.delete"),
 							getErrorMessage(error) || translateText("settings.alerts.deleteFailed"),
 						);
@@ -297,7 +303,7 @@ export const SettingsScreen = () => {
 		const nextErrors = validateReportSettingsBeforeSubmit();
 
 		if (nextErrors.commissionPercentage || nextErrors.fixedDailyExpense) {
-			Alert.alert(
+			showAlert(
 				translateText("common.save"),
 				translateText("settings.alerts.reportValidation"),
 			);
@@ -305,7 +311,7 @@ export const SettingsScreen = () => {
 		}
 
 		await settingsService.setReportCalculationSettings(reportSettingValues);
-		Alert.alert(
+		showAlert(
 			translateText("common.save"),
 			translateText("settings.alerts.dailyReportSaved"),
 		);
@@ -314,7 +320,7 @@ export const SettingsScreen = () => {
 	const handleResetReportSettings = async () => {
 		resetReportSettingValues(DEFAULT_REPORT_CALCULATION_SETTINGS);
 		await settingsService.setReportCalculationSettings(DEFAULT_REPORT_CALCULATION_SETTINGS);
-		Alert.alert(
+		showAlert(
 			translateText("common.reset"),
 			translateText("settings.alerts.dailyReportReset"),
 		);

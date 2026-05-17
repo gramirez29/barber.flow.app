@@ -40,8 +40,8 @@ public static class AppointmentsApi
             .WithName(nameof(DeleteAppointmentAsync))
             .WithTags(AppointmentTag);
 
-        api.MapGet("/nextBarberId", NextBarberIdAsync)
-            .WithName(nameof(NextBarberIdAsync))
+        api.MapGet("/nextAppointmentId", NextAppointmentIdAsync)
+            .WithName(nameof(NextAppointmentIdAsync))
             .WithTags(AppointmentTag);
 
         return api;
@@ -127,6 +127,7 @@ public static class AppointmentsApi
 
     private static async Task<IResult> FindAppointmentsAsync(
         [FromQuery] string? date,
+        [FromQuery] string? endDate,
         [FromQuery] string? status,
         [FromQuery] string? query,
         [FromQuery] int? page,
@@ -134,7 +135,7 @@ public static class AppointmentsApi
         IAppointmentService appointmentService,
         CancellationToken cancellationToken = default)
     {
-        var list = await appointmentService.FindAsync(date, status, query, page, pageSize, cancellationToken);
+        var list = await appointmentService.FindAsync(date, endDate, status, query, page, pageSize, cancellationToken);
         return TypedResults.Ok(list.Select(Map));
     }
 
@@ -156,7 +157,7 @@ public static class AppointmentsApi
         return ok ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
-    private static async Task<IResult> NextBarberIdAsync(IAppointmentService appointmentService)
+    private static async Task<IResult> NextAppointmentIdAsync(IAppointmentService appointmentService)
     {
         var id = await appointmentService.GetNextIdAsync();
         return TypedResults.Ok(new { nextId = id });

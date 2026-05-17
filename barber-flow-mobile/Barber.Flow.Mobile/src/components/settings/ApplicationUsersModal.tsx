@@ -81,12 +81,12 @@ export const ApplicationUsersModal: React.FC<ApplicationUsersModalProps> = ({
 					<View style={[styles.modalCard, isCompact && styles.modalCardCompact, isUltraCompact && styles.modalCardUltraCompact]}>
 						<View style={styles.header}>
 							<Text style={[styles.headerTitle, isUltraCompact && styles.headerTitleUltraCompact]}>{translateText("settings.manageUsersForm.title")}</Text>
-							<Pressable
+							{/* <Pressable
 								onPress={onClose}
 								style={({ pressed }) => [styles.headerClose, pressed && { opacity: 0.75 }]}
 							>
 								<Text style={styles.headerCloseText}>{translateText("common.close")}</Text>
-							</Pressable>
+							</Pressable> */}
 						</View>
 						<KeyboardAwareScrollView
 							style={styles.flex}

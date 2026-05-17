@@ -2,94 +2,126 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { Appointment, AppointmentDraft } from "./appointments.types";
+import {
+	appointmentService,
+	type AppointmentSearchParams,
+} from "../../services/appointmentService";
 
 interface AppointmentState {
 	appointments: Appointment[];
-	addAppointment: (appointment: AppointmentDraft) => Appointment;
+	isLoading: boolean;
+	fetchAppointments: (params?: AppointmentSearchParams) => Promise<void>;
+	fetchAppointmentsByDateRange: (startDate: string, endDate: string, status?: string) => Promise<void>;
+	addAppointment: (appointment: AppointmentDraft) => Promise<Appointment>;
 	getCompletedAppointmentsByDate: (date: string) => Appointment[];
-	moveAppointment: (id: string, newDate: string) => void;
-	updateAppointment: (id: string, appointment: AppointmentDraft) => void;
-	removeAppointment: (id: string) => void;
+	moveAppointment: (id: string, newDate: string) => Promise<void>;
+	updateAppointment: (id: string, appointment: AppointmentDraft) => Promise<void>;
+	removeAppointment: (id: string) => Promise<void>;
 	getAppointmentsByDate: (date: string) => Appointment[];
 }
 
 const sortAppointments = (appointments: Appointment[]) =>
 	[...appointments].sort((left, right) => {
 		if (left.date === right.date) {
-		return left.time.localeCompare(right.time);
+			return left.time.localeCompare(right.time);
 		}
 
 		return left.date.localeCompare(right.date);
 	});
 
-const createAppointmentId = () =>
-	`appointment-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-
 export const useAppointmentStore = create<AppointmentState>()(
 	persist(
 		(set, get) => ({
-		appointments: [],
+			appointments: [],
+			isLoading: false,
 
-		addAppointment: (appointment) => {
-			const nextAppointment: Appointment = {
-			...appointment,
-			id: createAppointmentId(),
-			status: appointment.status ?? "scheduled",
-			};
+			fetchAppointments: async (params) => {
+				set({ isLoading: true });
+				try {
+					const appointments = await appointmentService.find(params);
+					set({ appointments: sortAppointments(appointments) });
+				} finally {
+					set({ isLoading: false });
+				}
+			},
 
-			set((state) => ({
-			appointments: sortAppointments([...state.appointments, nextAppointment]),
-			}));
-
-			return nextAppointment;
-		},
-
-		moveAppointment: (id, newDate) =>
-			set((state) => ({
-			appointments: sortAppointments(
-				state.appointments.map((appointment) =>
-				appointment.id === id ? { ...appointment, date: newDate } : appointment,
-				),
-			),
-			})),
-
-		updateAppointment: (id, appointment) =>
-			set((state) => ({
-			appointments: sortAppointments(
-				state.appointments.map((currentAppointment) =>
-				currentAppointment.id === id
-					? {
-						...currentAppointment,
-						...appointment,
-						status: appointment.status ?? currentAppointment.status,
+			fetchAppointmentsByDateRange: async (startDate, endDate, status?) => {
+				set({ isLoading: true });
+				try {
+					const fetched = await appointmentService.find({ date: startDate, endDate, status });
+					const outside = get().appointments.filter(
+						(a) => a.date < startDate || a.date > endDate,
+					);
+					if (status) {
+						// Keep in-range appointments that don't match the filtered status
+						const inRangeOtherStatus = get().appointments.filter(
+							(a) => a.date >= startDate && a.date <= endDate && a.status !== status,
+						);
+						set({ appointments: sortAppointments([...outside, ...inRangeOtherStatus, ...fetched]) });
+					} else {
+						set({ appointments: sortAppointments([...outside, ...fetched]) });
 					}
-					: currentAppointment,
+				} catch (error) {
+					console.error("[AppointmentStore] fetchAppointmentsByDateRange failed:", error);
+				} finally {
+					set({ isLoading: false });
+				}
+			},
+
+			addAppointment: async (draft) => {
+				const created = await appointmentService.create(draft);
+				set((state) => ({
+					appointments: sortAppointments([...state.appointments, created]),
+				}));
+				return created;
+			},
+
+			moveAppointment: async (id, newDate) => {
+				const updated = await appointmentService.move(id, newDate);
+				set((state) => ({
+					appointments: sortAppointments(
+						state.appointments.map((appointment) =>
+							appointment.id === id ? updated : appointment,
+						),
+					),
+				}));
+			},
+
+			updateAppointment: async (id, draft) => {
+				const updated = await appointmentService.update(id, draft);
+				set((state) => ({
+					appointments: sortAppointments(
+						state.appointments.map((appointment) =>
+							appointment.id === id ? updated : appointment,
+						),
+					),
+				}));
+			},
+
+			removeAppointment: async (id) => {
+				await appointmentService.remove(id);
+				set((state) => ({
+					appointments: state.appointments.filter(
+						(appointment) => appointment.id !== id,
+					),
+				}));
+			},
+
+			getAppointmentsByDate: (date) =>
+				get().appointments.filter((appointment) => appointment.date === date),
+
+			getCompletedAppointmentsByDate: (date) =>
+				get().appointments.filter(
+					(appointment) =>
+						appointment.date === date && appointment.status === "completed",
 				),
-			),
-			})),
-
-		removeAppointment: (id) =>
-			set((state) => ({
-			appointments: state.appointments.filter(
-				(appointment) => appointment.id !== id,
-			),
-			})),
-
-		getAppointmentsByDate: (date) =>
-			get().appointments.filter((appointment) => appointment.date === date),
-
-		getCompletedAppointmentsByDate: (date) =>
-			get().appointments.filter(
-			(appointment) =>
-				appointment.date === date && appointment.status === "completed",
-			),
 		}),
 		{
-		name: "barber-flow-appointments",
-		storage: createJSONStorage(() => AsyncStorage),
-		partialize: (state) => ({
-			appointments: state.appointments,
-		}),
+			name: "barber-flow-appointments",
+			storage: createJSONStorage(() => AsyncStorage),
+			partialize: (state) => ({
+				appointments: state.appointments,
+			}),
 		},
 	),
 );

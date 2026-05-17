@@ -114,7 +114,7 @@ const normalizeDraftForSave = (
 	serviceName: draft.serviceName?.trim() || undefined,
 	servicePrice: draft.servicePrice,
 	notes: draft.notes?.trim() || undefined,
-	date,
+	date: draft.date,
 });
 
 export interface UseAppointmentFormArgs {

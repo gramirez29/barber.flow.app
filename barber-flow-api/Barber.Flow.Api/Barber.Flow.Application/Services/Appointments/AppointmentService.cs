@@ -20,12 +20,13 @@ public class AppointmentService(IAppointmentRepository repo) : IAppointmentServi
 
     public Task<IEnumerable<Domain.Entities.Appointments>> FindAsync(
         string? date = null,
+        string? endDate = null,
         string? status = null,
         string? query = null,
         int? page = null,
         int? pageSize = null,
         CancellationToken cancellationToken = default)
-        => _repo.FindAsync(date, status, query, page, pageSize, cancellationToken);
+        => _repo.FindAsync(date, endDate, status, query, page, pageSize, cancellationToken);
 
     public Task<Domain.Entities.Appointments?> MoveAsync(string id, string newDate, CancellationToken cancellationToken = default)
         => _repo.MoveAsync(id, newDate, cancellationToken);

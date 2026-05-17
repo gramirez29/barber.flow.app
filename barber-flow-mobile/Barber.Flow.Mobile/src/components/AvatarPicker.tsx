@@ -1,9 +1,10 @@
 import React from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { ClientAvatar } from "./ClientAvatar";
 import { useTranslation } from "../context/LanguageContext";
+import { useDialog } from "../context/DialogContext";
 
 const COLORS = {
 	bg: "#0D0D0D",
@@ -44,12 +45,13 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 	onChangePhoto,
 }) => {
 	const { translateText } = useTranslation();
+	const { showAlert } = useDialog();
 
 	const handlePickFromGallery = async () => {
 		const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
 		if (!permission.granted) {
-			Alert.alert(
+			showAlert(
 				translateText("common.open"),
 				translateText("avatarPicker.galleryPermissionRequired"),
 			);
@@ -72,7 +74,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 		const permission = await ImagePicker.requestCameraPermissionsAsync();
 
 		if (!permission.granted) {
-			Alert.alert(
+			showAlert(
 				translateText("common.open"),
 				translateText("avatarPicker.cameraPermissionRequired"),
 			);

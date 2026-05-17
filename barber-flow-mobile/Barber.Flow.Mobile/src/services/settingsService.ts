@@ -83,12 +83,17 @@ export const settingsService = {
 		return Array.isArray(response) ? response.map(mapBarberResponse) : [];
 	},
 
-	getApplicationUserById: async (barberId: string) => {
-		const response = await apiFetch(`/api/barbers/getById/${barberId}`, {
-			method: "GET",
-		});
-
-		return mapBarberResponse(response);
+	getApplicationUserById: async (barberId: string): Promise<BarberApiResponse | null> => {
+		try {
+			const response = await apiFetch(`/api/barbers/getById/${barberId}`, {
+				method: "GET",
+			});
+			return mapBarberResponse(response);
+		} catch (error: unknown) {
+			const msg = error instanceof Error ? error.message : "";
+			if (msg.includes("(404)")) return null;
+			throw error;
+		}
 	},
 
 	getNextBarberId: async () => {

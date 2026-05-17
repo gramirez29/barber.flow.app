@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, ImageBackground, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ImageBackground, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -14,6 +14,7 @@ import type { ClientsStackParamList } from "../navigation/ClientsNavigator";
 import { clientsService } from "../services/clientService";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { getErrorMessage } from '../utils/errors';
+import { useDialog } from '../context/DialogContext';
 import type { Client } from "../types/clients";
 import { formatPhoneNumber } from "../utils/formatUtil";
 
@@ -31,6 +32,7 @@ const COLORS = {
 } as const;
 
 export const ClientFormScreen = () => {
+	const { showAlert } = useDialog();
 	const navigation = useNavigation<ClientFormScreenNavigation>();
 	const route = useRoute<ClientFormScreenRoute>();
 	const { translateText } = useTranslation();
@@ -102,7 +104,7 @@ export const ClientFormScreen = () => {
 			nextErrors.phone ||
 			nextErrors.email
 		) {
-			Alert.alert(
+			showAlert(
 				translateText("common.save"),
 				translateText("clients.alerts.validation"),
 			);
@@ -113,13 +115,13 @@ export const ClientFormScreen = () => {
 			try {
 				if (isEditMode && client.id) {
 					await clientsService.update(client.id, client);
-					Alert.alert(
+					showAlert(
 					translateText("common.update"),
 					translateText("clients.alerts.clientUpdated"),
 					);
 				} else {
 					await clientsService.create(client);
-					Alert.alert(
+					showAlert(
 					translateText("common.create"),
 					translateText("clients.alerts.clientCreated"),
 					);
@@ -127,7 +129,7 @@ export const ClientFormScreen = () => {
 
 			navigation.goBack();
 			} catch (error: unknown) {
-				Alert.alert(
+				showAlert(
 					translateText("common.save"),
 					getErrorMessage(error) || translateText("clients.alerts.saveFailed"),
 				);
@@ -138,11 +140,11 @@ export const ClientFormScreen = () => {
 
 	const handleDelete = async () => {
 		if (!client.id) {
-			Alert.alert(translateText("common.delete"), translateText("clients.alerts.noClientSelected"));
+			showAlert(translateText("common.delete"), translateText("clients.alerts.noClientSelected"));
 			return;
 		}
 
-		Alert.alert(translateText("common.delete"), translateText("clients.alerts.removeClientMessage"), [
+		showAlert(translateText("common.delete"), translateText("clients.alerts.removeClientMessage"), [
 
 			{ text: translateText("common.cancel"), style: "cancel" },
 			{
@@ -152,10 +154,10 @@ export const ClientFormScreen = () => {
 
 					try {
 						await clientsService.delete(client.id as string);
-						Alert.alert(translateText("common.delete"), translateText("clients.alerts.clientRemoved"));
+						showAlert(translateText("common.delete"), translateText("clients.alerts.clientRemoved"));
 						navigation.goBack();
 					} catch (error: unknown) {
-						Alert.alert(translateText("common.delete"), getErrorMessage(error) || translateText("clients.alerts.removeFailed"));
+						showAlert(translateText("common.delete"), getErrorMessage(error) || translateText("clients.alerts.removeFailed"));
 					} finally {
 							setLoading(false);
 					}

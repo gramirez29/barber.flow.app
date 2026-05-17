@@ -18,6 +18,16 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();  // ← Now build after all services are registered
 
+// IMPORTANTE: UseCors debe ir ANTES de UseAuthorization y UseEndpoints
+app.UseCors("AllowExpoApp");
+
+// Esto es CRÍTICO para que escuche desde cualquier dispositivo en Railway
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    app.Urls.Add($"http://0.0.0.0:{port}");
+}
+
 // Configure middleware pipeline
 // Enable Swagger in development and production (for Railway)
 if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
