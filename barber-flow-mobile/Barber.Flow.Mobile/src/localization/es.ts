@@ -209,6 +209,23 @@
 			sinpeMovil: "Sinpe Móvil",
 			transfer: "Transferencia digital",
 		},
+		alerts: {
+			appointmentAlertTitle: "Editar Reserva",
+			noCompletedIfNotConfirmed: "Solo se pueden completar citas confirmadas.",
+			noCancelledIfCompleted: "No se puede Cancelar una cita si en estado Completada.",
+			noConfirmedIfCompleted: "No se puede Confirmar una cita si en estado Completada.",
+			noScheduledIfCancelled: "No se puede Agendar una cita Completada.",
+			areYouSureCancelAppointment: "¿Está seguro que desea cancelar la cita?",
+			hoursUntilAppointmentIsConfirmed: "",
+			yesAlertResponse: "Sí",
+			noAlertResponse: "No",
+			moveAppointmentDialogTitle: "Mover cita",
+			noMoveAppointmentConfirmation: "No se puede mover una cita completada o cancelada, solo citas Programadas o Confirmadas",
+			areYouSureMoveAppointment: "¿Usted va a mover la cita, ¿Está seguro de realizar esta acción?",
+			reassignDateTimeAppointment: "Reasignar fecha y hora",
+			moveThisAppointmentToOtherSchedule: "Mover esta cita a otro día u hora.",
+			moveAppointmentCta: "Mover cita",
+		},
 	},
 	clients: {
 		alerts: {

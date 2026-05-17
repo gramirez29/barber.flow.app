@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import {
 	APPOINTMENT_PAYMENT_METHOD_OPTIONS,
 	AppointmentDraft,
+	AppointmentStatus,
 	getAppointmentPaymentMethodLabel,
 } from "../../features/appointments/appointments.types";
 import type { AppointmentFormErrors } from "../../features/appointments/useAppointmentForm";
@@ -54,6 +55,7 @@ interface AppointmentFormProps {
 	isSaving?: boolean;
 	onPaymentMethodTouched?: () => void;
 	onOpenClientSearch?: () => void;
+	onStatusChange?: (next: AppointmentStatus) => void;
 }
 
 export const AppointmentForm: React.FC<AppointmentFormProps> = ({
@@ -68,6 +70,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 	isSaving,
 	onPaymentMethodTouched,
 	onOpenClientSearch,
+	onStatusChange,
 }) => {
 	const { translateText } = useTranslation();
 	const [isTimePickerVisible, setTimePickerVisible] = useState(false);
@@ -84,11 +87,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					{translateText("calendar.appointmentModal.status")}
 				</Text>
 				<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillRow}>
-					{(["scheduled", "confirmed", "completed", "cancelled"] as AppointmentDraft["status"][]).map((s) => (
+			{(["scheduled", "confirmed", "completed", "cancelled"] as AppointmentStatus[]).map((s) => (
 						<Pressable
 							key={s}
 							style={[styles.pill, (draft.status ?? "scheduled") === s && styles.pillActive]}
-							onPress={() => onFieldChange("status", s)}
+							onPress={() => onStatusChange ? onStatusChange(s) : onFieldChange("status", s)}
 						>
 							<Text style={[(draft.status ?? "scheduled") === s ? styles.pillTextActive : styles.pillText]}>
 								{translateText(`calendar.appointmentModal.statuses.${s}`)}

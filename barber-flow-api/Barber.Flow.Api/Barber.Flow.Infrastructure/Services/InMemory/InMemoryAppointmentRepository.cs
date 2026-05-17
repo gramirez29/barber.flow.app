@@ -18,7 +18,7 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
             Phone = "8888-0000",
             Date = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd"),
             Time = "10:00",
-            Status = "completed",
+            Status = "scheduled",
             ServiceName = "Haircut",
             PaymentMethodUsed = "card",
             ServicePrice = 1500.00m,

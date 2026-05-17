@@ -209,6 +209,23 @@
 			sinpeMovil: "Sinpe Movil",
 			transfer: "Digital Transfer",
 		},
+		alerts: {
+			appointmentAlertTitle: "Edit Appointment",
+			noCompletedIfNotConfirmed: "Only confirmed appointments can be completed.",
+			noCancelledIfCompleted: "Cannot cancel an appointment if it is completed.",
+			noConfirmedIfCompleted: "Cannot confirm an appointment if it is completed.",
+			noScheduledIfCancelled: "Cannot schedule a cancelled appointment.",
+			areYouSureCancelAppointment: "Are you sure you want to cancel the appointment?",
+			hoursUntilAppointmentIsConfirmed: "An appointment can only be confirmed 24 hours in advance.",
+			yesAlertResponse: "Yes",
+			noAlertResponse: "No",
+			moveAppointmentDialogTitle: "Move Appointment",
+			noMoveAppointmentConfirmation: "Cannot move a completed or cancelled appointment, only Scheduled or Confirmed appointments.",
+			areYouSureMoveAppointment: "You are about to move the appointment, are you sure you want to proceed?",
+			reassignDateTimeAppointment: "Reassign date and time",
+			moveThisAppointmentToOtherSchedule: "Move this appointment to another day or time.",
+			moveAppointmentCta: "Move appointment",
+			},
 	},
 	clients: {
 		alerts: {
