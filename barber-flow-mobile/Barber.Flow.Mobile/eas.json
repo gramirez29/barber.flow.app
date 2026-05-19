@@ -10,13 +10,13 @@
         "APP_ENV": "development"
       }
     },
-    "preview": {
+    "testing": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
       },
       "env": {
-        "APP_ENV": "preview"
+        "APP_ENV": "testing"
       }
     },
     "production": {

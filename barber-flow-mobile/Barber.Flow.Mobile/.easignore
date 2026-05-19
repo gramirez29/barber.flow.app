@@ -1,0 +1,39 @@
+# Exclude .NET backend — not needed for mobile build
+barber-flow-api/
+
+# Visual Studio locked cache files (safety net if barber-flow-api/ pattern mismatches)
+**/.vs/
+**/bin/
+**/obj/
+
+# Expo / Metro cache
+.expo/
+.metro-health-check*
+
+# Node modules (restored during build)
+node_modules/
+
+# Build outputs
+dist/
+web-build/
+android/
+ios/
+
+# Test files
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Local env files
+.env*.local
+.env.development
+.env.staging
+.env.production
+
+# OS files
+.DS_Store

@@ -331,7 +331,7 @@ export const DailyReportScreen = () => {
 					mode="date"
 					date={new Date(`${selectedDate}T12:00:00`)}
 					themeVariant="dark"
-					accentColor="#8A8A8E"
+					accentColor="#C9A84C"
 					onConfirm={(nextDate) => {
 						setSelectedDate(format(nextDate, "yyyy-MM-dd"));
 						setDatePickerVisible(false);

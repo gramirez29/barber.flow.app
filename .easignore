@@ -1,0 +1,13 @@
+# Exclude .NET backend — only the mobile app is needed for EAS Build
+barber-flow-api/
+
+# Visual Studio cache
+**/.vs/
+
+# .NET build outputs
+**/bin/
+**/obj/
+
+# OS files
+.DS_Store
+Thumbs.db
