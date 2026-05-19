@@ -49,5 +49,6 @@ composer.lock
 # IDEs and OS artifacts (common)
 .vscode/
 .idea/
+.vs/
 .DS_Store
 Thumbs.db

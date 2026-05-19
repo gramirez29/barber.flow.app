@@ -1,5 +1,6 @@
 import React from "react";
-import { Modal, Platform, Pressable, SafeAreaView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { Modal, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { ManageApplicationUsersForm } from "./ManageApplicationUsersForm";
 import { useTranslation } from "../../context/LanguageContext";
@@ -134,6 +135,7 @@ export const ApplicationUsersModal: React.FC<ApplicationUsersModalProps> = ({
 
 const styles = StyleSheet.create({
 	safeArea: {
+		backgroundColor: COLORS.backdrop,
 		flex: 1,
 	},
 	backdrop: {

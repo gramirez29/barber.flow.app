@@ -62,12 +62,14 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
 	}, [language]);
 
 	const setLanguage = useCallback(async (nextLanguage: Language) => {
+		setI18nLanguage(nextLanguage);
 		setStoredLanguage(nextLanguage);
 		setLanguageSource("manual");
 		await settingsService.setLanguagePreference(nextLanguage, "manual");
 	}, []);
 
 	const resetToSystemLanguage = useCallback(async () => {
+		setI18nLanguage(systemLanguage);
 		setStoredLanguage(systemLanguage);
 		setLanguageSource("system");
 		await settingsService.setLanguagePreference(systemLanguage, "system");

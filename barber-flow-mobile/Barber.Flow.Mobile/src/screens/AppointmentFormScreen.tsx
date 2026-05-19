@@ -380,7 +380,7 @@ const handleSubmit = async () => {
 				isVisible={movePickerStep === "date"}
 				mode="date"
 				themeVariant="dark"
-				accentColor="#8A8A8E"
+				accentColor="#C9A84C"
 				onConfirm={handleMoveDateConfirm}
 				onCancel={() => setMovePickerStep(null)}
 			/>
@@ -388,7 +388,7 @@ const handleSubmit = async () => {
 				isVisible={movePickerStep === "time"}
 				mode="time"
 				themeVariant="dark"
-				accentColor="#8A8A8E"
+				accentColor="#C9A84C"
 				onConfirm={handleMoveTimeConfirm}
 				onCancel={() => { setPendingMoveDate(null); setMovePickerStep(null); }}
 			/>

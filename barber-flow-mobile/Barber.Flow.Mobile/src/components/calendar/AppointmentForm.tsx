@@ -291,7 +291,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 				isVisible={isTimePickerVisible}
 				mode="time"
 				themeVariant="dark"
-				accentColor="#8A8A8E"
+				accentColor="#C9A84C"
 				onConfirm={handleTimeConfirm}
 				onCancel={() => setTimePickerVisible(false)}
 			/>
