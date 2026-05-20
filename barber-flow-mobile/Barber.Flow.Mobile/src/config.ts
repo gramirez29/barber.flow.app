@@ -6,7 +6,8 @@ let expoExtra:
 	| { APP_ENV?: string; BASE_URL?: string; ADMIN_USERNAME?: string }
 	| undefined = undefined;
 try {
-	const Constants = require("expo-constants");
+	const ConstantsModule = require("expo-constants");
+	const Constants = ConstantsModule?.default ?? ConstantsModule;
 	expoExtra = Constants?.expoConfig?.extra ?? Constants?.manifest?.extra;
 } catch {
   // Not running in an Expo environment, ignore
