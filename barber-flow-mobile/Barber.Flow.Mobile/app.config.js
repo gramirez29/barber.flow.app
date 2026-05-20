@@ -1,7 +1,7 @@
 const APP_ENV = process.env.APP_ENV ?? "development";
 
 const URL_BY_ENV = {
-	development: "https://barberflowapp-develop.up.railway.app",
+	development: "http://192.168.68.55:7016",
 	testing:     "https://barberflowapp-develop.up.railway.app",
 	production:  "https://barberflowapp-develop.up.railway.app",
 };
