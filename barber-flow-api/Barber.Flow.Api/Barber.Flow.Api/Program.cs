@@ -1,5 +1,6 @@
 using Barber.Flow.Api.Apis;
 using Barber.Flow.Api.Extensions;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,11 +13,22 @@ builder.Services.AddApplicationServices(builder.Configuration, builder.Environme
 builder.Services.AddAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddAllowCORS();
 
+// Confiar en los headers de proxy de Railway (X-Forwarded-Proto, X-Forwarded-For)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();     
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Procesar headers de Railway antes que cualquier otro middleware
+app.UseForwardedHeaders();
 
 // IMPORTANTE: UseCors debe ir ANTES de UseAuthorization y UseEndpoints
 app.UseCors("AllowExpoApp");
@@ -26,7 +38,6 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.MapSampleApi();
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
