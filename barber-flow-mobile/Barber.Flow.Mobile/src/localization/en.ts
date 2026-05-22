@@ -25,6 +25,11 @@
 	},
 	drawer: {
 		cancel: "Cancel",
+		deleteAccount: "Delete My Account",
+		deleteAccountConfirm: "Delete",
+		deleteAccountDescription: "Permanently delete your account and data",
+		deleteAccountMessage: "This action is permanent and irreversible. All your data will be deleted.",
+		deleteAccountTitle: "Delete Account",
 		help: "Help",
 		helpDescription: "Get help and usage guidance",
 		helpMessage: "For help, contact support or check the documentation.",

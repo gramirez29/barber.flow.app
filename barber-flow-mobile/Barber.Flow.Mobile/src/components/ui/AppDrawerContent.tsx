@@ -68,6 +68,25 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 		]);
 	};
 
+	const handleDeleteAccount = () => {
+		showAlert(
+			translateText("drawer.deleteAccountTitle"),
+			translateText("drawer.deleteAccountMessage"),
+			[
+				{ text: translateText("drawer.cancel"), style: "cancel" },
+				{
+					text: translateText("drawer.deleteAccountConfirm"),
+					style: "destructive",
+					onPress: async () => {
+						props.navigation.closeDrawer();
+						await authService.deleteSelf();
+						clearUser();
+					},
+				},
+			],
+		);
+	};
+
 	const goToSettings = () => {
 		props.navigation.navigate("HomeTabs", { screen: "SettingsScreen" });
 		props.navigation.closeDrawer();
@@ -253,6 +272,13 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 					icon: "sparkles-outline",
 					label: translateText("drawer.help"),
 					onPress: openHelp,
+				})}
+				{user?.role !== "Admin" && renderAction({
+					description: translateText("drawer.deleteAccountDescription"),
+					destructive: true,
+					icon: "trash-outline",
+					label: translateText("drawer.deleteAccount"),
+					onPress: handleDeleteAccount,
 				})}
 				{renderAction({
 					description: translateText("drawer.logoutDescription"),

@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import type { ApplicationUser } from "../types/applicationUser";
 import { BASE_URL } from "../config";
+import { apiFetch } from "./apis/apiClient";
 
 // Revisar la funcionalidad del calendario para verficar que todo esté funcionando correctamente, 
 // especialmente en lo que respecta a la gestión de citas y la visualización de las mismas. Además,
@@ -33,6 +34,10 @@ export const authService = {
 		return json ? JSON.parse(json) : null;
 	},
 	clearStoredUser: async () => {
+		await SecureStore.deleteItemAsync("applicationUser");
+	},
+	deleteSelf: async (): Promise<void> => {
+		await apiFetch("/api/users/me", { method: "DELETE" });
 		await SecureStore.deleteItemAsync("applicationUser");
 	},
 };

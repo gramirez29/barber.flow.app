@@ -21,4 +21,9 @@ public class UserService(IUserRepository userRepository) : IUserService
     {
         return _repo.UpdatePasswordAsync(userName, newPassword, cancellation);
     }
+
+    public Task<bool> DeleteAsync(string id, CancellationToken cancellation = default)
+    {
+        return _repo.DeleteAsync(id, cancellation);
+    }
 }

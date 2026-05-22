@@ -1,6 +1,9 @@
 ﻿using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Users;
+using Microsoft.AspNetCore.Http;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Barber.Flow.Api.Apis;
 
@@ -16,6 +19,11 @@ public static class UsersApi
             .WithName(nameof(GetAuthenticationUserAsync))
             .WithTags(UsersTag);
 
+        api.MapDelete("/me", DeleteSelfAsync)
+            .WithName(nameof(DeleteSelfAsync))
+            .WithTags(UsersTag)
+            .RequireAuthorization();
+
         return api;
     }
 
@@ -27,5 +35,22 @@ public static class UsersApi
 
         var response = new UserResponse(user.Id, user.Name, user.Email, user.UserName, user.Role, user.Token);
         return TypedResults.Ok(response);
+    }
+
+    private static async Task<IResult> DeleteSelfAsync(
+        HttpContext context,
+        IUserService userService,
+        CancellationToken cancellationToken)
+    {
+        var role = context.User.FindFirst(ClaimTypes.Role)?.Value;
+        if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+            return TypedResults.Forbid();
+
+        var userId = context.User.FindFirst(JwtRegisteredClaimNames.NameId)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+            return TypedResults.Unauthorized();
+
+        var deleted = await userService.DeleteAsync(userId, cancellationToken);
+        return deleted ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 }
