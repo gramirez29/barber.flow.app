@@ -86,6 +86,8 @@
 		takePhoto: "Tomar foto",
 	},
 	settings: {
+		privacyPolicy: "Política de privacidad",
+		privacyPolicyDescription: "Lee cómo manejamos tus datos",
 		about: "Acerca de",
 		aboutSubtitle:
 		"Información de la aplicación y créditos de desarrollo presentados con el mismo tratamiento visual del resto del espacio de ajustes.",

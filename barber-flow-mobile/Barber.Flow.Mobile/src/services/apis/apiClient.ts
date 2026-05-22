@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import { useAuthStore } from "../../store/auth.store";
 import { BASE_URL } from "../../config";
 import { authService } from "../authService";
@@ -7,7 +7,7 @@ import type { ApplicationUser } from "../../types/applicationUser";
 const APPLICATION_USER_STORAGE_KEY = "applicationUser";
 
 const getStoredUser = async (): Promise<ApplicationUser | null> => {
-    const storedUser = await AsyncStorage.getItem(APPLICATION_USER_STORAGE_KEY);
+    const storedUser = await SecureStore.getItemAsync(APPLICATION_USER_STORAGE_KEY);
 
     if (!storedUser) {
         return null;
@@ -58,16 +58,9 @@ const parseResponse = async (res: Response) => {
     }
 };
 
-const tryRefreshStoredSession = async () => {
-    const storedUser = await getStoredUser();
-
-    if (!storedUser?.userName || !storedUser.password) {
-        return null;
-    }
-
-    const refreshedUser = await authService.login(storedUser.userName, storedUser.password);
-    useAuthStore.getState().setUser(refreshedUser);
-    return refreshedUser;
+const clearSessionOnUnauthorized = async () => {
+    await authService.clearStoredUser();
+    useAuthStore.getState().clearUser();
 };
 
 export type ApiFetchOptions = Omit<RequestInit, "body" | "headers"> & { json?: unknown; headers?: Record<string, string> };
@@ -99,11 +92,8 @@ export async function apiFetch(path: string, opts: ApiFetchOptions = {}) {
     let response = await runRequest(initialToken);
 
     if (!response.ok && response.status === 401) {
-        const refreshedUser = await tryRefreshStoredSession().catch(() => null);
-
-        if (refreshedUser?.token) {
-            response = await runRequest(refreshedUser.token);
-        }
+        await clearSessionOnUnauthorized();
+        throw new Error("Sesión expirada. Por favor vuelve a iniciar sesión.");
     }
 
     if (!response.ok) {

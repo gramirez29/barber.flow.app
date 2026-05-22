@@ -90,6 +90,8 @@
 		aboutSubtitle:
 		"Application information and development credits presented with the same polished card treatment as the rest of the settings workspace.",
 		developer: "Developer",
+		privacyPolicy: "Privacy Policy",
+		privacyPolicyDescription: "Read how we handle your data",
 		dailyReportCalculations: "Daily Report Calculations",
 		followSystem: "Follow system",
 		manageApplicationUsers: "Manage Application Users",
