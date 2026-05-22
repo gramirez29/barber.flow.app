@@ -36,7 +36,9 @@ public class InMemoryUserRepository() : IUserRepository
 
     public Task<bool> DeleteAsync(string id, CancellationToken cancellation = default)
     {
-        throw new NotImplementedException();
+        var entry = _store.FirstOrDefault(kv => kv.Value.Id.ToString() == id);
+        if (entry.Key is null) return Task.FromResult(false);
+        return Task.FromResult(_store.TryRemove(entry.Key, out _));
     }
 
     public Task<User?> GetAuthenticationUserAsync(string userName, string password, CancellationToken cancellation = default)
@@ -55,7 +57,7 @@ public class InMemoryUserRepository() : IUserRepository
         var user = users.FirstOrDefault();
         if (user != null && string.Equals(user.Password, password, StringComparison.Ordinal))
         {
-            user.Token = BuildJwtToken(user.UserName);
+            user.Token = BuildJwtToken(user);
         }
 
         return Task.FromResult(user);
@@ -75,7 +77,7 @@ public class InMemoryUserRepository() : IUserRepository
         return Task.FromResult(true);
     }
 
-    private string BuildJwtToken(string username)
+    private string BuildJwtToken(User user)
     {
         var jwt = _config?.GetSection("Jwt") ?? throw new InvalidOperationException("Jwt configuration not available");
         var key = jwt["Key"] ?? throw new InvalidOperationException("Jwt:Key not configured");
@@ -88,8 +90,10 @@ public class InMemoryUserRepository() : IUserRepository
 
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, username),
-            new Claim("username", username),
+            new Claim(JwtRegisteredClaimNames.Sub,    user.UserName),
+            new Claim("username",                     user.UserName),
+            new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
+            new Claim(ClaimTypes.Role,                user.Role ?? string.Empty),
         };
 
         var token = new JwtSecurityToken(
