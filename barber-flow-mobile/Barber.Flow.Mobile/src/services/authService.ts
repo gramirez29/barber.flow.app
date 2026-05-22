@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import type { ApplicationUser } from "../types/applicationUser";
 import { BASE_URL } from "../config";
 
@@ -25,15 +25,14 @@ export const authService = {
 		}
 
 		const data: ApplicationUser = await res.json();
-		const userWithCredentials: ApplicationUser = { ...data, password };
-		await AsyncStorage.setItem("applicationUser", JSON.stringify(userWithCredentials));
-		return userWithCredentials;
+		await SecureStore.setItemAsync("applicationUser", JSON.stringify(data));
+		return data;
 	},
 	getStoredUser: async (): Promise<ApplicationUser | null> => {
-		const json = await AsyncStorage.getItem("applicationUser");
+		const json = await SecureStore.getItemAsync("applicationUser");
 		return json ? JSON.parse(json) : null;
 	},
 	clearStoredUser: async () => {
-		await AsyncStorage.removeItem("applicationUser");
+		await SecureStore.deleteItemAsync("applicationUser");
 	},
 };

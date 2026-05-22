@@ -55,14 +55,13 @@ const openUrl = async (
 	errorMessage: string,
 	showAlert: ShowAlert,
 ) => {
-	const supported = await Linking.canOpenURL(url);
-
-	if (!supported) {
+	// Skip canOpenURL — returns false for custom schemes (tel:, sms:) on Android 11+
+	// due to package visibility restrictions without <queries> in AndroidManifest.
+	try {
+		await Linking.openURL(url);
+	} catch {
 		showAlert(errorTitle, errorMessage);
-		return;
 	}
-
-	await Linking.openURL(url);
 };
 
 export const openClientPhoneCall = async (

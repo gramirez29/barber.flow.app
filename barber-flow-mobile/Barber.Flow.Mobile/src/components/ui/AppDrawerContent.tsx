@@ -6,6 +6,7 @@ import {
 	TouchableOpacity,
 	Image,
 } from "react-native";
+
 import { DrawerContentScrollView, type DrawerContentComponentProps } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";

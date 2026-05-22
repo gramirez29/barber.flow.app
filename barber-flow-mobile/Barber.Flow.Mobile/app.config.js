@@ -1,5 +1,9 @@
 const APP_ENV = process.env.APP_ENV ?? "development";
 
+const PRIVACY_POLICY_URL =
+	process.env.PRIVACY_POLICY_URL ??
+	"https://barberflowapp-develop.up.railway.app/privacy-policy";
+
 const URL_BY_ENV = {
 	development: "http://192.168.68.55:7016",
 	testing:     "https://barberflowapp-develop.up.railway.app",
@@ -30,7 +34,6 @@ module.exports = {
 			foregroundImage: "./assets/adaptive-icon.png",
 			backgroundColor: "#ffffff",
 		},
-		schemes: ["whatsapp", "tel", "sms"],
 		edgeToEdgeEnabled: true,
 		predictiveBackGestureEnabled: false,
 		package: "com.anonymous.Barber.Flow.Mobile",
@@ -41,6 +44,7 @@ module.exports = {
 	extra: {
 		APP_ENV,
 		BASE_URL,
+		PRIVACY_POLICY_URL,
 		eas: {
 			projectId: "7dac0395-3c83-4913-82dc-5793de184b98",
 		},
@@ -48,6 +52,7 @@ module.exports = {
 	plugins: [
 		"@react-native-community/datetimepicker",
 		"expo-font",
+		"expo-secure-store",
 		[
 			"expo-image-picker",
 			{
@@ -55,8 +60,6 @@ module.exports = {
 					"Permite a Barber Flow acceder a tu galeria para seleccionar una foto de perfil.",
 				cameraPermission:
 					"Permite a Barber Flow acceder a la camara para tomar una foto de perfil.",
-				microphonePermission:
-					"Permite a Barber Flow acceder al microfono al grabar video desde la camara.",
 			},
 		],
 	],

@@ -3,7 +3,7 @@ export interface ApplicationUser {
 	name: string;
 	email: string;
 	userName: string;
-	password: string;
+	password?: string;
 	role: string;
 	token: string;
 }

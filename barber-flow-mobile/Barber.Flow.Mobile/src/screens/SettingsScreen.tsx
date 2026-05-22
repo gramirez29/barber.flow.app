@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
 	ImageBackground,
+	Linking,
 	Platform,
 	Pressable,
 	StyleSheet,
@@ -33,6 +34,7 @@ import {
 import { DrawerActions, useNavigation } from "@react-navigation/core";
 import { AppTabParamList } from "../navigation/AppNavigator";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { PRIVACY_POLICY_URL } from "../config";
 
 const APP_VERSION = "1.0.0";
 const DEVELOPER_NAME = "Guillermo Ramirez";
@@ -476,10 +478,18 @@ export const SettingsScreen = () => {
 							<Text style={styles.aboutValue}>{APP_VERSION}</Text>
 						</View>
 
-						<View style={styles.aboutInfoRowLast}>
+						<View style={styles.aboutInfoRow}>
 							<Text style={styles.aboutLabel}>{translateText("settings.developer")}</Text>
 							<Text style={styles.aboutValue}>{DEVELOPER_NAME}</Text>
 						</View>
+
+						<Pressable
+							onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)}
+							style={({ pressed }) => [styles.aboutInfoRowLast, pressed && styles.aboutLinkPressed]}
+						>
+							<Text style={styles.aboutLabel}>{translateText("settings.privacyPolicy")}</Text>
+							<Text style={styles.aboutLinkValue}>{translateText("settings.privacyPolicyDescription")}</Text>
+						</Pressable>
 					</View>
 				</KeyboardAwareScrollView>
 
@@ -694,6 +704,14 @@ const styles = StyleSheet.create({
 	},
 	aboutInfoRowLast: {
 		paddingTop: 14,
+	},
+	aboutLinkPressed: {
+		opacity: 0.6,
+	},
+	aboutLinkValue: {
+		color: "#C9A84C",
+		fontSize: 15,
+		fontWeight: "600",
 	},
 	aboutLabel: {
 		color: COLORS.textSecondary,
