@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
 	ImageBackground,
-	Linking,
 	Platform,
 	Pressable,
 	StyleSheet,
@@ -11,6 +10,7 @@ import {
 	View,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import * as WebBrowser from "expo-web-browser";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { ReportCalculationSettingsForm } from "../components/settings/ReportCalculationSettingsForm";
 import { ScreenLayout } from "../components/ScreenLayout";
@@ -484,7 +484,7 @@ export const SettingsScreen = () => {
 						</View>
 
 						<Pressable
-							onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)}
+							onPress={() => void WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)}
 							style={({ pressed }) => [styles.aboutInfoRowLast, pressed && styles.aboutLinkPressed]}
 						>
 							<Text style={styles.aboutLabel}>{translateText("settings.privacyPolicy")}</Text>
