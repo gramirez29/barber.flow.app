@@ -30,6 +30,8 @@ var app = builder.Build();
 // Procesar headers de Railway antes que cualquier otro middleware
 app.UseForwardedHeaders();
 
+app.UseStaticFiles();
+
 // IMPORTANTE: UseCors debe ir ANTES de UseAuthorization y UseEndpoints
 app.UseCors("AllowExpoApp");
 

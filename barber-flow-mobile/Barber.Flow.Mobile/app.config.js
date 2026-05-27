@@ -14,7 +14,7 @@ const BASE_URL = URL_BY_ENV[APP_ENV] ?? URL_BY_ENV.development;
 
 /** @type {import('expo/config').ExpoConfig} */
 module.exports = {
-	name: "Barber.Flow.Mobile",
+	name: "Barber Flow",
 	slug: "barber-flow",
 	version: "1.0.0",
 	orientation: "portrait",
@@ -22,13 +22,16 @@ module.exports = {
 	userInterfaceStyle: "light",
 	newArchEnabled: true,
 	splash: {
-		image: "./assets/icon.png",
+		image: "./assets/splash-icon.png",
 		resizeMode: "contain",
 		backgroundColor: "#ffffff",
 	},
 	ios: {
-		supportsTablet: true,
-	},
+		supportsTablet: false,
+		bundleIdentifier: "com.guillermoramirez.barberflow",
+		buildNumber: "1",		config: {
+			usesNonExemptEncryption: false,
+		},	},
 	android: {
 		adaptiveIcon: {
 			foregroundImage: "./assets/adaptive-icon.png",
@@ -36,7 +39,8 @@ module.exports = {
 		},
 		edgeToEdgeEnabled: true,
 		predictiveBackGestureEnabled: false,
-		package: "com.anonymous.Barber.Flow.Mobile",
+		package: "com.guillermoramirez.barberflow",
+		versionCode: 1,
 	},
 	web: {
 		favicon: "./assets/favicon.png",
@@ -53,6 +57,7 @@ module.exports = {
 		"@react-native-community/datetimepicker",
 		"expo-font",
 		"expo-secure-store",
+		"expo-web-browser",
 		[
 			"expo-image-picker",
 			{

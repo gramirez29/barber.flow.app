@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Barber Flow</title>
+  <meta name="description" content="Barber Flow Privacy Policy — how we collect, use, and protect your personal data." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg:         #0D0D0D;
+      --surface:    #1A1A1A;
+      --surface-2:  #252525;
+      --primary:    #FFFFFF;
+      --accent:     #C9A84C;
+      --accent-light: #E5C878;
+      --text-primary:   #FFFFFF;
+      --text-secondary: #9B9B9B;
+      --border:     #3A3A3A;
+      --radius:     12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.7;
+      font-size: 16px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 780px;
+      margin: 0 auto;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-mark svg {
+      width: 20px;
+      height: 20px;
+      fill: white;
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+    }
+
+    .logo-text span {
+      color: var(--accent-light);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #0D0D0D 0%, #181008 50%, #0D0D0D 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 56px 24px 48px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(201, 168, 76, 0.12);
+      border: 1px solid rgba(201, 168, 76, 0.35);
+      color: var(--accent-light);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-size: clamp(28px, 5vw, 40px);
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 500px;
+      margin: 0 auto 24px;
+    }
+
+    .hero-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .hero-meta .dot {
+      width: 6px;
+      height: 6px;
+      background: #22c55e;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Content ── */
+    main {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── Table of contents ── */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+
+    .toc-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+    }
+
+    .toc ol {
+      list-style: none;
+      counter-reset: toc-counter;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 6px 24px;
+    }
+
+    .toc li {
+      counter-increment: toc-counter;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .toc li::before {
+      content: counter(toc-counter, decimal-leading-zero);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .toc a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .toc a:hover { color: var(--accent-light); }
+
+    /* ── Sections ── */
+    section {
+      margin-bottom: 48px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-number {
+      width: 32px;
+      height: 32px;
+      background: rgba(201, 168, 76, 0.12);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent-light);
+      flex-shrink: 0;
+    }
+
+    .section-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+    }
+
+    p {
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+      font-size: 15px;
+    }
+
+    p:last-child { margin-bottom: 0; }
+
+    /* ── Data table ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .data-table thead tr {
+      background: var(--surface-2);
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table td {
+      padding: 12px 16px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table tbody tr:hover {
+      background: rgba(255,255,255,0.02);
+    }
+
+    .data-table td:first-child {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* ── Info cards ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+
+    .card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: rgba(201, 168, 76, 0.10);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    .card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* ── Callout ── */
+    .callout {
+      display: flex;
+      gap: 14px;
+      background: rgba(201, 168, 76, 0.07);
+      border: 1px solid rgba(201, 168, 76, 0.25);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      margin: 20px 0;
+    }
+
+    .callout-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .callout p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .callout strong {
+      color: var(--accent-light);
+    }
+
+    /* ── List ── */
+    ul.styled {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    ul.styled li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    ul.styled li::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      margin-top: 7px;
+      flex-shrink: 0;
+    }
+
+    /* ── Contact ── */
+    .contact-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .contact-avatar {
+      width: 48px;
+      height: 48px;
+      background: var(--accent);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .contact-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .contact-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .contact-card a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent);
+      color: #0D0D0D;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 9px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .contact-card a:hover {
+      background: var(--accent-light);
+      color: #0D0D0D;
+      transform: translateY(-1px);
+    }
+
+    /* ── Footer ── */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 28px 24px;
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    footer p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    footer strong {
+      color: var(--accent-light);
+    }
+
+    /* ── Language toggle ── */
+    .lang-toggle {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .lang-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      padding: 5px 12px;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+      letter-spacing: 0.3px;
+    }
+
+    .lang-btn.active {
+      background: var(--accent);
+      color: #0D0D0D;
+    }
+
+    .lang-btn:hover:not(.active) {
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* Hide/show content blocks by language
+       !important is required to override component-level display rules
+       (e.g. ul.styled { display: flex } has higher specificity than [data-lang]) */
+    [data-lang] { display: none !important; }
+    .lang-en [data-lang="en"],
+    .lang-es [data-lang="es"] { display: revert !important; }
+
+    /* Inline spans */
+    span[data-lang] { display: none !important; }
+    .lang-en span[data-lang="en"],
+    .lang-es span[data-lang="es"] { display: inline !important; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .toc ol { grid-template-columns: 1fr; }
+      .card-grid { grid-template-columns: 1fr 1fr; }
+      .contact-card { flex-direction: column; gap: 14px; }
+    }
+
+    @media (max-width: 380px) {
+      .card-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body id="body-root" class="lang-en">
+
+  <!-- Header -->
+  <header>
+    <div class="header-inner">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+        </svg>
+      </div>
+      <span class="logo-text">Barber <span>Flow</span></span>
+      <div class="lang-toggle" role="group" aria-label="Language selector">
+        <button class="lang-btn active" id="btn-en" onclick="setLang('en')" aria-pressed="true">EN</button>
+        <button class="lang-btn"        id="btn-es" onclick="setLang('es')" aria-pressed="false">ES</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-badge">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <circle cx="5" cy="5" r="4" fill="#60A5FA"/>
+      </svg>
+      <span data-lang="en">Legal Document</span>
+      <span data-lang="es">Documento Legal</span>
+    </div>
+    <h1><span data-lang="en">Privacy Policy</span><span data-lang="es">Política de Privacidad</span></h1>
+    <p>
+      <span data-lang="en">How Barber Flow collects, uses, and protects your personal information.</span>
+      <span data-lang="es">Cómo Barber Flow recopila, usa y protege tu información personal.</span>
+    </p>
+    <div class="hero-meta">
+      <span class="dot"></span>
+      <span data-lang="en">Last updated: May 26, 2026</span>
+      <span data-lang="es">Última actualización: 26 de mayo de 2026</span>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <main>
+
+    <!-- Table of Contents -->
+    <div class="toc">
+      <p class="toc-title">
+        <span data-lang="en">Contents</span>
+        <span data-lang="es">Contenido</span>
+      </p>
+      <ol data-lang="en">
+        <li><a href="#s1">Information We Collect</a></li>
+        <li><a href="#s2">How We Use Your Information</a></li>
+        <li><a href="#s3">Data Storage &amp; Security</a></li>
+        <li><a href="#s4">Data Sharing</a></li>
+        <li><a href="#s5">Your Rights</a></li>
+        <li><a href="#s6">Data Retention</a></li>
+        <li><a href="#s7">Children's Privacy</a></li>
+        <li><a href="#s8">Changes to This Policy</a></li>
+        <li><a href="#s9">Contact Us</a></li>
+      </ol>
+      <ol data-lang="es">
+        <li><a href="#s1">Información que recopilamos</a></li>
+        <li><a href="#s2">Cómo usamos tu información</a></li>
+        <li><a href="#s3">Almacenamiento y seguridad</a></li>
+        <li><a href="#s4">Compartición de datos</a></li>
+        <li><a href="#s5">Tus derechos</a></li>
+        <li><a href="#s6">Retención de datos</a></li>
+        <li><a href="#s7">Privacidad infantil</a></li>
+        <li><a href="#s8">Cambios a esta política</a></li>
+        <li><a href="#s9">Contáctanos</a></li>
+      </ol>
+    </div>
+
+    <!-- Intro callout -->
+    <div class="callout">
+      <span class="callout-icon">🔒</span>
+      <p>
+        <span data-lang="en"><strong>Your privacy matters.</strong> Barber Flow is a barbershop management tool for professional barbers. We collect only the data necessary to make the app work — no advertising, no analytics tracking, no data sold to third parties.</span>
+        <span data-lang="es"><strong>Tu privacidad importa.</strong> Barber Flow es una herramienta de gestión de barberías para barberos profesionales. Solo recopilamos los datos necesarios para que la app funcione — sin publicidad, sin seguimiento analítico, sin venta de datos a terceros.</span>
+      </p>
+    </div>
+
+    <!-- 1. Information We Collect -->
+    <section id="s1">
+      <div class="section-header">
+        <span class="section-number">01</span>
+        <h2>
+          <span data-lang="en">Information We Collect</span>
+          <span data-lang="es">Información que recopilamos</span>
+        </h2>
+      </div>
+
+      <p>
+        <span data-lang="en">We collect the following types of information when you use Barber Flow:</span>
+        <span data-lang="es">Recopilamos los siguientes tipos de información cuando usas Barber Flow:</span>
+      </p>
+
+      <table class="data-table" data-lang="en">
+        <thead>
+          <tr>
+            <th>Data type</th>
+            <th>Examples</th>
+            <th>Required?</th>
+            <th>Where it's stored</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Barber profile</td>
+            <td>Name, phone, email, shop name, shop phone</td>
+            <td>Name &amp; phone required; others optional</td>
+            <td>Our servers</td>
+          </tr>
+          <tr>
+            <td>Profile photo</td>
+            <td>Photo taken with camera or selected from gallery</td>
+            <td>Optional</td>
+            <td>Our servers</td>
+          </tr>
+          <tr>
+            <td>Client data</td>
+            <td>Client first name, last name, phone, email</td>
+            <td>Name &amp; phone required; email optional</td>
+            <td>Our servers</td>
+          </tr>
+          <tr>
+            <td>Appointment data</td>
+            <td>Client name, phone, service, date, time, price</td>
+            <td>Required to create an appointment</td>
+            <td>Our servers</td>
+          </tr>
+          <tr>
+            <td>App preferences</td>
+            <td>Theme (dark/light), language (EN/ES)</td>
+            <td>Optional</td>
+            <td>On-device only (AsyncStorage)</td>
+          </tr>
+          <tr>
+            <td>Authentication token</td>
+            <td>Encrypted JWT session token</td>
+            <td>Automatically generated on login</td>
+            <td>On-device only (SecureStore)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="data-table" data-lang="es">
+        <thead>
+          <tr>
+            <th>Tipo de dato</th>
+            <th>Ejemplos</th>
+            <th>¿Obligatorio?</th>
+            <th>Dónde se almacena</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Perfil del barbero</td>
+            <td>Nombre, teléfono, email, nombre del local, teléfono del local</td>
+            <td>Nombre y teléfono obligatorios; resto opcional</td>
+            <td>Nuestros servidores</td>
+          </tr>
+          <tr>
+            <td>Foto de perfil</td>
+            <td>Foto tomada con cámara o seleccionada de galería</td>
+            <td>Opcional</td>
+            <td>Nuestros servidores</td>
+          </tr>
+          <tr>
+            <td>Datos de clientes</td>
+            <td>Nombre, apellido, teléfono, email del cliente</td>
+            <td>Nombre y teléfono obligatorios; email opcional</td>
+            <td>Nuestros servidores</td>
+          </tr>
+          <tr>
+            <td>Datos de citas</td>
+            <td>Nombre, teléfono, servicio, fecha, hora, precio</td>
+            <td>Obligatorio para crear una cita</td>
+            <td>Nuestros servidores</td>
+          </tr>
+          <tr>
+            <td>Preferencias de la app</td>
+            <td>Tema (oscuro/claro), idioma (EN/ES)</td>
+            <td>Opcional</td>
+            <td>Solo en el dispositivo (AsyncStorage)</td>
+          </tr>
+          <tr>
+            <td>Token de autenticación</td>
+            <td>Token de sesión JWT cifrado</td>
+            <td>Generado automáticamente al iniciar sesión</td>
+            <td>Solo en el dispositivo (SecureStore)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="callout-icon">📵</span>
+        <p>
+          <span data-lang="en"><strong>No tracking.</strong> Barber Flow does not use analytics services, crash reporters, advertising SDKs, or any third-party tracking technology. We do not track your behavior across other apps or websites.</span>
+          <span data-lang="es"><strong>Sin rastreo.</strong> Barber Flow no utiliza servicios de análisis, reportes de errores, SDKs publicitarios ni ninguna tecnología de rastreo de terceros. No hacemos seguimiento de tu comportamiento en otras apps o sitios web.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- 2. How We Use Your Information -->
+    <section id="s2">
+      <div class="section-header">
+        <span class="section-number">02</span>
+        <h2>
+          <span data-lang="en">How We Use Your Information</span>
+          <span data-lang="es">Cómo usamos tu información</span>
+        </h2>
+      </div>
+
+      <p>
+        <span data-lang="en">All data collected is used exclusively to provide and operate the app's features:</span>
+        <span data-lang="es">Todos los datos recopilados se usan exclusivamente para brindar y operar las funcionalidades de la app:</span>
+      </p>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-icon">📅</div>
+          <h3><span data-lang="en">Appointments</span><span data-lang="es">Citas</span></h3>
+          <p>
+            <span data-lang="en">Schedule, view, edit, and manage your daily and weekly bookings.</span>
+            <span data-lang="es">Agenda, visualiza, edita y gestiona tus reservas diarias y semanales.</span>
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-icon">👥</div>
+          <h3><span data-lang="en">Client management</span><span data-lang="es">Gestión de clientes</span></h3>
+          <p>
+            <span data-lang="en">Build and maintain a client database for faster appointment creation.</span>
+            <span data-lang="es">Crea y mantén una base de datos de clientes para agendar citas más rápido.</span>
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📊</div>
+          <h3><span data-lang="en">Reports</span><span data-lang="es">Reportes</span></h3>
+          <p>
+            <span data-lang="en">Generate revenue summaries and appointment statistics for your shop.</span>
+            <span data-lang="es">Genera resúmenes de ingresos y estadísticas de citas de tu local.</span>
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔔</div>
+          <h3><span data-lang="en">Notifications</span><span data-lang="es">Notificaciones</span></h3>
+          <p>
+            <span data-lang="en">In-app alerts for upcoming appointments and relevant updates.</span>
+            <span data-lang="es">Alertas dentro de la app para citas próximas y actualizaciones relevantes.</span>
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🪪</div>
+          <h3><span data-lang="en">Profile</span><span data-lang="es">Perfil</span></h3>
+          <p>
+            <span data-lang="en">Display your barber and shop information within the app.</span>
+            <span data-lang="es">Muestra tu información de barbero y de tu local dentro de la app.</span>
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔐</div>
+          <h3><span data-lang="en">Authentication</span><span data-lang="es">Autenticación</span></h3>
+          <p>
+            <span data-lang="en">Keep your session secure so only you can access your account.</span>
+            <span data-lang="es">Mantén tu sesión segura para que solo tú puedas acceder a tu cuenta.</span>
+          </p>
+        </div>
+      </div>
+
+      <p>
+        <span data-lang="en">We do <strong style="color: var(--text-primary)">not</strong> use your data for advertising, profiling, or any purpose beyond app functionality.</span>
+        <span data-lang="es">No usamos tus datos para publicidad, perfilado ni ningún fin más allá de las funcionalidades de la app.</span>
+      </p>
+    </section>
+
+    <!-- 3. Data Storage & Security -->
+    <section id="s3">
+      <div class="section-header">
+        <span class="section-number">03</span>
+        <h2>
+          <span data-lang="en">Data Storage &amp; Security</span>
+          <span data-lang="es">Almacenamiento y seguridad</span>
+        </h2>
+      </div>
+
+      <ul class="styled" data-lang="en">
+        <li>All data transmitted between the app and our servers is encrypted via <strong style="color: var(--text-primary)">HTTPS/TLS</strong>.</li>
+        <li>Your authentication token is stored locally on your device using <strong style="color: var(--text-primary)">Expo SecureStore</strong>, which uses the device's secure hardware (Keychain on iOS, Keystore on Android).</li>
+        <li>App preferences (theme, language) are stored locally on your device using AsyncStorage and never sent to our servers.</li>
+        <li>Profile photos are uploaded to our server and stored securely.</li>
+        <li>We do not store your password in our servers beyond a securely hashed format.</li>
+      </ul>
+
+      <ul class="styled" data-lang="es">
+        <li>Todos los datos transmitidos entre la app y nuestros servidores están cifrados con <strong style="color: var(--text-primary)">HTTPS/TLS</strong>.</li>
+        <li>Tu token de autenticación se almacena localmente en tu dispositivo usando <strong style="color: var(--text-primary)">Expo SecureStore</strong>, que utiliza el hardware seguro del dispositivo (Keychain en iOS, Keystore en Android).</li>
+        <li>Las preferencias de la app (tema, idioma) se almacenan localmente mediante AsyncStorage y nunca se envían a nuestros servidores.</li>
+        <li>Las fotos de perfil se suben a nuestros servidores y se almacenan de forma segura.</li>
+        <li>No almacenamos tu contraseña en texto plano; solo guardamos un hash seguro de la misma.</li>
+      </ul>
+    </section>
+
+    <!-- 4. Data Sharing -->
+    <section id="s4">
+      <div class="section-header">
+        <span class="section-number">04</span>
+        <h2>
+          <span data-lang="en">Data Sharing</span>
+          <span data-lang="es">Compartición de datos</span>
+        </h2>
+      </div>
+
+      <div class="callout">
+        <span class="callout-icon">🚫</span>
+        <p>
+          <span data-lang="en"><strong>We do not sell, rent, or share your personal data with third parties.</strong> Your data stays within Barber Flow's own infrastructure and is never disclosed to advertisers, data brokers, or other services.</span>
+          <span data-lang="es"><strong>No vendemos, alquilamos ni compartimos tus datos personales con terceros.</strong> Tus datos permanecen dentro de la infraestructura propia de Barber Flow y nunca son divulgados a anunciantes, intermediarios de datos u otros servicios.</span>
+        </p>
+      </div>
+
+      <p>
+        <span data-lang="en">The only circumstances in which data may be disclosed are:</span>
+        <span data-lang="es">Las únicas circunstancias en las que los datos podrían divulgarse son:</span>
+      </p>
+
+      <ul class="styled" data-lang="en">
+        <li>When required by applicable law or a valid legal order.</li>
+        <li>To protect the rights, property, or safety of Barber Flow, its users, or the public.</li>
+      </ul>
+
+      <ul class="styled" data-lang="es">
+        <li>Cuando lo exija la ley aplicable o una orden legal válida.</li>
+        <li>Para proteger los derechos, la propiedad o la seguridad de Barber Flow, sus usuarios o el público en general.</li>
+      </ul>
+    </section>
+
+    <!-- 5. Your Rights -->
+    <section id="s5">
+      <div class="section-header">
+        <span class="section-number">05</span>
+        <h2>
+          <span data-lang="en">Your Rights</span>
+          <span data-lang="es">Tus derechos</span>
+        </h2>
+      </div>
+
+      <p>
+        <span data-lang="en">You have full control over your data. At any time, you may:</span>
+        <span data-lang="es">Tienes control total sobre tus datos. En cualquier momento puedes:</span>
+      </p>
+
+      <ul class="styled" data-lang="en">
+        <li><strong style="color: var(--text-primary)">Access</strong> — view all personal data stored in your account through the app's profile and settings screens.</li>
+        <li><strong style="color: var(--text-primary)">Update</strong> — edit your barber profile, shop information, and client records at any time.</li>
+        <li><strong style="color: var(--text-primary)">Delete</strong> — permanently delete your account and all associated data directly from the app via <em>Settings → Delete Account</em>. Deletion is immediate and irreversible.</li>
+      </ul>
+
+      <ul class="styled" data-lang="es">
+        <li><strong style="color: var(--text-primary)">Acceder</strong> — ver todos los datos personales almacenados en tu cuenta desde las pantallas de perfil y configuración.</li>
+        <li><strong style="color: var(--text-primary)">Actualizar</strong> — editar tu perfil de barbero, la información de tu local y los registros de clientes en cualquier momento.</li>
+        <li><strong style="color: var(--text-primary)">Eliminar</strong> — borrar permanentemente tu cuenta y todos los datos asociados desde la app en <em>Configuración → Eliminar cuenta</em>. La eliminación es inmediata e irreversible.</li>
+      </ul>
+
+      <div class="callout">
+        <span class="callout-icon">🗑️</span>
+        <p>
+          <span data-lang="en">Account deletion removes <strong>all your data</strong> from our servers, including your profile, client list, and appointment history. This action cannot be undone.</span>
+          <span data-lang="es">La eliminación de la cuenta borra <strong>todos tus datos</strong> de nuestros servidores, incluyendo tu perfil, lista de clientes e historial de citas. Esta acción no se puede deshacer.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- 6. Data Retention -->
+    <section id="s6">
+      <div class="section-header">
+        <span class="section-number">06</span>
+        <h2>
+          <span data-lang="en">Data Retention</span>
+          <span data-lang="es">Retención de datos</span>
+        </h2>
+      </div>
+
+      <p>
+        <span data-lang="en">We retain your data for as long as your account is active. When you delete your account, all associated personal data is permanently erased from our servers. Anonymized or aggregated data that cannot identify you may be retained for internal analysis.</span>
+        <span data-lang="es">Conservamos tus datos mientras tu cuenta esté activa. Cuando eliminas tu cuenta, todos los datos personales asociados son borrados permanentemente de nuestros servidores. Los datos anonimizados o agregados que no puedan identificarte pueden conservarse para análisis interno.</span>
+      </p>
+    </section>
+
+    <!-- 7. Children's Privacy -->
+    <section id="s7">
+      <div class="section-header">
+        <span class="section-number">07</span>
+        <h2>
+          <span data-lang="en">Children's Privacy</span>
+          <span data-lang="es">Privacidad infantil</span>
+        </h2>
+      </div>
+
+      <p>
+        <span data-lang="en">Barber Flow is intended for use by professional barbers and business owners. The app is not directed at children under the age of 13, and we do not knowingly collect personal information from minors. If you believe we have inadvertently collected data from a child, please contact us immediately so we can delete it.</span>
+        <span data-lang="es">Barber Flow está dirigida a barberos profesionales y propietarios de negocios. La app no está orientada a menores de 13 años y no recopilamos intencionalmente información personal de menores. Si crees que hemos recopilado datos de un menor de forma inadvertida, contáctanos de inmediato para que podamos eliminarlos.</span>
+      </p>
+    </section>
+
+    <!-- 8. Changes -->
+    <section id="s8">
+      <div class="section-header">
+        <span class="section-number">08</span>
+        <h2>
+          <span data-lang="en">Changes to This Policy</span>
+          <span data-lang="es">Cambios a esta política</span>
+        </h2>
+      </div>
+
+      <p>
+        <span data-lang="en">We may update this Privacy Policy from time to time. When we do, the "Last updated" date at the top of the page will be revised. For significant changes, we will notify users through an in-app notice. Continued use of the app after changes are posted constitutes acceptance of the updated policy.</span>
+        <span data-lang="es">Podemos actualizar esta Política de Privacidad de vez en cuando. Cuando lo hagamos, se revisará la fecha de "Última actualización" al inicio de la página. Para cambios significativos, notificaremos a los usuarios mediante un aviso dentro de la app. El uso continuado de la app después de publicar los cambios constituye la aceptación de la política actualizada.</span>
+      </p>
+    </section>
+
+    <!-- 9. Contact -->
+    <section id="s9">
+      <div class="section-header">
+        <span class="section-number">09</span>
+        <h2>
+          <span data-lang="en">Contact Us</span>
+          <span data-lang="es">Contáctanos</span>
+        </h2>
+      </div>
+
+      <p>
+        <span data-lang="en">If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please reach out to us:</span>
+        <span data-lang="es">Si tienes preguntas, inquietudes o solicitudes sobre esta Política de Privacidad o tus datos personales, comunícate con nosotros:</span>
+      </p>
+
+      <div class="contact-card">
+        <div class="contact-avatar">✉️</div>
+        <div>
+          <h3>Barber Flow — Privacy</h3>
+          <p>
+            <span data-lang="en">We aim to respond to all privacy-related inquiries within 5 business days.</span>
+            <span data-lang="es">Nos comprometemos a responder todas las consultas de privacidad dentro de 5 días hábiles.</span>
+          </p>
+          <a href="mailto:privacy@barberflow.app">
+            privacy@barberflow.app
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <p>
+        <span data-lang="en">&copy; 2026 <strong>Barber Flow</strong>. All rights reserved. &nbsp;·&nbsp; This document is available at the URL registered with the App Store and Google Play.</span>
+        <span data-lang="es">&copy; 2026 <strong>Barber Flow</strong>. Todos los derechos reservados. &nbsp;·&nbsp; Este documento está disponible en la URL registrada en App Store y Google Play.</span>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    function setLang(lang) {
+      var body = document.getElementById('body-root') || document.body;
+      body.className = 'lang-' + lang;
+      var html = document.getElementById('html-root');
+      if (html) html.lang = lang;
+      var btnEn = document.getElementById('btn-en');
+      var btnEs = document.getElementById('btn-es');
+      if (btnEn) { btnEn.classList.toggle('active', lang === 'en'); btnEn.setAttribute('aria-pressed', String(lang === 'en')); }
+      if (btnEs) { btnEs.classList.toggle('active', lang === 'es'); btnEs.setAttribute('aria-pressed', String(lang === 'es')); }
+      try { localStorage.setItem('bf-lang', lang); } catch(e) {}
+    }
+    (function() {
+      try { var l = localStorage.getItem('bf-lang'); if (l === 'en' || l === 'es') setLang(l); } catch(e) {}
+    })();
+  </script>
+
+</body>
+</html>
