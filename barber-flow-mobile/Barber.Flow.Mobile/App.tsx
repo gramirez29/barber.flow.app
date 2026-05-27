@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
-import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider, useAppTheme } from './src/theme/ThemeContext';
 import { LanguageProvider } from './src/context/LanguageContext';
@@ -15,16 +15,18 @@ function Main() {
 	const navigationTheme = createNavigationTheme(theme);
 
 	return (
-		<PaperProvider theme={paperTheme}>
-			<DialogProvider>
-				<NavigationContainer theme={navigationTheme}>
-					<NotificationProvider>
-						<StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
-						<RootNavigator />
-					</NotificationProvider>
-				</NavigationContainer>
-			</DialogProvider>
-		</PaperProvider>
+		<GestureHandlerRootView style={{ flex: 1 }}>
+			<PaperProvider theme={paperTheme}>
+				<DialogProvider>
+					<NavigationContainer theme={navigationTheme}>
+						<NotificationProvider>
+							<StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
+							<RootNavigator />
+						</NotificationProvider>
+					</NavigationContainer>
+				</DialogProvider>
+			</PaperProvider>
+		</GestureHandlerRootView>
 	);
 }
 

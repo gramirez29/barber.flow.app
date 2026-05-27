@@ -26,12 +26,6 @@ const BASE_URL_DEFAULT =
 export const BASE_URL =
 	(process.env.BARBERFLOW_API_URL as string | undefined) ?? expoExtra?.BASE_URL ?? BASE_URL_DEFAULT;
 
-// create an alert to show the BASE_URL value for easier debugging in development/testing
-if (APP_ENV === "development" || APP_ENV === "testing") {
-	// eslint-disable-next-line no-alert
-	alert(`Using API Base URL: ${BASE_URL} in environment ${APP_ENV}`);
-}
-
 // Admin username (single admin). Can be configured via env or Expo extra.
 export const ADMIN_USERNAME =
 	(process.env.BARBERFLOW_ADMIN_USERNAME as string | undefined) ?? expoExtra?.ADMIN_USERNAME ?? "admin";
