@@ -11,10 +11,13 @@ using System.Text;
 using Barber.Flow.Application.Services.Clients;
 using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Infrastructure.Services.InMemory;
+using Barber.Flow.Infrastructure.Services.MongoDb;
+using Barber.Flow.Infrastructure.Settings;
 using Barber.Flow.Application.Services.Users;
 using Barber.Flow.Application.Services.Reports;
 using Barber.Flow.Api.DTOs.Requests;
 using FluentValidation;
+using MongoDB.Driver;
 
 namespace Barber.Flow.Api.Extensions;
 
@@ -39,9 +42,40 @@ public static class ApplicationExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IJwtAuthService, JwtAuthService>();
 
+        // Bind feature flags and MongoDB settings
+        services.Configure<FeatureFlags>(configuration.GetSection("Features"));
+        services.Configure<MongoDbSettings>(configuration.GetSection("MongoDb"));
+
+        var useMongoDb = configuration.GetValue<bool>("Features:UseMongoDb");
+
         services.AddScoped<IClientService, ClientService>();
-        services.AddSingleton<IClientRepository, InMemoryClientRepository>();
-        
+
+        if (useMongoDb)
+        {
+            var mongoSettings = configuration.GetSection("MongoDb").Get<MongoDbSettings>()
+                ?? throw new InvalidOperationException("MongoDb settings are required when Features:UseMongoDb is true.");
+
+            // MONGODB_URI is injected by the Railway MongoDB Atlas plugin at runtime
+            var mongoConnectionString = Environment.GetEnvironmentVariable("MONGODB_URI")
+                ?? mongoSettings.ConnectionString;
+
+            services.AddSingleton<IMongoClient>(_ => new MongoClient(mongoConnectionString));
+            services.AddSingleton<IMongoDatabase>(sp =>
+                sp.GetRequiredService<IMongoClient>().GetDatabase(mongoSettings.DatabaseName));
+
+            services.AddHostedService<MongoDbBootstrapper>();
+            services.AddSingleton<IClientRepository, MongoDbClientRepository>();
+            services.AddSingleton<IBarberShopRepository, MongoDbBarberShopRepository>();
+            services.AddSingleton<IAppointmentRepository, MongoDbAppointmentRepository>();
+            services.AddSingleton<Barber.Flow.Infrastructure.Services.IDataMigrationService, Barber.Flow.Infrastructure.Services.DataMigrationService>();
+        }
+        else
+        {
+            services.AddSingleton<IClientRepository, InMemoryClientRepository>();
+            services.AddSingleton<IBarberShopRepository, InMemoryBarberShopRepository>();
+            services.AddSingleton<IAppointmentRepository, InMemoryAppointmentRepository>();
+        }
+
         services.AddScoped<IBarberService, BarberService>();
         services.AddSingleton<IBarberRepository, InMemoryBarberRepository>();
 
@@ -52,7 +86,6 @@ public static class ApplicationExtensions
         services.AddSingleton<IReportRepository, InMemoryReportRepository>();
 
         services.AddScoped<IAppointmentService, AppointmentService>();
-        services.AddSingleton<IAppointmentRepository, InMemoryAppointmentRepository>();
 
         services.AddScoped<IValidator<BarberRequest>, BarberRequestValidator>();
 

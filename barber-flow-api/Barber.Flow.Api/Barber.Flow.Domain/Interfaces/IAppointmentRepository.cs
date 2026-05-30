@@ -22,4 +22,16 @@ public interface IAppointmentRepository
     Task<Entities.Appointments?> MoveAsync(string id, string newDate, CancellationToken cancellation = default);
 
     Task<string> GetNextIdAsync(CancellationToken cancellation = default);
+
+    Task<IEnumerable<Entities.Appointments>> GetClientHistoryAsync(
+        string clientId,
+        string createdBy,
+        int page = 1,
+        int pageSize = 20,
+        CancellationToken cancellation = default);
+
+    Task<Entities.Appointments?> FindByPhoneAsync(
+        string phone,
+        string createdBy,
+        CancellationToken cancellation = default);
 }

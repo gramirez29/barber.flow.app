@@ -2,6 +2,7 @@
 using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Clients;
 using Barber.Flow.Domain.Entities;
+using Barber.Flow.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using static System.Net.WebRequestMethods;
@@ -40,6 +41,18 @@ public static class ClientsApi
         
         api.MapDelete("/delete/{id}", DeleteClientAsync)
             .WithName(nameof(DeleteClientAsync))
+            .WithTags(ClientTagName);
+
+        api.MapGet("/{id}/appointments/history", GetClientHistoryAsync)
+            .WithName(nameof(GetClientHistoryAsync))
+            .WithTags(ClientTagName);
+
+        api.MapGet("/{id}/stats", GetClientStatsAsync)
+            .WithName(nameof(GetClientStatsAsync))
+            .WithTags(ClientTagName);
+
+        api.MapGet("/findByPhone", FindByPhoneAsync)
+            .WithName(nameof(FindByPhoneAsync))
             .WithTags(ClientTagName);
             
         return api;
@@ -142,7 +155,116 @@ public static class ClientsApi
             client.PaymentMethod,
             client.Active,
             client.PhotoUrl,
+            client.ShopId,
             client.CreatedAt,
             client.UpdatedAt
+        );
+
+    private static async Task<IResult> GetClientHistoryAsync(
+        string id,
+        IAppointmentRepository appointmentRepository,
+        HttpContext httpContext,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                     ?? httpContext.User.Identity?.Name 
+                     ?? throw new UnauthorizedAccessException("User not authenticated");
+
+        var history = await appointmentRepository.GetClientHistoryAsync(id, userId, page, pageSize, cancellationToken);
+        var response = history.Select(MapAppointment);
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<IResult> GetClientStatsAsync(
+        string id,
+        IAppointmentRepository appointmentRepository,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                     ?? httpContext.User.Identity?.Name 
+                     ?? throw new UnauthorizedAccessException("User not authenticated");
+
+        var allAppointments = await appointmentRepository.GetClientHistoryAsync(id, userId, 1, 1000, cancellationToken);
+        var appointmentsList = allAppointments.ToList();
+
+        var stats = new ClientStatsResponse(
+            TotalAppointments: appointmentsList.Count,
+            CompletedAppointments: appointmentsList.Count(a => a.Status == "completed"),
+            CancelledAppointments: appointmentsList.Count(a => a.Status == "cancelled"),
+            TotalSpent: appointmentsList.Where(a => a.Status == "completed").Sum(a => a.ServicePrice ?? 0),
+            LastVisit: appointmentsList
+                .Where(a => a.Status == "completed")
+                .OrderByDescending(a => a.Date)
+                .ThenByDescending(a => a.Time)
+                .FirstOrDefault()?.Date,
+            PreferredPaymentMethod: appointmentsList
+                .Where(a => !string.IsNullOrEmpty(a.PaymentMethodUsed))
+                .GroupBy(a => a.PaymentMethodUsed)
+                .OrderByDescending(g => g.Count())
+                .FirstOrDefault()?.Key
+        );
+
+        return TypedResults.Ok(stats);
+    }
+
+    private static async Task<IResult> FindByPhoneAsync(
+        [FromQuery] string phone,
+        IAppointmentRepository appointmentRepository,
+        IClientService clientService,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                     ?? httpContext.User.Identity?.Name 
+                     ?? throw new UnauthorizedAccessException("User not authenticated");
+
+        // Try to find client by phone
+        var clients = await clientService.FindAsync(phone, 1, 1, cancellationToken);
+        var client = clients.FirstOrDefault();
+
+        if (client != null)
+        {
+            return TypedResults.Ok(new { client = Map(client), found = true });
+        }
+
+        // If not found, check if there's an appointment with this phone
+        var appointment = await appointmentRepository.FindByPhoneAsync(phone, userId, cancellationToken);
+        
+        if (appointment != null)
+        {
+            return TypedResults.Ok(new 
+            { 
+                clientName = appointment.ClientName, 
+                phone = appointment.Phone,
+                found = false 
+            });
+        }
+
+        return TypedResults.NotFound(new { message = "No client or appointment found with this phone" });
+    }
+
+    private static AppointmentResponse MapAppointment(Appointments appointment) =>
+        new
+        (
+            appointment.Id,
+            appointment.ClientName,
+            appointment.Phone,
+            appointment.ClientId,
+            appointment.Date,
+            appointment.Time,
+            appointment.Status,
+            appointment.CompletedAt,
+            appointment.PaymentMethodUsed,
+            appointment.ServiceName,
+            appointment.ServicePrice,
+            appointment.Notes,
+            appointment.ShopId,
+            appointment.CreatedAt,
+            appointment.UpdatedAt,
+            appointment.CreatedBy,
+            appointment.UpdatedBy
         );
 }

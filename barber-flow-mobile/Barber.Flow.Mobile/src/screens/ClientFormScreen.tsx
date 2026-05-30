@@ -8,8 +8,12 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import { ClientForm } from "../components/clients/ClientForm";
+import { ClientStatsCard } from "../components/clients/ClientStatsCard";
+import { ClientAppointmentHistory } from "../components/clients/ClientAppointmentHistory";
 import { useTranslation } from "../context/LanguageContext";
 import { useClientForm } from "../features/clients/clientForm";
+import { clientHistoryService } from "../services/clientHistoryService";
+import type { ClientStats } from "../types/clients";
 import type { ClientsStackParamList } from "../navigation/ClientsNavigator";
 import { clientsService } from "../services/clientService";
 import { ScreenLayout } from "../components/ScreenLayout";
@@ -50,11 +54,29 @@ export const ClientFormScreen = () => {
 	} = useClientForm();
 
 	const [loading, setLoading] = useState(false);
+	const [stats, setStats] = useState<ClientStats | null>(null);
+	const [loadingStats, setLoadingStats] = useState(false);
 	const isEditMode = route.params.mode === "edit";
 
 	useEffect(() => {
 		if (route.params.client) {
 			loadClient(route.params.client);
+			
+			// Load stats for existing client
+			if (route.params.client.id) {
+				const loadClientStats = async () => {
+					setLoadingStats(true);
+					try {
+						const clientStats = await clientHistoryService.getStats(route.params.client.id!);
+						setStats(clientStats);
+					} catch {
+						// Stats loading is non-critical
+					} finally {
+						setLoadingStats(false);
+					}
+				};
+				void loadClientStats();
+			}
 			return;
 		}
 
@@ -200,6 +222,10 @@ export const ClientFormScreen = () => {
 				keyboardShouldPersistTaps="handled"
 				showsVerticalScrollIndicator={false}>
 
+				{isEditMode && client.id && stats && !loadingStats && (
+					<ClientStatsCard stats={stats} />
+				)}
+
 				<ClientForm
 					client={client}
 					errors={errors}
@@ -210,6 +236,10 @@ export const ClientFormScreen = () => {
 					onOpenDatePicker={openDatePicker}
 					onPhotoChange={(uri) => setField("photoUrl", uri)}
 				/>
+
+				{isEditMode && client.id && (
+					<ClientAppointmentHistory clientId={client.id} />
+				)}
 
 				<View style={styles.actions}>
 					<Pressable

@@ -24,6 +24,8 @@ public class Client
 
     public string? PhotoUrl { get; set; }
 
+    public string? ShopId { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

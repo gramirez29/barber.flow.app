@@ -1,34 +1,34 @@
-# Barber Flow — Database Schema & Technology Recommendation
+# Barber Flow — Esquema de Base de Datos y Recomendación Tecnológica
 
-## 1. Recommendation: MongoDB
+## 1. Recomendación: MongoDB
 
-### Why MongoDB over PostgreSQL for this project
+### Por qué MongoDB sobre PostgreSQL para este proyecto
 
-| Factor | MongoDB | PostgreSQL on Railway |
+| Factor | MongoDB | PostgreSQL en Railway |
 |---|---|---|
-| **Schema flexibility** | ✅ No migrations needed as features grow | ⚠️ Every change requires a migration |
-| **Denormalized appointments** | ✅ Appointments embed `clientName`/`phone` by design — natural fit | ⚠️ Requires either a FK or accepting a hybrid |
-| **Embedded sub-documents** | ✅ `DailyReport` embeds `PaymentMethodBreakdown[]` and `CompletedAppointments[]` natively | ⚠️ Needs separate tables or JSONB columns |
-| **Polymorphic payloads** | ✅ `NotificationItem.payload` can vary by type — BSON handles this cleanly | ⚠️ Requires JSONB or multiple nullable columns |
-| **Barber settings** | ✅ Nested `ReportCalculationSettings` fits as an embedded document | ⚠️ Requires a separate settings table |
-| **Railway hosting** | ✅ MongoDB Atlas has a Railway plugin (free M0 tier available) | ✅ Railway native PostgreSQL (excellent DX) |
-| **.NET driver** | ✅ Official MongoDB Driver for .NET + `MongoDB.Driver` NuGet | ✅ `Npgsql.EntityFrameworkCore.PostgreSQL` |
-| **Startup speed** | ✅ No ORM/migration overhead for early-stage app | ⚠️ EF Core setup, migration history required |
+| **Flexibilidad de esquema** | ✅ No requiere migraciones a medida que el proyecto crece | ⚠️ Cada cambio requiere una migración |
+| **Citas desnormalizadas** | ✅ Las citas embeben `clientName`/`phone` por diseño — encaje natural | ⚠️ Requiere FK o aceptar un modelo híbrido |
+| **Sub-documentos embebidos** | ✅ `DailyReport` embebe `PaymentMethodBreakdown[]` y `CompletedAppointments[]` nativamente | ⚠️ Requiere tablas separadas o columnas JSONB |
+| **Payloads polimórficos** | ✅ `NotificationItem.payload` puede variar por tipo — BSON lo maneja limpiamente | ⚠️ Requiere JSONB o múltiples columnas nullable |
+| **Configuración del barbero** | ✅ `ReportCalculationSettings` anidado encaja como documento embebido | ⚠️ Requiere una tabla de configuración separada |
+| **Hosting en Railway** | ✅ MongoDB Atlas tiene plugin para Railway (tier gratuito M0 disponible) | ✅ PostgreSQL nativo en Railway (excelente DX) |
+| **Driver .NET** | ✅ Driver oficial de MongoDB para .NET + NuGet `MongoDB.Driver` | ✅ `Npgsql.EntityFrameworkCore.PostgreSQL` |
+| **Velocidad de arranque** | ✅ Sin overhead de ORM/migraciones para una app en etapa temprana | ⚠️ Requiere configuración de EF Core e historial de migraciones |
 
-### Verdict
-The domain model was already designed in a **document-oriented style**:
-- `Appointment` embeds client info (not a FK to `Client`)
-- `DailyReport` embeds its breakdown arrays
-- `Notification.payload` is polymorphic JSON
-- `BarberSettings` wraps nested preference objects
+### Veredicto
+El modelo de dominio fue diseñado desde el inicio con un **estilo orientado a documentos**:
+- `Appointment` embebe la info del cliente (no usa FK a `Client`)
+- `DailyReport` embebe sus arrays de desglose
+- `Notification.payload` es JSON polimórfico
+- `BarberSettings` agrupa objetos de preferencias anidados
 
-MongoDB on **MongoDB Atlas (Railway plugin)** is the natural fit. The repository interfaces (`IAppointmentRepository`, `IBarberRepository`, etc.) are already in place — replacing `InMemory*` implementations with MongoDB ones requires minimal changes to the domain layer.
+MongoDB en **MongoDB Atlas (plugin de Railway)** es el encaje natural. Las interfaces de repositorio (`IAppointmentRepository`, `IBarberRepository`, etc.) ya están implementadas — reemplazar las implementaciones `InMemory*` por implementaciones MongoDB requiere cambios mínimos en la capa de dominio.
 
-> **Railway setup**: Add the **MongoDB Atlas** plugin to your Railway project → it provisions a free M0 cluster and injects `MONGODB_URI` into your service environment variables automatically.
+> **Configuración en Railway**: Agrega el plugin **MongoDB Atlas** a tu proyecto de Railway → aprovisionará un cluster M0 gratuito e inyectará `MONGODB_URI` en las variables de entorno de tu servicio automáticamente.
 
 ---
 
-## 2. Entity Relationship Diagram
+## 2. Diagrama de Entidad-Relación
 
 ```mermaid
 erDiagram
@@ -107,24 +107,17 @@ erDiagram
         string   barberUserName FK  "→ BARBER.userName"
     }
 
-    BARBER_SETTINGS {
-        string  barberId             FK  "→ BARBER.id"
-        float   commissionPercentage
-        decimal fixedDailyExpense
-    }
-
-    USER         ||--||  BARBER          : "has profile"
-    BARBER       ||--o{  CLIENT          : "manages"
-    BARBER       ||--o{  APPOINTMENT     : "creates"
-    BARBER       ||--o{  NOTIFICATION    : "receives"
-    BARBER       ||--||  BARBER_SETTINGS : "has"
+    USER         ||--||  BARBER       : "tiene perfil"
+    BARBER       ||--o{  CLIENT       : "gestiona"
+    BARBER       ||--o{  APPOINTMENT  : "crea"
+    BARBER       ||--o{  NOTIFICATION : "recibe"
 ```
 
-> **Note on CLIENT ↔ APPOINTMENT**: The current design is intentionally denormalized — `Appointment` stores `clientName` and `phone` directly rather than a `clientId` FK. This simplifies queries and aligns with the document model. When a future feature requires linking appointments back to the client profile, add an optional `clientId` field to `Appointment`.
+> **Nota sobre CLIENT ↔ APPOINTMENT**: El diseño actual está intencionalmente desnormalizado — `Appointment` almacena `clientName` y `phone` directamente en lugar de usar una FK a `clientId`. Esto simplifica las consultas y se alinea con el modelo documental. Cuando se requiera vincular citas al perfil del cliente, se agrega un campo opcional `clientId` a `Appointment`.
 
 ---
 
-## 3. MongoDB Collections
+## 3. Colecciones de MongoDB
 
 ### `users`
 ```json
@@ -137,7 +130,7 @@ erDiagram
   "role": "Admin"
 }
 ```
-**Indexes**: `userName` (unique), `email` (unique, sparse)
+**Índices** *(Planificados — pendientes de `MongoDbUserRepository`)*: `userName` (único), `email` (único, sparse)
 
 ---
 
@@ -154,19 +147,15 @@ erDiagram
   "barberShopName": "The Flow Barbershop",
   "barberShopPhone": "2222-0000",
   "photoUrl": "https://...",
-  "settings": {
-    "commissionPercentage": 40,
-    "fixedDailyExpense": 5000
-  },
   "createdAt": "2025-01-01T00:00:00Z",
   "updatedAt": "2025-01-01T00:00:00Z",
   "createdBy": "johndoe",
   "updatedBy": "johndoe"
 }
 ```
-> `settings` is embedded in the barber document (avoids a separate collection for a 1:1 relationship).
+> Los campos `commissionPercentage` y `fixedDailyExpense` serán embebidos en este documento cuando se implemente el repositorio MongoDB de barberos (actualmente están hardcodeados en el servicio de reportes).
 
-**Indexes**: `userName` (unique)
+**Índices** *(Planificados — pendientes de `MongoDbBarberRepository`)*: `userName` (único)
 
 ---
 
@@ -190,7 +179,7 @@ erDiagram
   "updatedBy": "johndoe"
 }
 ```
-**Indexes**: `createdBy`, `phone + createdBy` (compound, for deduplication), `active`
+**Índices** *(Activos — registrados en `MongoDbBootstrapper.cs`)*: `createdBy`, `phone + createdBy` (compuesto, para deduplicación)
 
 ---
 
@@ -214,15 +203,18 @@ erDiagram
   "updatedBy": "johndoe"
 }
 ```
-**Indexes**:
-- `createdBy + date` (compound) — primary query pattern for calendar view
-- `date + status` — for report generation
-- `createdBy + status` — for appointment list filtering
-- `phone + createdBy` — for client history lookups
+**Índices** *(Planificados — pendientes de `MongoDbAppointmentRepository`)*:
+- `createdBy + date` (compuesto) — patrón de consulta principal para la vista de calendario
+- `date + status` — para generación de reportes
+- `createdBy + status` — para filtrado de lista de citas
+- `phone + createdBy` — para historial de citas por cliente
 
 ---
 
 ### `notifications`
+
+> **Estado**: Pendiente de implementación en el backend. No existe entidad de dominio ni repositorio en el servidor actualmente. La lógica de notificaciones es gestionada en el frontend (estado local de la app).
+
 ```json
 {
   "_id": "UUID",
@@ -242,47 +234,73 @@ erDiagram
   }
 }
 ```
-**Indexes**: `barberUserName + isRead`, `barberUserName + effectiveDate`
+**Índices**: `barberUserName + isRead`, `barberUserName + effectiveDate`
 
 ---
 
-## 4. Derived / Computed Data
+### `counters`
 
-### DailyReport (not stored — computed on demand)
+Colección interna utilizada para la generación atómica de IDs secuenciales. Garantiza que IDs del tipo `APT-0001`, `CRB-0001`, etc., se asignen sin colisiones en entornos concurrentes mediante `findOneAndUpdate` con `$inc` y `upsert: true`.
 
-`DailyReport` is **generated at query time** by aggregating `appointments` filtered by `date` and `status = "completed"`. It is not persisted in its own collection.
+```json
+{
+  "_id": "appointments",
+  "seq": 42
+}
+```
 
-**MongoDB aggregation pipeline** (conceptual):
+```json
+{
+  "_id": "clients",
+  "seq": 15
+}
+```
+
+> Esta colección no la gestiona el frontend directamente — el backend la mantiene de forma transparente al crear nuevos documentos.
+
+---
+
+## 4. Datos Derivados / Calculados
+
+### DailyReport (no se almacena — se calcula bajo demanda)
+
+`DailyReport` se **genera en tiempo de consulta** agregando `appointments` filtrados por `date` y `status = "completed"`. No se persiste en su propia colección.
+
+**Pipeline de agregación de MongoDB** (conceptual):
 ```
 appointments
   → $match { createdBy, date, status: "completed" }
   → $group by paymentMethodUsed
-  → $project gross/net/commission from settings
+  → $project bruto/neto/comisión desde settings
 ```
 
-If report history is needed in the future, add a `daily_reports` collection to cache computed results per `(barberUserName, date)`.
+Si en el futuro se necesita historial de reportes, agregar una colección `daily_reports` para cachear resultados calculados por `(barberUserName, date)`.
 
 ---
 
-## 5. Future Considerations
+## 5. Consideraciones Futuras
 
-| Feature | Schema change |
+| Funcionalidad | Cambio en el esquema |
 |---|---|
-| **Multi-barber shops** | Add `shopId` to `barbers`, `clients`, `appointments` |
-| **Services catalog** | New `services` collection `{ barberId, name, price, duration }` |
-| **Client → Appointment link** | Add optional `clientId` field to `appointments` |
-| **Appointment history per client** | Index on `phone + createdBy` in `appointments` |
-| **Payment receipts / invoices** | New `receipts` collection linked to `appointmentId` |
-| **Push notification tokens** | Add `expoPushToken` field to `barbers` |
+| **Configuración del barbero (comisión/gastos)** | Agregar campo `settings: { commissionPercentage, fixedDailyExpense }` embebido en `barbers`; actualmente son valores hardcodeados en el servicio de reportes |
+| **Repositorio MongoDB — barbers** | Crear `MongoDbBarberRepository` y registrar índices en `MongoDbBootstrapper` |
+| **Repositorio MongoDB — appointments** | Crear `MongoDbAppointmentRepository`; patrón documentado en `MONGODB_IMPLEMENTATION.md` §9 |
+| **Repositorio MongoDB — notifications** | Crear entidad `Notification`, `INotificationRepository` y su implementación MongoDB |
+| **Barberías multi-barbero** | Agregar `shopId` a `barbers`, `clients`, `appointments` |
+| **Catálogo de servicios** | Nueva colección `services` `{ barberId, name, price, duration }` |
+| **Vínculo Cliente → Cita** | Agregar campo opcional `clientId` a `appointments` |
+| **Historial de citas por cliente** | Índice en `phone + createdBy` en `appointments` |
+| **Recibos / facturas de pago** | Nueva colección `receipts` vinculada a `appointmentId` |
+| **Tokens de notificaciones push** | Agregar campo `expoPushToken` a `barbers` |
 
 ---
 
-## 6. Railway Setup Steps
+## 6. Pasos de Configuración en Railway
 
-1. Open your Railway project dashboard
-2. Click **+ New** → **Database** → **MongoDB** (via Atlas plugin or community template)
-3. Railway injects `MONGODB_URI` into your API service automatically
-4. In `appsettings.json`:
+1. Abre el dashboard de tu proyecto en Railway
+2. Haz clic en **+ New** → **Database** → **MongoDB** (via plugin Atlas o template de la comunidad)
+3. Railway inyecta `MONGODB_URI` en tu servicio de API automáticamente
+4. En `appsettings.json`:
 ```json
 {
   "MongoDB": {
@@ -291,5 +309,5 @@ If report history is needed in the future, add a `daily_reports` collection to c
   }
 }
 ```
-5. Replace `InMemory*` repository implementations with `MongoDB*` implementations using `MongoDB.Driver` NuGet package
-6. Connection string is injected securely — never hardcode credentials
+5. Reemplaza las implementaciones `InMemory*` con implementaciones `MongoDB*` usando el paquete NuGet `MongoDB.Driver`
+6. El connection string se inyecta de forma segura — nunca hardcodear credenciales

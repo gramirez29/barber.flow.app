@@ -1,4 +1,6 @@
-﻿namespace Barber.Flow.Domain.Entities;
+﻿using Barber.Flow.Domain.ValueObjects;
+
+namespace Barber.Flow.Domain.Entities;
 
 public class Barber
 {
@@ -21,6 +23,10 @@ public class Barber
     public string? BarberShopPhone { get; set; }
 
     public string? PhotoUrl { get; set; }
+
+    public BarberSettings? Settings { get; set; }
+
+    public string? ShopId { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

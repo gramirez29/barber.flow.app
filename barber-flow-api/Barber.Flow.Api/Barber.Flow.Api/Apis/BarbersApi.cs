@@ -2,6 +2,7 @@ using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Application.Services.Users;
+using Barber.Flow.Domain.ValueObjects;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -86,6 +87,9 @@ public static class BarbersApi
             BarberShopName = request.BarberShopName,
             BarberShopPhone = request.BarberShopPhone,
             PhotoUrl = request.PhotoUrl,
+            Settings = request.Settings != null 
+                ? new BarberSettings(request.Settings.CommissionPercentage, request.Settings.FixedDailyExpense) 
+                : null,
             CreatedBy = userId ?? string.Empty,
             UpdatedBy = userId ?? string.Empty
         };
@@ -206,6 +210,10 @@ public static class BarbersApi
         b.BarberShopName,
         b.BarberShopPhone,
         b.PhotoUrl,
+        b.Settings != null 
+            ? new BarberSettingsDto(b.Settings.CommissionPercentage, b.Settings.FixedDailyExpense) 
+            : null,
+        b.ShopId,
         b.CreatedAt,
         b.UpdatedAt
     );

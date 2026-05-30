@@ -17,6 +17,7 @@ export const APPOINTMENT_PAYMENT_METHOD_OPTIONS: AppointmentPaymentMethod[] = [
 export interface AppointmentDraft {
     clientName: string;
     phone: string;
+    clientId?: string;
     date: string;
     time: string;
     completedAt?: string;
@@ -25,6 +26,7 @@ export interface AppointmentDraft {
     servicePrice?: number;
     notes?: string;
     status?: AppointmentStatus;
+    shopId?: string;
 }
 
 export interface Appointment extends AppointmentDraft {

@@ -170,4 +170,34 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
 
         return Task.FromResult<Domain.Entities.Appointments?>(existing);
     }
+
+    public Task<IEnumerable<Domain.Entities.Appointments>> GetClientHistoryAsync(
+        string clientId,
+        string createdBy,
+        int page = 1,
+        int pageSize = 20,
+        CancellationToken cancellation = default)
+    {
+        var list = _store.Values
+            .Where(a => a.ClientId == clientId && a.CreatedBy == createdBy)
+            .OrderByDescending(a => a.Date)
+            .ThenByDescending(a => a.Time)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize);
+
+        return Task.FromResult<IEnumerable<Domain.Entities.Appointments>>(list);
+    }
+
+    public Task<Domain.Entities.Appointments?> FindByPhoneAsync(
+        string phone,
+        string createdBy,
+        CancellationToken cancellation = default)
+    {
+        var appointment = _store.Values
+            .Where(a => a.Phone == phone && a.CreatedBy == createdBy)
+            .OrderByDescending(a => a.CreatedAt)
+            .FirstOrDefault();
+
+        return Task.FromResult(appointment);
+    }
 }

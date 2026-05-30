@@ -15,6 +15,16 @@ export interface Client {
     preferences?: string;
     paymentMethod?: "None" | "Sinpe Movil" | "Transfer" | "Cash";
     active: boolean;
+    shopId?: string;
     createdAt?: string;
     updatedAt?: string;
+}
+
+export interface ClientStats {
+    totalAppointments: number;
+    completedAppointments: number;
+    cancelledAppointments: number;
+    totalSpent: number;
+    lastVisit?: string;
+    preferredPaymentMethod?: string;
 }
