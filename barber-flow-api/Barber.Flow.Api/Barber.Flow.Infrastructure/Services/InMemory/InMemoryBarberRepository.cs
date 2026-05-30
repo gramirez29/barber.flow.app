@@ -1,4 +1,5 @@
 using Barber.Flow.Domain.Interfaces;
+using Barber.Flow.Domain.ValueObjects;
 using System.Collections.Concurrent;
 using System.Threading;
 
@@ -11,8 +12,18 @@ public class InMemoryBarberRepository : IBarberRepository
 
     public InMemoryBarberRepository()
     {
-        // seed example barbers
-        var b1 = new Domain.Entities.Barber { Id = GenerateId(), UserName = "Admin User", UserPhone = "8888-0000", UserEmail = "admin@example.com", BarberName = "Main Barber", BarberPhone = "8888-0000", Address = "Main Street 1" };
+        // seed example barbers with default settings
+        var b1 = new Domain.Entities.Barber 
+        { 
+            Id = GenerateId(), 
+            UserName = "Admin User", 
+            UserPhone = "8888-0000", 
+            UserEmail = "admin@example.com", 
+            BarberName = "Main Barber", 
+            BarberPhone = "8888-0000", 
+            Address = "Main Street 1",
+            Settings = new BarberSettings(CommissionPercentage: 40m, FixedDailyExpense: 12000m)
+        };
         _store[b1.Id] = b1;
     }
 
@@ -53,6 +64,7 @@ public class InMemoryBarberRepository : IBarberRepository
         existing.BarberShopName = barber.BarberShopName;
         existing.BarberShopPhone = barber.BarberShopPhone;
         existing.PhotoUrl = barber.PhotoUrl;
+        existing.Settings = barber.Settings;
         existing.UpdatedAt = DateTime.UtcNow;
         _store[id] = existing;
         return Task.FromResult<Domain.Entities.Barber?>(existing);

@@ -8,6 +8,8 @@ public class Appointments
 
     public string Phone { get; set; } = string.Empty;
 
+    public string? ClientId { get; set; }
+
     /// <summary>yyyy-MM-dd</summary>
     public string Date { get; set; } = string.Empty;
 
@@ -27,6 +29,8 @@ public class Appointments
     public decimal? ServicePrice { get; set; }
 
     public string? Notes { get; set; }
+
+    public string? ShopId { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -1,3 +1,5 @@
+using Barber.Flow.Api.DTOs.Requests;
+
 namespace Barber.Flow.Api.DTOs.Responses;
 
 public record BarberResponse(
@@ -11,6 +13,8 @@ public record BarberResponse(
     string? BarberShopName,
     string? BarberShopPhone,
     string? PhotoUrl,
+    BarberSettingsDto? Settings,
+    string? ShopId,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );

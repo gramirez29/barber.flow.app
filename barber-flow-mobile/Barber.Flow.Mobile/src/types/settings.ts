@@ -49,6 +49,7 @@ export interface BarberApiRequest {
 	Address?: string;
 	Password?: string;
 	PhotoUrl?: string;
+	Settings?: ReportCalculationSettings;
 }
 
 export interface BarberApiResponse {
@@ -62,6 +63,7 @@ export interface BarberApiResponse {
 	shopPhone?: string;
 	address?: string;
 	photoUrl?: string;
+	settings?: ReportCalculationSettings;
 	createdAt?: string;
 	updatedAt?: string;
 }

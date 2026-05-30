@@ -12,6 +12,7 @@ public record ClientResponse(
     string? PaymentMethod,
     bool Active,
     string? PhotoUrl,
+    string? ShopId,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );

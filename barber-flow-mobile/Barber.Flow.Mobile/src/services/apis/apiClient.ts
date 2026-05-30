@@ -1,7 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { useAuthStore } from "../../store/auth.store";
 import { BASE_URL } from "../../config";
-import { authService } from "../authService";
 import type { ApplicationUser } from "../../types/applicationUser";
 
 const APPLICATION_USER_STORAGE_KEY = "applicationUser";
@@ -59,7 +58,7 @@ const parseResponse = async (res: Response) => {
 };
 
 const clearSessionOnUnauthorized = async () => {
-    await authService.clearStoredUser();
+    await SecureStore.deleteItemAsync(APPLICATION_USER_STORAGE_KEY);
     useAuthStore.getState().clearUser();
 };
 

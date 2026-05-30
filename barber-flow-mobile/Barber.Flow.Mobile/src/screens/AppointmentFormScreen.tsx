@@ -14,6 +14,7 @@ import { Text, View } from "react-native";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { AppointmentForm } from "../components/calendar/AppointmentForm";
 import { ClientSearchModal } from "../components/clients/ClientSearchModal";
+import { ClientSelectorModal } from "../components/appointments/ClientSelectorModal";
 import { useTranslation } from "../context/LanguageContext";
 import { clientsService } from "../services/clientService";
 import type { Client } from "../types/clients";
@@ -96,6 +97,7 @@ export const AppointmentFormScreen = () => {
 	const [clientSearchQuery, setClientSearchQuery] = useState("");
 	const [clientSearchResults, setClientSearchResults] = useState<Client[]>([]);
 	const [clientSearchLoading, setClientSearchLoading] = useState(false);
+	const [clientSelectorVisible, setClientSelectorVisible] = useState(false);
 	const [movePickerStep, setMovePickerStep] = useState<"date" | "time" | null>(null);
 	const [pendingMoveDate, setPendingMoveDate] = useState<string | null>(null);
 
@@ -138,6 +140,16 @@ export const AppointmentFormScreen = () => {
 		setField("clientName", fullName);
 		setField("phone", client.phone);
 		setClientSearchVisible(false);
+	}, [setField]);
+
+	const handleClientSelected = useCallback((client: Client | null, clientId?: string) => {
+		if (client) {
+			const fullName = `${client.firstName} ${client.lastName}`.trim();
+			setField("clientName", fullName);
+			setField("phone", client.phone);
+		}
+		// Store clientId in draft if needed for backend
+		setClientSelectorVisible(false);
 	}, [setField]);
 
 	const title = useMemo(
@@ -375,6 +387,12 @@ const handleSubmit = async () => {
 				onClose={() => setClientSearchVisible(false)}
 				onSearchChange={handleClientSearchChange}
 				onSelectClient={handleSelectClient}
+			/>
+			<ClientSelectorModal
+				visible={clientSelectorVisible}
+				onClose={() => setClientSelectorVisible(false)}
+				onClientSelected={handleClientSelected}
+				initialPhone={draft.phone}
 			/>
 			<DateTimePickerModal
 				isVisible={movePickerStep === "date"}

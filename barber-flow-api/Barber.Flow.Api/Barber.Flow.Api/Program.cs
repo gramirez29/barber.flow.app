@@ -46,6 +46,7 @@ app.MapControllers();
 app.MapAuthApi();
 app.MapClientsApi();
 app.MapBarbersApi();
+app.MapBarberShopsApi();
 app.MapReportsApi();
 app.MapUsersApi();
 app.MapAppointmentsApi();

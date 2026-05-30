@@ -10,5 +10,6 @@ public record ClientRequest(
     string? Preferences,
     string? PaymentMethod,
     bool Active,
-    string? PhotoUrl
+    string? PhotoUrl,
+    string? ShopId
 );

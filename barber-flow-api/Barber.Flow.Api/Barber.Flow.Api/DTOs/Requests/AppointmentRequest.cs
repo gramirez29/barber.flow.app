@@ -3,6 +3,7 @@ namespace Barber.Flow.Api.DTOs.Requests;
 public record AppointmentRequest(
     string ClientName,
     string Phone,
+    string? ClientId,
     string Date,
     string Time,
     string Status,
@@ -10,5 +11,6 @@ public record AppointmentRequest(
     string? PaymentMethodUsed,
     string? ServiceName,
     decimal? ServicePrice,
-    string? Notes
+    string? Notes,
+    string? ShopId
 );

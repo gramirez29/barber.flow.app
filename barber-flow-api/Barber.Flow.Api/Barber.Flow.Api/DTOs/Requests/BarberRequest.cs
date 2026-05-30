@@ -10,5 +10,7 @@ public record BarberRequest(
     string? BarberShopName,
     string? BarberShopPhone,
     string? PhotoUrl,
-    string? Password
+    string? Password,
+    BarberSettingsDto? Settings,
+    string? ShopId
 );
