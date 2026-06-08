@@ -3,6 +3,8 @@ import { View, StyleSheet } from "react-native";
 import { Text, IconButton, ToggleButton } from "react-native-paper";
 import { format } from "date-fns";
 import { useTranslation } from "../../context/LanguageContext";
+import { AppTheme } from "../../theme/themes";
+import { useAppTheme } from "../../theme/ThemeContext";
 
 type ViewMode = "month" | "week" | "day";
 
@@ -22,6 +24,8 @@ export const CalendarHeader: React.FC<Props> = ({
     onChangeView,
 }) => {
     const { translateText } = useTranslation();
+    const { theme } = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
 
     return (
         <View style={styles.header}>
@@ -47,20 +51,23 @@ export const CalendarHeader: React.FC<Props> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) =>
+    StyleSheet.create({
     header: {
         flexDirection: "row",
         alignItems: "center",
         padding: 16,
-        backgroundColor: "#fff",
+        backgroundColor: theme.colors.surface,
         elevation: 2,
         borderBottomLeftRadius: 16,
         borderBottomRightRadius: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
     },
     headerText: {
         flex: 1,
         fontSize: 20,
         fontWeight: "bold",
-        color: "#222",
+        color: theme.colors.textPrimary,
     },
 });

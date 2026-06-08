@@ -63,6 +63,13 @@ public class InMemoryUserRepository() : IUserRepository
         return Task.FromResult(user);
     }
 
+    public Task<User?> GetByEmailAsync(string email, CancellationToken cancellation = default)
+    {
+        var user = _store.Values.FirstOrDefault(u => 
+            string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(user);
+    }
+
     public Task<User?> UpdateAsync(string id, User user, CancellationToken cancellation = default)
     {
         throw new NotImplementedException();

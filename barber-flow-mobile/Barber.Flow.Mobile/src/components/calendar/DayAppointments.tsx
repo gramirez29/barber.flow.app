@@ -6,6 +6,8 @@ import type { CalendarStackParamList } from "../../navigation/CalendarNavigator"
 import { useAppointmentStore } from "../../features/appointments/appointment.store";
 import { Appointment } from "../../features/appointments/appointments.types";
 import { useTranslation } from "../../context/LanguageContext";
+import { AppTheme } from "../../theme/themes";
+import { useAppTheme } from "../../theme/ThemeContext";
 
 interface DayAppointmentsProps {
 	date: string;
@@ -15,6 +17,8 @@ export const DayAppointments = ({ date }: DayAppointmentsProps) => {
 	const navigation = useNavigation<NativeStackNavigationProp<CalendarStackParamList>>();
 	const { appointments } = useAppointmentStore();
 	const { translateText } = useTranslation();
+	const { theme } = useAppTheme();
+	const styles = React.useMemo(() => createStyles(theme), [theme]);
 
 	const dayAppointments = appointments.filter(appointment => appointment.date === date);
 
@@ -71,11 +75,12 @@ export const DayAppointments = ({ date }: DayAppointmentsProps) => {
 	);
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) =>
+	StyleSheet.create({
 	container: {
 		flex: 1,
 		marginTop: 12,
-		backgroundColor: "#f5f7fa",
+		backgroundColor: theme.colors.background,
 		borderTopLeftRadius: 20,
 		borderTopRightRadius: 20,
 		paddingHorizontal: 16,
@@ -92,23 +97,25 @@ const styles = StyleSheet.create({
 	title: {
 		fontSize: 18,
 		fontWeight: "700",
-		color: "#111",
+		color: theme.colors.textPrimary,
 	},
 
 	empty: {
 		textAlign: "center",
 		marginTop: 40,
 		fontSize: 15,
-		color: "#777",
+		color: theme.colors.textSecondary,
 	},
 
 	card: {
 		flexDirection: "row",
 		alignItems: "center",
-		backgroundColor: "#fff",
+		backgroundColor: theme.colors.surface,
 		padding: 14,
 		borderRadius: 14,
 		marginBottom: 10,
+		borderWidth: 1,
+		borderColor: theme.colors.border,
 
 		// sombra iOS
 		shadowColor: "#000",
@@ -124,19 +131,19 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		fontWeight: "700",
 		marginRight: 14,
-		color: "#222",
+		color: theme.colors.accent,
 		width: 60,
 	},
 
 	name: {
 		fontSize: 15,
 		fontWeight: "600",
-		color: "#111",
+		color: theme.colors.textPrimary,
 	},
 
 	phone: {
 		fontSize: 13,
-		color: "#666",
+		color: theme.colors.textSecondary,
 		marginTop: 2,
 	},
 });

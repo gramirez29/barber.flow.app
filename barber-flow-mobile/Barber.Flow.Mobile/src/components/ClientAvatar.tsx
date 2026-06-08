@@ -1,6 +1,5 @@
 import React from "react";
-import { View, Image, StyleSheet } from "react-native";
-import { Text } from "react-native-paper";
+import { View, Image, StyleSheet, Text } from "react-native";
 import { useAppTheme } from "../theme/ThemeContext";
 
 interface ClientAvatarProps {
@@ -10,21 +9,10 @@ interface ClientAvatarProps {
 }
 
 const getInitials = (value?: string) => {
-	if (!value) {
-		return "CL";
-	}
-
-	const parts = value
-		.trim()
-		.split(/\s+/)
-		.filter(Boolean)
-		.slice(0, 2);
-
-	if (parts.length === 0) {
-		return "CL";
-	}
-
-	return parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
+	if (!value) return "CL";
+	const parts = value.trim().split(/\s+/).filter(Boolean).slice(0, 2);
+	if (parts.length === 0) return "CL";
+	return parts.map(p => p[0]?.toUpperCase() ?? "").join("");
 };
 
 export const ClientAvatar: React.FC<ClientAvatarProps> = ({ size = 96, uri, initials }) => {
@@ -35,11 +23,10 @@ export const ClientAvatar: React.FC<ClientAvatarProps> = ({ size = 96, uri, init
 				styles.avatarWrap,
 				{
 					backgroundColor: theme.colors.surface,
-					//borderColor: theme.colors.border,
 					width: size,
 					height: size,
 					borderRadius: size / 2,
-					borderColor: "#C9A84C",
+					borderColor: theme.colors.accent,
 					borderWidth: 2
 				},
 			]}
@@ -55,23 +42,19 @@ export const ClientAvatar: React.FC<ClientAvatarProps> = ({ size = 96, uri, init
 				},
 			]}
 		>
-			<Image
-				source={uri ? { uri } : require("../../assets/images/no-image.jpg")}
-				style={{ width: size - 22, height: size - 22, borderRadius: (size - 22) / 2 }}
-				resizeMode="cover"
-			/>
-			{/* <View
-				style={[
-					styles.initialsBadge,
-					{
-						backgroundColor: theme.colors.badgePrimary,
-					},
-				]}
-				>
-				<Text style={styles.initialsText}>
-					{getInitials(initials)}
-				</Text>
-			</View> */}
+			{uri ? (
+				<Image
+					source={{ uri }}
+					style={{ width: size - 22, height: size - 22, borderRadius: (size - 22) / 2 }}
+					resizeMode="cover"
+				/>
+			) : (
+				<View style={[styles.initialsContainer, { backgroundColor: theme.colors.accent + "20" }]}>
+					<Text style={[styles.initialsText, { color: theme.colors.accent, fontSize: size * 0.35 }]}>
+						{getInitials(initials)}
+					</Text>
+				</View>
+			)}
 		</View>
 		</View>
 	);
@@ -79,32 +62,20 @@ export const ClientAvatar: React.FC<ClientAvatarProps> = ({ size = 96, uri, init
 
 const styles = StyleSheet.create({
 	avatarWrap: {
-		borderWidth: 1,
 		justifyContent: "center",
 		alignItems: "center",
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 8 },
-		shadowOpacity: 0.08,
-		shadowRadius: 16,
-		elevation: 4,
 	},
 	innerCircle: {
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	initialsBadge: {
-		borderRadius: 999,
-		bottom: 0,
-		minWidth: 34,
-		paddingHorizontal: 8,
-		paddingVertical: 5,
-		position: "absolute",
-		right: -4,
+	initialsContainer: {
+		alignItems: "center",
+		justifyContent: "center",
+		width: "100%",
+		height: "100%",
 	},
 	initialsText: {
-		color: "#FFFFFF",
-		fontSize: 11,
 		fontWeight: "700",
-		textAlign: "center",
 	},
 });

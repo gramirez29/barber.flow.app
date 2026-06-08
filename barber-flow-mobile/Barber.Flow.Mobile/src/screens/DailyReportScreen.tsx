@@ -22,17 +22,8 @@ import {
 	type ReportCalculationSettings,
 } from "../types/settings";
 
-const COLORS = {
-	bg: "#0D0D0D",
-	surface: "#1A1A1A",
-	surfaceElevated: "#252525",
-	gold: "#C9A84C",
-	goldLight: "#E5C878",
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-	border: "#3A3A3A",
-	overlay: "rgba(0,0,0,0.58)",
-} as const;
+import { AppTheme } from "../theme/themes";
+import { useAppTheme } from "../theme/ThemeContext";
 
 const formatCurrency = (value: number, locale: string) =>
 	new Intl.NumberFormat(locale, {
@@ -53,6 +44,8 @@ const formatLongDate = (date: string, locale: string) =>
 export const DailyReportScreen = () => {
 	const navigation = useNavigation<DrawerNavigationProp<DrawerParamList>>();
 	const { language, translateText } = useTranslation();
+	const { theme } = useAppTheme();
+	const styles = useMemo(() => createStyles(theme), [theme]);
 	const appointments = useAppointmentStore((state) => state.appointments);
 	const isLoading = useAppointmentStore((state) => state.isLoading);
 	const fetchAppointmentsByDateRange = useAppointmentStore((state) => state.fetchAppointmentsByDateRange);
@@ -195,7 +188,7 @@ export const DailyReportScreen = () => {
 							<View key={card.label} style={styles.metricCard}>
 								<Text style={styles.metricLabel}>{card.label}</Text>
 								{isLoading ? (
-									<ActivityIndicator size="small" color={COLORS.gold} style={styles.metricLoader} />
+									<ActivityIndicator size="small" color={theme.colors.accent} style={styles.metricLoader} />
 								) : (
 									<Text style={styles.metricValue}>{card.value}</Text>
 								)}
@@ -331,7 +324,7 @@ export const DailyReportScreen = () => {
 					mode="date"
 					date={new Date(`${selectedDate}T12:00:00`)}
 					themeVariant="dark"
-					accentColor="#C9A84C"
+					accentColor={theme.colors.accent}
 					onConfirm={(nextDate) => {
 						setSelectedDate(format(nextDate, "yyyy-MM-dd"));
 						setDatePickerVisible(false);
@@ -343,13 +336,13 @@ export const DailyReportScreen = () => {
 	);
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
 	screenBg: {
 		flex: 1,
 	},
 	screenOverlay: {
 		...StyleSheet.absoluteFillObject,
-		backgroundColor: "rgba(13,13,13,0.65)",
+		backgroundColor: theme.colors.overlay,
 	},
 	scrollContent: {
 		gap: 16,
@@ -358,8 +351,8 @@ const styles = StyleSheet.create({
 	},
 	// ─── Cards ───────────────────────────────────────────────────────
 	card: {
-		backgroundColor: COLORS.surface,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surface,
+		borderColor: theme.colors.border,
 		borderRadius: 24,
 		borderWidth: 1,
 		gap: 6,
@@ -368,7 +361,7 @@ const styles = StyleSheet.create({
 	},
 	// ─── Hero typography ─────────────────────────────────────────────
 	eyebrow: {
-		color: COLORS.gold,
+		color: theme.colors.accent,
 		fontSize: 11,
 		fontWeight: "700",
 		letterSpacing: 1.4,
@@ -376,25 +369,25 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	heroTitle: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 28,
 		fontWeight: "700",
 		letterSpacing: -0.3,
 	},
 	heroSubtitle: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 14,
 		lineHeight: 20,
 		marginBottom: 4,
 	},
 	sectionTitle: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 20,
 		fontWeight: "700",
 		letterSpacing: -0.2,
 	},
 	sectionSubtitle: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 13,
 		lineHeight: 18,
 		marginBottom: 4,
@@ -405,15 +398,15 @@ const styles = StyleSheet.create({
 		marginTop: 8,
 	},
 	dateSelector: {
-		backgroundColor: COLORS.surfaceElevated,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surfaceElevated,
+		borderColor: theme.colors.border,
 		borderRadius: 18,
 		borderWidth: 1,
 		paddingHorizontal: 16,
 		paddingVertical: 14,
 	},
 	dateSelectorLabel: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 11,
 		fontWeight: "700",
 		letterSpacing: 0.8,
@@ -421,7 +414,7 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	dateSelectorValue: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 17,
 		fontWeight: "700",
 		textTransform: "capitalize",
@@ -433,27 +426,27 @@ const styles = StyleSheet.create({
 	},
 	btnPrimary: {
 		alignItems: "center",
-		backgroundColor: COLORS.gold,
+		backgroundColor: theme.colors.accent,
 		borderRadius: 14,
 		paddingHorizontal: 20,
 		paddingVertical: 11,
 	},
 	btnPrimaryText: {
-		color: COLORS.bg,
+		color: "#0F172A",
 		fontSize: 14,
 		fontWeight: "700",
 	},
 	btnSecondary: {
 		alignItems: "center",
-		backgroundColor: COLORS.surfaceElevated,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surfaceElevated,
+		borderColor: theme.colors.border,
 		borderRadius: 14,
 		borderWidth: 1,
 		paddingHorizontal: 20,
 		paddingVertical: 11,
 	},
 	btnSecondaryText: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 14,
 		fontWeight: "600",
 	},
@@ -465,8 +458,8 @@ const styles = StyleSheet.create({
 		marginTop: 6,
 	},
 	formulaPill: {
-		backgroundColor: COLORS.surfaceElevated,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surfaceElevated,
+		borderColor: theme.colors.border,
 		borderRadius: 16,
 		borderWidth: 1,
 		flex: 1,
@@ -475,14 +468,14 @@ const styles = StyleSheet.create({
 		paddingVertical: 12,
 	},
 	formulaLabel: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 11,
 		fontWeight: "700",
 		letterSpacing: 0.6,
 		textTransform: "uppercase",
 	},
 	formulaValue: {
-		color: COLORS.gold,
+		color: theme.colors.accent,
 		fontSize: 20,
 		fontWeight: "700",
 		marginTop: 4,
@@ -494,8 +487,8 @@ const styles = StyleSheet.create({
 		gap: 12,
 	},
 	metricCard: {
-		backgroundColor: COLORS.surface,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surface,
+		borderColor: theme.colors.border,
 		borderRadius: 22,
 		borderWidth: 1,
 		flexGrow: 1,
@@ -504,7 +497,7 @@ const styles = StyleSheet.create({
 		paddingVertical: 16,
 	},
 	metricLabel: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 11,
 		fontWeight: "700",
 		letterSpacing: 0.8,
@@ -512,7 +505,7 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	metricValue: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 24,
 		fontWeight: "700",
 	},
@@ -532,7 +525,7 @@ const styles = StyleSheet.create({
 		minWidth: 140,
 	},
 	breakdownLabel: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 11,
 		fontWeight: "700",
 		letterSpacing: 0.6,
@@ -540,7 +533,7 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	breakdownValue: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 20,
 		fontWeight: "700",
 	},
@@ -551,8 +544,8 @@ const styles = StyleSheet.create({
 	},
 	paymentRow: {
 		alignItems: "center",
-		backgroundColor: COLORS.surfaceElevated,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surfaceElevated,
+		borderColor: theme.colors.border,
 		borderRadius: 18,
 		borderWidth: 1,
 		flexDirection: "row",
@@ -561,25 +554,25 @@ const styles = StyleSheet.create({
 		paddingVertical: 14,
 	},
 	paymentMethod: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 15,
 		fontWeight: "700",
 		marginBottom: 4,
 	},
 	paymentMeta: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 13,
 	},
 	paymentTotal: {
-		color: COLORS.gold,
+		color: theme.colors.accent,
 		fontSize: 16,
 		fontWeight: "700",
 	},
 	// ─── Empty state ──────────────────────────────────────────────────
 	emptyState: {
 		alignItems: "center",
-		backgroundColor: COLORS.surfaceElevated,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surfaceElevated,
+		borderColor: theme.colors.border,
 		borderRadius: 18,
 		borderWidth: 1,
 		marginTop: 12,
@@ -587,13 +580,13 @@ const styles = StyleSheet.create({
 		paddingVertical: 26,
 	},
 	emptyTitle: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 17,
 		fontWeight: "700",
 		marginBottom: 8,
 	},
 	emptySubtitle: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 14,
 		lineHeight: 20,
 		textAlign: "center",
@@ -605,8 +598,8 @@ const styles = StyleSheet.create({
 	},
 	ledgerRow: {
 		alignItems: "center",
-		backgroundColor: COLORS.surfaceElevated,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surfaceElevated,
+		borderColor: theme.colors.border,
 		borderRadius: 18,
 		borderWidth: 1,
 		flexDirection: "row",
@@ -619,19 +612,20 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	ledgerTitle: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 15,
 		fontWeight: "700",
 		marginBottom: 4,
 	},
 	ledgerMeta: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 13,
 		marginTop: 2,
 	},
 	ledgerAmount: {
-		color: COLORS.gold,
+		color: theme.colors.accent,
 		fontSize: 16,
 		fontWeight: "700",
 	},
 });
+

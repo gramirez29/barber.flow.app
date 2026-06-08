@@ -21,19 +21,75 @@ import { getErrorMessage } from '../utils/errors';
 import { useDialog } from '../context/DialogContext';
 import type { Client } from "../types/clients";
 import { formatPhoneNumber } from "../utils/formatUtil";
+import { AppTheme } from "../theme/themes";
+import { useAppTheme } from "../theme/ThemeContext";
 
 type ClientFormScreenNavigation = NativeStackNavigationProp<ClientsStackParamList, "ClientForm">;
 type ClientFormScreenRoute = RouteProp<ClientsStackParamList, "ClientForm">;
 
-const COLORS = {
-	bg: "#0D0D0D",
-	surface: "#1A1A1A",
-	surfaceElevated: "#252525",
-	gold: "#C9A84C",
-	textPrimary: "#FFFFFF",
-	border: "#3A3A3A",
-	error: "#F87171",
-} as const;
+const createStyles = (theme: AppTheme) => StyleSheet.create({
+	screenBg: {
+		flex: 1,
+	},
+	screenOverlay: {
+		...StyleSheet.absoluteFillObject,
+		backgroundColor: theme.colors.overlay,
+	},
+	actions: {
+		gap: 10,
+		marginTop: 18,
+	},
+	flex: {
+		flex: 1,
+	},
+	scrollContent: {
+		paddingTop: 18,
+	},
+	btnPrimary: {
+		alignItems: "center",
+		backgroundColor: theme.colors.accent,
+		borderRadius: 14,
+		justifyContent: "center",
+		paddingVertical: 15,
+	},
+	btnPrimaryText: {
+		color: "#0F172A",
+		fontSize: 16,
+		fontWeight: "700",
+		letterSpacing: 0.3,
+	},
+	btnSecondary: {
+		alignItems: "center",
+		backgroundColor: theme.colors.surfaceElevated,
+		borderColor: theme.colors.border,
+		borderRadius: 14,
+		borderWidth: 1,
+		justifyContent: "center",
+		paddingVertical: 15,
+	},
+	btnSecondaryText: {
+		color: theme.colors.textPrimary,
+		fontSize: 16,
+		fontWeight: "600",
+	},
+	btnDanger: {
+		alignItems: "center",
+		backgroundColor: theme.colors.errorBg,
+		borderColor: theme.colors.error,
+		borderRadius: 14,
+		borderWidth: 1,
+		justifyContent: "center",
+		paddingVertical: 15,
+	},
+	btnDangerText: {
+		color: theme.colors.error,
+		fontSize: 16,
+		fontWeight: "600",
+	},
+	btnDisabled: {
+		opacity: 0.45,
+	},
+});
 
 export const ClientFormScreen = () => {
 	const { showAlert } = useDialog();
@@ -41,6 +97,8 @@ export const ClientFormScreen = () => {
 	const route = useRoute<ClientFormScreenRoute>();
 	const { translateText } = useTranslation();
 	const insets = useSafeAreaInsets();
+	const { theme } = useAppTheme();
+	const styles = useMemo(() => createStyles(theme), [theme]);
 	const {
 		client,
 		errors,
@@ -59,15 +117,18 @@ export const ClientFormScreen = () => {
 	const isEditMode = route.params.mode === "edit";
 
 	useEffect(() => {
-		if (route.params.client) {
-			loadClient(route.params.client);
+		const client = route.params?.client;
+
+		if (client) {
+			loadClient(client);
 			
 			// Load stats for existing client
-			if (route.params.client.id) {
+			if (client.id) {
+				const clientId = client.id;
 				const loadClientStats = async () => {
 					setLoadingStats(true);
 					try {
-						const clientStats = await clientHistoryService.getStats(route.params.client.id!);
+						const clientStats = await clientHistoryService.getStats(clientId);
 						setStats(clientStats);
 					} catch {
 						// Stats loading is non-critical
@@ -248,7 +309,7 @@ export const ClientFormScreen = () => {
 						disabled={!isFormValid || loading}
 					>
 						{loading ? (
-							<ActivityIndicator color={COLORS.bg} size="small" />
+							<ActivityIndicator color="#0F172A" size="small" />
 						) : (
 							<Text style={styles.btnPrimaryText}>
 								{isEditMode
@@ -281,67 +342,3 @@ export const ClientFormScreen = () => {
 		</ImageBackground>
 	);
 	};
-
-const styles = StyleSheet.create({
-	screenBg: {
-		flex: 1,
-	},
-	screenOverlay: {
-		...StyleSheet.absoluteFillObject,
-		backgroundColor: "rgba(13,13,13,0.65)",
-	},
-	actions: {
-		gap: 10,
-		marginTop: 18,
-	},
-	flex: {
-		flex: 1,
-	},
-	scrollContent: {
-		paddingTop: 18,
-	},
-	btnPrimary: {
-		alignItems: "center",
-		backgroundColor: COLORS.gold,
-		borderRadius: 14,
-		justifyContent: "center",
-		paddingVertical: 15,
-	},
-	btnPrimaryText: {
-		color: COLORS.bg,
-		fontSize: 16,
-		fontWeight: "700",
-		letterSpacing: 0.3,
-	},
-	btnSecondary: {
-		alignItems: "center",
-		backgroundColor: COLORS.surfaceElevated,
-		borderColor: COLORS.border,
-		borderRadius: 14,
-		borderWidth: 1,
-		justifyContent: "center",
-		paddingVertical: 15,
-	},
-	btnSecondaryText: {
-		color: COLORS.textPrimary,
-		fontSize: 16,
-		fontWeight: "600",
-	},
-	btnDanger: {
-		alignItems: "center",
-		backgroundColor: "rgba(248,113,113,0.10)",
-		borderColor: COLORS.error,
-		borderRadius: 14,
-		borderWidth: 1,
-		justifyContent: "center",
-		paddingVertical: 15,
-	},
-	btnDangerText: {
-		color: COLORS.error,
-		fontSize: 16,
-		fontWeight: "600",
-	},
-	btnDisabled: {
-		opacity: 0.45,
-	},
-});

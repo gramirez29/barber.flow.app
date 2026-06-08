@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
 	StyleSheet,
 	Text,
@@ -22,41 +22,28 @@ import { authService } from '../services/authService';
 import { useAuthStore } from '../store/auth.store';
 import { getErrorMessage } from '../utils/errors';
 import { useTranslation } from '../context/LanguageContext';
-
-// ─── Design tokens (local, scoped to LoginScreen) ───────────────────────────
-const COLORS = {
-	bg: '#0D0D0D',
-	surface: '#1A1A1A',
-	surfaceElevated: '#252525',
-	gold: '#C9A84C',
-	goldLight: '#E5C878',
-	textPrimary: '#FFFFFF',
-	textSecondary: '#9B9B9B',
-	border: '#3A3A3A',
-	overlay: 'rgba(0,0,0,0.58)',
-	error: '#F87171',
-	errorBg: 'rgba(248,113,113,0.10)',
-} as const;
-
-const PAPER_THEME = {
-	colors: {
-		primary: COLORS.gold,
-		onSurfaceVariant: COLORS.textSecondary,
-		background: COLORS.surfaceElevated,
-		outline: COLORS.border,
-		surface: COLORS.surfaceElevated,
-		onSurface: COLORS.textPrimary,
-		error: COLORS.error,
-	},
-} as const;
-
-// ─────────────────────────────────────────────────────────────────────────────
+import { AppTheme } from '../theme/themes';
+import { useAppTheme } from '../theme/ThemeContext';
 
 type Props = NativeStackScreenProps<any, any>;
 
-export const LoginScreen: React.FC<Props> = () => {
+export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 	const { translateText } = useTranslation();
 	const { height: screenHeight } = useWindowDimensions();
+	const { theme } = useAppTheme();
+	const styles = useMemo(() => createStyles(theme), [theme]);
+
+	const PAPER_THEME = useMemo(() => ({
+		colors: {
+			primary: theme.colors.accent,
+			onSurfaceVariant: theme.colors.textSecondary,
+			background: theme.colors.surfaceElevated,
+			outline: theme.colors.border,
+			surface: theme.colors.surfaceElevated,
+			onSurface: theme.colors.textPrimary,
+			error: theme.colors.error,
+		},
+	}), [theme]);
 
 	const [userName, setUserName] = useState('');
 	const [password, setPassword] = useState('');
@@ -106,7 +93,7 @@ export const LoginScreen: React.FC<Props> = () => {
 								{/* Brand row */}
 								<View style={styles.brandRow}>
 									<View style={styles.brandIconCircle}>
-										<Ionicons name="cut" size={18} color={COLORS.bg} />
+										<Ionicons name="cut" size={18} color="#0F172A" />
 									</View>
 									<Text style={styles.brandName}>BARBER FLOW</Text>
 								</View>
@@ -156,7 +143,7 @@ export const LoginScreen: React.FC<Props> = () => {
 									left={
 										<PaperTextInput.Icon
 											icon={() => (
-												<Ionicons name="person-outline" size={20} color={COLORS.textSecondary} />
+												<Ionicons name="person-outline" size={20} color={theme.colors.textSecondary} />
 											)}
 										/>
 									}
@@ -178,7 +165,7 @@ export const LoginScreen: React.FC<Props> = () => {
 									left={
 										<PaperTextInput.Icon
 											icon={() => (
-												<Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
+												<Ionicons name="lock-closed-outline" size={20} color={theme.colors.textSecondary} />
 											)}
 										/>
 									}
@@ -188,7 +175,7 @@ export const LoginScreen: React.FC<Props> = () => {
 												<Ionicons
 													name={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
 													size={20}
-													color={COLORS.textSecondary}
+													color={theme.colors.textSecondary}
 												/>
 											)}
 											onPress={() => setPasswordVisible((v) => !v)}
@@ -200,7 +187,7 @@ export const LoginScreen: React.FC<Props> = () => {
 							{/* Error banner */}
 							{error ? (
 								<View style={styles.errorCard}>
-									<Ionicons name="alert-circle-outline" size={16} color={COLORS.error} style={styles.errorIcon} />
+									<Ionicons name="alert-circle-outline" size={16} color={theme.colors.error} style={styles.errorIcon} />
 									<View style={styles.errorText}>
 										<Text style={styles.errorTitle}>{translateText('login.authFailed')}</Text>
 										<Text style={styles.errorMsg}>{error}</Text>
@@ -220,10 +207,22 @@ export const LoginScreen: React.FC<Props> = () => {
 								accessibilityLabel={translateText('login.signIn')}
 							>
 								{loading ? (
-									<ActivityIndicator color={COLORS.bg} />
+									<ActivityIndicator color="#0F172A" />
 								) : (
 									<Text style={styles.buttonText}>{translateText('login.signIn').toUpperCase()}</Text>
 								)}
+							</Pressable>
+
+							<Pressable 
+								onPress={() => navigation.navigate('ForgotPassword')}
+								style={({ pressed }) => [
+									styles.forgotPassword,
+									{ opacity: pressed ? 0.7 : 1 }
+								]}
+							>
+								<Text style={styles.forgotPasswordText}>
+									{translateText('forgotPassword.title')}
+								</Text>
 							</Pressable>
 
 							<Text style={styles.helperText}>{translateText('login.helperText')}</Text>
@@ -235,11 +234,10 @@ export const LoginScreen: React.FC<Props> = () => {
 	);
 };
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
 	safe: {
 		flex: 1,
-		backgroundColor: COLORS.bg,
+		backgroundColor: theme.colors.background,
 	},
 	flex: { flex: 1 },
 	scroll: {
@@ -252,7 +250,7 @@ const styles = StyleSheet.create({
 	},
 	overlay: {
 		flex: 1,
-		backgroundColor: COLORS.overlay,
+		backgroundColor: theme.colors.overlay,
 		justifyContent: 'flex-end',
 		paddingHorizontal: 24,
 		paddingBottom: 48,
@@ -267,25 +265,25 @@ const styles = StyleSheet.create({
 		width: 36,
 		height: 36,
 		borderRadius: 18,
-		backgroundColor: COLORS.gold,
+		backgroundColor: theme.colors.accent,
 		alignItems: 'center',
 		justifyContent: 'center',
 	},
 	brandName: {
-		color: COLORS.gold,
+		color: theme.colors.accent,
 		fontSize: 14,
 		fontWeight: '800',
 		letterSpacing: 3,
 	},
 	heroTitle: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 26,
 		fontWeight: '700',
 		lineHeight: 33,
 		marginBottom: 10,
 	},
 	heroBody: {
-		color: 'rgba(255,255,255,0.72)',
+		color: 'rgba(255,255,255,0.85)',
 		fontSize: 14,
 		lineHeight: 21,
 		marginBottom: 18,
@@ -297,14 +295,14 @@ const styles = StyleSheet.create({
 	},
 	pill: {
 		borderWidth: 1,
-		borderColor: COLORS.gold,
+		borderColor: theme.colors.accent,
 		borderRadius: 999,
 		paddingHorizontal: 12,
 		paddingVertical: 5,
-		backgroundColor: 'rgba(201,168,76,0.10)',
+		backgroundColor: theme.colors.accent + '1a',
 	},
 	pillText: {
-		color: COLORS.goldLight,
+		color: theme.colors.accentLight,
 		fontSize: 11,
 		fontWeight: '600',
 		letterSpacing: 0.4,
@@ -312,7 +310,7 @@ const styles = StyleSheet.create({
 
 	// Card
 	card: {
-		backgroundColor: COLORS.surface,
+		backgroundColor: theme.colors.surface,
 		borderTopLeftRadius: 28,
 		borderTopRightRadius: 28,
 		marginTop: -28,
@@ -325,12 +323,12 @@ const styles = StyleSheet.create({
 		width: 40,
 		height: 4,
 		borderRadius: 2,
-		backgroundColor: COLORS.border,
+		backgroundColor: theme.colors.border,
 		alignSelf: 'center',
 		marginBottom: 24,
 	},
 	eyebrow: {
-		color: COLORS.gold,
+		color: theme.colors.accent,
 		fontSize: 11,
 		fontWeight: '700',
 		letterSpacing: 2,
@@ -338,13 +336,13 @@ const styles = StyleSheet.create({
 		marginBottom: 6,
 	},
 	cardTitle: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 26,
 		fontWeight: '700',
 		marginBottom: 6,
 	},
 	cardSubtitle: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 14,
 		lineHeight: 21,
 		marginBottom: 28,
@@ -356,7 +354,7 @@ const styles = StyleSheet.create({
 		marginBottom: 20,
 	},
 	paperInput: {
-		backgroundColor: COLORS.surfaceElevated,
+		backgroundColor: theme.colors.surfaceElevated,
 		fontSize: 15,
 	},
 	inputOutline: {
@@ -367,9 +365,9 @@ const styles = StyleSheet.create({
 	errorCard: {
 		flexDirection: 'row',
 		alignItems: 'flex-start',
-		backgroundColor: COLORS.errorBg,
+		backgroundColor: theme.colors.errorBg,
 		borderWidth: 1,
-		borderColor: COLORS.error,
+		borderColor: theme.colors.error,
 		borderRadius: 12,
 		padding: 12,
 		marginBottom: 16,
@@ -382,7 +380,7 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	errorTitle: {
-		color: COLORS.error,
+		color: theme.colors.error,
 		fontSize: 12,
 		fontWeight: '700',
 		letterSpacing: 0.5,
@@ -390,7 +388,7 @@ const styles = StyleSheet.create({
 		marginBottom: 2,
 	},
 	errorMsg: {
-		color: COLORS.error,
+		color: theme.colors.error,
 		fontSize: 13,
 		lineHeight: 19,
 	},
@@ -399,10 +397,10 @@ const styles = StyleSheet.create({
 	button: {
 		height: 54,
 		borderRadius: 14,
-		backgroundColor: COLORS.gold,
+		backgroundColor: theme.colors.accent,
 		alignItems: 'center',
 		justifyContent: 'center',
-		shadowColor: COLORS.gold,
+		shadowColor: theme.colors.accent,
 		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.4,
 		shadowRadius: 10,
@@ -410,15 +408,25 @@ const styles = StyleSheet.create({
 		marginBottom: 20,
 	},
 	buttonText: {
-		color: COLORS.bg,
+		color: '#0F172A',
 		fontSize: 15,
 		fontWeight: '800',
 		letterSpacing: 1.5,
 	},
+	forgotPassword: {
+		marginTop: 8,
+		paddingVertical: 12,
+		alignItems: 'center',
+	},
+	forgotPasswordText: {
+		color: theme.colors.textSecondary,
+		fontSize: 13,
+		textDecorationLine: 'underline',
+	},
 
 	// Helper
 	helperText: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 13,
 		lineHeight: 18,
 		textAlign: 'center',

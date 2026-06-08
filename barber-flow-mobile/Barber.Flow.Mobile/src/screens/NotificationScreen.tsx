@@ -12,22 +12,15 @@ import type { AppTabParamList } from "../navigation/AppNavigator";
 import { getErrorMessage } from "../utils/errors";
 import { useDialog } from "../context/DialogContext";
 
-const COLORS = {
-    bg: "#0D0D0D",
-    surface: "#1A1A1A",
-    surfaceElevated: "#252525",
-    gold: "#C9A84C",
-    goldLight: "#E5C878",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#9B9B9B",
-    border: "#3A3A3A",
-    overlay: "rgba(0,0,0,0.72)",
-} as const;
+import type { AppTheme } from "../theme/themes";
+import { useAppTheme } from "../theme/ThemeContext";
 
 export const NotificationScreen = () => {
     const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
     const { translateText } = useTranslation();
     const { showAlert } = useDialog();
+    const { theme } = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
     const {
         dismissNotification,
         isLoading,
@@ -188,17 +181,17 @@ export const NotificationScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     screenBg: { flex: 1 },
-    screenOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(13,13,13,0.65)" },
+    screenOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.colors.overlay },
     flex: { flex: 1 },
     scrollContent: {
         gap: 18,
         paddingBottom: 32,
     },
     card: {
-        backgroundColor: COLORS.surface,
-        borderColor: COLORS.border,
+        backgroundColor: theme.colors.surface,
+        borderColor: theme.colors.border,
         borderRadius: 24,
         borderWidth: 1,
         gap: 16,
@@ -206,19 +199,19 @@ const styles = StyleSheet.create({
         paddingVertical: 20,
     },
     eyebrow: {
-        color: COLORS.gold,
+        color: theme.colors.accent,
         fontSize: 11,
         fontWeight: "700",
         letterSpacing: 1.4,
         textTransform: "uppercase",
     },
     heroTitle: {
-        color: COLORS.textPrimary,
+        color: theme.colors.textPrimary,
         fontSize: 26,
         fontWeight: "700",
     },
     heroSubtitle: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
         fontSize: 14,
         lineHeight: 20,
     },
@@ -227,8 +220,8 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     metricPill: {
-        backgroundColor: COLORS.surfaceElevated,
-        borderColor: COLORS.border,
+        backgroundColor: theme.colors.surfaceElevated,
+        borderColor: theme.colors.border,
         borderRadius: 14,
         borderWidth: 1,
         flex: 1,
@@ -237,12 +230,12 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
     },
     metricValue: {
-        color: COLORS.textPrimary,
+        color: theme.colors.textPrimary,
         fontSize: 22,
         fontWeight: "700",
     },
     metricLabel: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
         fontSize: 12,
         textTransform: "uppercase",
     },
@@ -254,26 +247,26 @@ const styles = StyleSheet.create({
     },
     btnPrimary: {
         alignItems: "center",
-        backgroundColor: COLORS.gold,
+        backgroundColor: theme.colors.accent,
         borderRadius: 12,
         paddingHorizontal: 20,
         paddingVertical: 11,
     },
     btnPrimaryText: {
-        color: "#0D0D0D",
+        color: "#0F172A",
         fontSize: 14,
         fontWeight: "700",
     },
     btnSecondary: {
         alignItems: "center",
-        borderColor: COLORS.border,
+        borderColor: theme.colors.border,
         borderRadius: 12,
         borderWidth: 1,
         paddingHorizontal: 18,
         paddingVertical: 10,
     },
     btnSecondaryText: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
         fontSize: 14,
         fontWeight: "600",
     },
@@ -281,16 +274,16 @@ const styles = StyleSheet.create({
         opacity: 0.4,
     },
     btnDisabledText: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
     },
     disabledTitle: {
-        color: COLORS.textPrimary,
+        color: theme.colors.textPrimary,
         fontSize: 16,
         fontWeight: "700",
         marginBottom: 8,
     },
     disabledBody: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
         fontSize: 14,
         lineHeight: 20,
     },

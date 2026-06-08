@@ -5,15 +5,8 @@ import { useTranslation } from "../../context/LanguageContext";
 import { getNotificationDisplayText } from "../../services/notificationService";
 import type { NotificationItem } from "../../types/notifications";
 
-const COLORS = {
-	bg: "#0D0D0D",
-	surface: "#1A1A1A",
-	gold: "#C9A84C",
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-	border: "#3A3A3A",
-	error: "#E57373",
-} as const;
+import { AppTheme } from "../../theme/themes";
+import { useAppTheme } from "../../theme/ThemeContext";
 
 type NotificationItemCardProps = {
 	item: NotificationItem;
@@ -36,6 +29,8 @@ export const NotificationItemCard = ({
 	onPress,
 }: NotificationItemCardProps) => {
 	const { translateText } = useTranslation();
+	const { theme } = useAppTheme();
+	const styles = React.useMemo(() => createStyles(theme), [theme]);
 	const copy = getNotificationDisplayText(item, translateText);
 
 	return (
@@ -50,7 +45,7 @@ export const NotificationItemCard = ({
 			<View style={styles.headerRow}>
 				<View style={styles.iconWrap}>
 					<Ionicons
-						color={item.type === "delayed-client-summary" ? COLORS.error : COLORS.gold}
+						color={item.type === "delayed-client-summary" ? theme.colors.error : theme.colors.accent}
 						name={getNotificationIcon(item.type)}
 						size={18}
 					/>
@@ -94,74 +89,75 @@ export const NotificationItemCard = ({
 	);
 };
 
-const styles = StyleSheet.create({
-	actionBtn: {
-		paddingHorizontal: 4,
-		paddingVertical: 4,
-	},
-	actionBtnPrimary: {
-		color: COLORS.gold,
-		fontSize: 13,
-		fontWeight: "600",
-	},
-	actionBtnSecondary: {
-		color: COLORS.textSecondary,
-		fontSize: 13,
-	},
-	actionsRow: {
-		alignItems: "center",
-		flexDirection: "row",
-		justifyContent: "space-between",
-	},
-	card: {
-		borderColor: COLORS.border,
-		borderRadius: 14,
-		borderWidth: 1,
-		gap: 12,
-		padding: 16,
-	},
-	cardRead: {
-		backgroundColor: COLORS.bg,
-	},
-	cardUnread: {
-		backgroundColor: COLORS.surface,
-	},
-	headerCopy: {
-		flex: 1,
-		gap: 2,
-	},
-	headerRow: {
-		alignItems: "center",
-		flexDirection: "row",
-		gap: 12,
-	},
-	iconWrap: {
-		alignItems: "center",
-		backgroundColor: "rgba(201,168,76,0.15)",
-		borderRadius: 20,
-		height: 40,
-		justifyContent: "center",
-		width: 40,
-	},
-	message: {
-		color: COLORS.textSecondary,
-		fontSize: 14,
-		lineHeight: 20,
-	},
-	meta: {
-		color: COLORS.textSecondary,
-		fontSize: 12,
-		textTransform: "uppercase",
-	},
-	title: {
-		color: COLORS.textPrimary,
-		fontSize: 15,
-		fontWeight: "600",
-	},
-	unreadDot: {
-		backgroundColor: COLORS.gold,
-		borderRadius: 5,
-		height: 10,
-		width: 10,
-	},
-});
+const createStyles = (theme: AppTheme) =>
+	StyleSheet.create({
+		actionBtn: {
+			paddingHorizontal: 4,
+			paddingVertical: 4,
+		},
+		actionBtnPrimary: {
+			color: theme.colors.accent,
+			fontSize: 13,
+			fontWeight: "600",
+		},
+		actionBtnSecondary: {
+			color: theme.colors.textSecondary,
+			fontSize: 13,
+		},
+		actionsRow: {
+			alignItems: "center",
+			flexDirection: "row",
+			justifyContent: "space-between",
+		},
+		card: {
+			borderColor: theme.colors.border,
+			borderRadius: 14,
+			borderWidth: 1,
+			gap: 12,
+			padding: 16,
+		},
+		cardRead: {
+			backgroundColor: theme.colors.background,
+		},
+		cardUnread: {
+			backgroundColor: theme.colors.surface,
+		},
+		headerCopy: {
+			flex: 1,
+			gap: 2,
+		},
+		headerRow: {
+			alignItems: "center",
+			flexDirection: "row",
+			gap: 12,
+		},
+		iconWrap: {
+			alignItems: "center",
+			backgroundColor: theme.colors.accentLight,
+			borderRadius: 20,
+			height: 40,
+			justifyContent: "center",
+			width: 40,
+		},
+		message: {
+			color: theme.colors.textSecondary,
+			fontSize: 14,
+			lineHeight: 20,
+		},
+		meta: {
+			color: theme.colors.textSecondary,
+			fontSize: 12,
+			textTransform: "uppercase",
+		},
+		title: {
+			color: theme.colors.textPrimary,
+			fontSize: 15,
+			fontWeight: "600",
+		},
+		unreadDot: {
+			backgroundColor: theme.colors.accent,
+			borderRadius: 5,
+			height: 10,
+			width: 10,
+		},
+	});

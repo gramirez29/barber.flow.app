@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { LoginScreen } from "../screens/LoginScreen";
+import { ForgotPasswordScreen } from "../screens/ForgotPasswordScreen";
+import { OtpVerificationScreen } from "../screens/OtpVerificationScreen";
+import { ResetPasswordScreen } from "../screens/ResetPasswordScreen";
 import { DrawerNavigator } from "./DrawerNavigator";
 import { useAuthStore } from "../store/auth.store";
 import { authService } from "../services/authService";
@@ -43,7 +46,12 @@ export const RootNavigator = () => {
 			{user ? (
 				<Stack.Screen name="Main" component={DrawerNavigator} />
 			) : (
-				<Stack.Screen name="Login" component={LoginScreen} />
+				<>
+					<Stack.Screen name="Login" component={LoginScreen} />
+					<Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+					<Stack.Screen name="OtpVerification" component={OtpVerificationScreen} />
+					<Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+				</>
 			)}
 		</Stack.Navigator>
 	);

@@ -40,4 +40,31 @@ export const authService = {
 		await apiFetch("/api/users/me", { method: "DELETE" });
 		await SecureStore.deleteItemAsync("applicationUser");
 	},
+
+	requestPasswordReset: async (email: string): Promise<void> => {
+		const res = await fetch(`${BASE_URL}/api/auth/forgot-password`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ email }),
+		});
+		if (!res.ok) throw new Error("Failed to request password reset");
+	},
+
+	verifyOtp: async (email: string, otpCode: string): Promise<void> => {
+		const res = await fetch(`${BASE_URL}/api/auth/verify-otp`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ email, otpCode }),
+		});
+		if (!res.ok) throw new Error("Invalid or expired OTP");
+	},
+
+	resetPassword: async (email: string, otpCode: string, newPassword: string): Promise<void> => {
+		const res = await fetch(`${BASE_URL}/api/auth/reset-password`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ email, otpCode, newPassword }),
+		});
+		if (!res.ok) throw new Error("Failed to reset password");
+	},
 };

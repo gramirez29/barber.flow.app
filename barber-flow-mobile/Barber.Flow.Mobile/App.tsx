@@ -20,7 +20,7 @@ function Main() {
 				<DialogProvider>
 					<NavigationContainer theme={navigationTheme}>
 						<NotificationProvider>
-							<StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
+							<StatusBar style="light" />
 							<RootNavigator />
 						</NotificationProvider>
 					</NavigationContainer>

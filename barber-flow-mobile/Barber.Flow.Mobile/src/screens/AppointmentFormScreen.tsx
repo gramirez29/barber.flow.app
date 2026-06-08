@@ -19,15 +19,6 @@ import { useTranslation } from "../context/LanguageContext";
 import { clientsService } from "../services/clientService";
 import type { Client } from "../types/clients";
 
-const COLORS = {
-	bg: "#0D0D0D",
-	surface: "#1A1A1A",
-	surfaceElevated: "#252525",
-	gold: "#C9A84C",
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-	border: "#3A3A3A",
-} as const;
 import { useAppointmentStore } from "../features/appointments/appointment.store";
 import type {
   Appointment,
@@ -38,6 +29,8 @@ import { useAppointmentForm } from "../features/appointments/useAppointmentForm"
 import { useDialog } from "../context/DialogContext";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { format } from "date-fns";
+import { AppTheme } from "../theme/themes";
+import { useAppTheme } from "../theme/ThemeContext";
 
 export type AppointmentFormParams = {
   mode: "create" | "edit";
@@ -60,6 +53,8 @@ export const AppointmentFormScreen = () => {
 	const insets = useSafeAreaInsets();
 	const { translateText } = useTranslation();
 	const { showAlert } = useDialog();
+	const { theme } = useAppTheme();
+	const styles = useMemo(() => createStyles(theme), [theme]);
 	const { appointments, addAppointment, updateAppointment } =
 		useAppointmentStore();
 
@@ -142,7 +137,7 @@ export const AppointmentFormScreen = () => {
 		setClientSearchVisible(false);
 	}, [setField]);
 
-	const handleClientSelected = useCallback((client: Client | null, clientId?: string) => {
+	const handleClientSelected = useCallback((client: Client | null) => {
 		if (client) {
 			const fullName = `${client.firstName} ${client.lastName}`.trim();
 			setField("clientName", fullName);
@@ -318,7 +313,7 @@ const handleSubmit = async () => {
 	return (
 		<ScreenLayout
 			title={title}
-			backgroundColor={COLORS.bg}
+			backgroundColor={theme.colors.background}
 			hideHeaderActions
 		>
 			<KeyboardAwareScrollView
@@ -398,7 +393,7 @@ const handleSubmit = async () => {
 				isVisible={movePickerStep === "date"}
 				mode="date"
 				themeVariant="dark"
-				accentColor="#C9A84C"
+				accentColor={theme.colors.accent}
 				onConfirm={handleMoveDateConfirm}
 				onCancel={() => setMovePickerStep(null)}
 			/>
@@ -406,7 +401,7 @@ const handleSubmit = async () => {
 				isVisible={movePickerStep === "time"}
 				mode="time"
 				themeVariant="dark"
-				accentColor="#C9A84C"
+				accentColor={theme.colors.accent}
 				onConfirm={handleMoveTimeConfirm}
 				onCancel={() => { setPendingMoveDate(null); setMovePickerStep(null); }}
 			/>
@@ -414,7 +409,7 @@ const handleSubmit = async () => {
 	);
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
 	flex: {
 		flex: 1,
 	},
@@ -422,12 +417,12 @@ const styles = StyleSheet.create({
 		paddingTop: 10,
 	},
 	formCard: {
-		backgroundColor: COLORS.surface,
+		backgroundColor: theme.colors.surface,
 		borderRadius: 20,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: theme.colors.border,
 		padding: 20,
-		shadowColor: COLORS.gold,
+		shadowColor: theme.colors.accent,
 		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.08,
 		shadowRadius: 12,
@@ -436,16 +431,16 @@ const styles = StyleSheet.create({
 	dateText: {
 		fontSize: 14,
 		marginBottom: 14,
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 	},
 	moveCard: {
-		backgroundColor: COLORS.surface,
+		backgroundColor: theme.colors.surface,
 		borderRadius: 20,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: theme.colors.border,
 		padding: 20,
 		marginTop: 12,
-		shadowColor: COLORS.gold,
+		shadowColor: theme.colors.accent,
 		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.08,
 		shadowRadius: 12,
@@ -456,22 +451,22 @@ const styles = StyleSheet.create({
 		fontWeight: "700",
 		letterSpacing: 1,
 		textTransform: "uppercase",
-		color: COLORS.gold,
+		color: theme.colors.accent,
 		marginBottom: 6,
 	},
 	moveCardTitle: {
 		fontSize: 18,
 		fontWeight: "700",
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		marginBottom: 4,
 	},
 	moveCardSubtitle: {
 		fontSize: 13,
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		marginBottom: 16,
 	},
 	goldBtn: {
-		backgroundColor: COLORS.gold,
+		backgroundColor: theme.colors.accent,
 		borderRadius: 12,
 		paddingVertical: 14,
 		alignItems: "center",
@@ -480,8 +475,9 @@ const styles = StyleSheet.create({
 		opacity: 0.85,
 	},
 	goldBtnText: {
-		color: COLORS.bg,
+		color: "#0F172A",
 		fontWeight: "700",
 		fontSize: 15,
 	},
 });
+

@@ -65,8 +65,8 @@ export const AppNavigator = () => {
 			activeIcon: "settings",
 		},
 	};
-	const activeIconBackground = "rgba(201, 168, 76, 0.18)";
-	const activeIconBorder = "rgba(201, 168, 76, 0.38)";
+	const activeIconBackground = theme.colors.accent + "2E"; // ~18% opacity
+	const activeIconBorder = theme.colors.accent + "61"; // ~38% opacity
 
 	return (
 		<Tab.Navigator
@@ -91,7 +91,7 @@ export const AppNavigator = () => {
 			},
 			tabBarBackground: () => (
 				<LinearGradient
-					colors={["#0B0B0B", "#151515", "#2A2A2A"]}
+					colors={[theme.colors.primaryInput, theme.colors.background, theme.colors.surface]}
 					end={{ x: 1, y: 0.5 }}
 					start={{ x: 0, y: 0.5 }}
 					style={styles.tabBarBackground}
@@ -100,8 +100,8 @@ export const AppNavigator = () => {
 			tabBarItemStyle: {
 				paddingHorizontal: 3,
 			},
-			tabBarActiveTintColor: "#F3E7C7",
-			tabBarInactiveTintColor: "#C2C2C2",
+			tabBarActiveTintColor: theme.colors.accent,
+			tabBarInactiveTintColor: theme.colors.textSecondary,
 			tabBarLabelStyle: {
 				fontSize: 11,
 				fontFamily: fonts.medium,

@@ -15,30 +15,8 @@ import type { AppointmentFormErrors } from "../../features/appointments/useAppoi
 import { useTranslation } from "../../context/LanguageContext";
 import { formatPhoneNumber } from "../../utils/formatUtil";
 
-const COLORS = {
-	bg: "#0D0D0D",
-	surface: "#1A1A1A",
-	surfaceElevated: "#252525",
-	gold: "#C9A84C",
-	goldLight: "#E5C878",
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-	border: "#3A3A3A",
-	error: "#F87171",
-	errorBg: "rgba(248,113,113,0.10)",
-} as const;
-
-const PAPER_THEME = {
-	colors: {
-		primary: COLORS.gold,
-		onSurfaceVariant: COLORS.textSecondary,
-		background: COLORS.surfaceElevated,
-		outline: COLORS.border,
-		surface: COLORS.surfaceElevated,
-		onSurface: COLORS.textPrimary,
-		error: COLORS.error,
-	},
-} as const;
+import { AppTheme } from "../../theme/themes";
+import { useAppTheme } from "../../theme/ThemeContext";
 
 interface AppointmentFormProps {
 	draft: AppointmentDraft;
@@ -73,6 +51,26 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 	onStatusChange,
 }) => {
 	const { translateText } = useTranslation();
+	const { theme } = useAppTheme();
+	const styles = React.useMemo(() => createStyles(theme), [theme]);
+
+	const paperTheme = React.useMemo(
+		() => ({
+			...theme,
+			colors: {
+				...theme.colors,
+				primary: theme.colors.accent,
+				onSurfaceVariant: theme.colors.textSecondary,
+				background: theme.colors.surfaceElevated,
+				outline: theme.colors.border,
+				surface: theme.colors.surfaceElevated,
+				onSurface: theme.colors.textPrimary,
+				error: theme.colors.error,
+			},
+		}),
+		[theme],
+	);
+
 	const [isTimePickerVisible, setTimePickerVisible] = useState(false);
 
 	const handleTimeConfirm = (selectedTime: Date) => {
@@ -122,7 +120,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 							/>
 						) : undefined
 					}
-					theme={PAPER_THEME as any}
+					theme={paperTheme as any}
 				/>
 				{Boolean(touched.clientName && errors.clientName) && (
 					<Text style={styles.helperError}>
@@ -144,7 +142,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					keyboardType="phone-pad"
 					placeholder="0000-0000"
 					maxLength={9}
-					theme={PAPER_THEME as any}
+					theme={paperTheme as any}
 				/>
 				{Boolean(touched.phone && errors.phone) && (
 					<Text style={styles.helperError}>
@@ -162,7 +160,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					placeholder={translateText(
 						"calendar.appointmentModal.servicePlaceholder",
 					)}
-					theme={PAPER_THEME as any}
+					theme={paperTheme as any}
 				/>
 			</View>
 
@@ -185,7 +183,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					keyboardType="decimal-pad"
 					placeholder="0.00"
 					left={<TextInput.Affix text="CRC" />}
-					theme={PAPER_THEME as any}
+					theme={paperTheme as any}
 				/>
 				{Boolean(touched.servicePrice && errors.servicePrice) && (
 					<Text style={styles.helperError}>
@@ -237,7 +235,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 						onPress={() => setTimePickerVisible(true)}
 						/>
 					}
-					theme={PAPER_THEME as any}
+					theme={paperTheme as any}
 				/>
 				{Boolean(touched.time && errors.time) && (
 					<Text style={styles.helperError}>
@@ -257,7 +255,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					placeholder={translateText(
 						"calendar.appointmentModal.notesPlaceholder",
 					)}
-					theme={PAPER_THEME as any}
+					theme={paperTheme as any}
 				/>
 			</View>
 
@@ -268,7 +266,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					disabled={isSaving}
 				>
 					{isSaving ? (
-						<ActivityIndicator size="small" color="#000" />
+						<ActivityIndicator size="small" color={theme.colors.background} />
 					) : (
 						<Text style={styles.goldBtnText}>
 							{isEditMode
@@ -278,7 +276,10 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					)}
 				</Pressable>
 				<Pressable
-					style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
+					style={({ pressed }) => [
+						styles.cancelBtn,
+						pressed && styles.cancelBtnPressed,
+					]}
 					onPress={onCancel}
 				>
 					<Text style={styles.cancelBtnText}>
@@ -291,7 +292,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 				isVisible={isTimePickerVisible}
 				mode="time"
 				themeVariant="dark"
-				accentColor="#C9A84C"
+				accentColor={theme.colors.accent}
 				onConfirm={handleTimeConfirm}
 				onCancel={() => setTimePickerVisible(false)}
 			/>
@@ -299,100 +300,101 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 	);
 };
 
-const styles = StyleSheet.create({
-	formGroup: {
-		marginBottom: 8,
-	},
-	sectionLabel: {
-		fontSize: 11,
-		fontWeight: "700",
-		letterSpacing: 1,
-		marginBottom: 10,
-		textTransform: "uppercase",
-		color: COLORS.textSecondary,
-	},
-	pillRow: {
-		flexDirection: "row",
-		marginBottom: 4,
-	},
-	pill: {
-		paddingHorizontal: 14,
-		paddingVertical: 7,
-		borderRadius: 20,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		marginRight: 8,
-		backgroundColor: COLORS.surfaceElevated,
-	},
-	pillActive: {
-		backgroundColor: COLORS.gold,
-		borderColor: COLORS.gold,
-	},
-	pillText: {
-		color: COLORS.textSecondary,
-		fontSize: 13,
-		fontWeight: "500",
-	},
-	pillTextActive: {
-		color: COLORS.bg,
-		fontSize: 13,
-		fontWeight: "700",
-	},
-	helperError: {
-		color: COLORS.error,
-		fontSize: 12,
-		marginTop: 3,
-		marginLeft: 4,
-	},
-	helperInfo: {
-		color: COLORS.textSecondary,
-		fontSize: 12,
-		marginTop: 3,
-		marginLeft: 4,
-	},
-	actions: {
-		flexDirection: "row",
-		justifyContent: "flex-end",
-		gap: 10,
-		marginTop: 20,
-	},
-	goldBtn: {
-		flex: 1,
-		backgroundColor: COLORS.gold,
-		paddingVertical: 14,
-		borderRadius: 12,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	goldBtnPressed: {
-		backgroundColor: COLORS.goldLight,
-	},
-	goldBtnDisabled: {
-		opacity: 0.6,
-	},
-	goldBtnText: {
-		color: COLORS.bg,
-		fontSize: 15,
-		fontWeight: "700",
-		letterSpacing: 0.4,
-	},
-	cancelBtn: {
-		flex: 1,
-		backgroundColor: "transparent",
-		paddingVertical: 14,
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	cancelBtnPressed: {
-		borderColor: COLORS.gold,
-	},
-	cancelBtnText: {
-		color: COLORS.textSecondary,
-		fontSize: 15,
-		fontWeight: "600",
-		letterSpacing: 0.4,
-	},
-});
+const createStyles = (theme: AppTheme) =>
+	StyleSheet.create({
+		formGroup: {
+			marginBottom: 8,
+		},
+		sectionLabel: {
+			fontSize: 11,
+			fontWeight: "700",
+			letterSpacing: 1,
+			marginBottom: 10,
+			textTransform: "uppercase",
+			color: theme.colors.textSecondary,
+		},
+		pillRow: {
+			flexDirection: "row",
+			marginBottom: 4,
+		},
+		pill: {
+			paddingHorizontal: 14,
+			paddingVertical: 7,
+			borderRadius: 20,
+			borderWidth: 1,
+			borderColor: theme.colors.border,
+			marginRight: 8,
+			backgroundColor: theme.colors.surfaceElevated,
+		},
+		pillActive: {
+			backgroundColor: theme.colors.accent,
+			borderColor: theme.colors.accent,
+		},
+		pillText: {
+			color: theme.colors.textSecondary,
+			fontSize: 13,
+			fontWeight: "500",
+		},
+		pillTextActive: {
+			color: theme.colors.background,
+			fontSize: 13,
+			fontWeight: "700",
+		},
+		helperError: {
+			color: theme.colors.error,
+			fontSize: 12,
+			marginTop: 3,
+			marginLeft: 4,
+		},
+		helperInfo: {
+			color: theme.colors.textSecondary,
+			fontSize: 12,
+			marginTop: 3,
+			marginLeft: 4,
+		},
+		actions: {
+			flexDirection: "row",
+			justifyContent: "flex-end",
+			gap: 10,
+			marginTop: 20,
+		},
+		goldBtn: {
+			flex: 1,
+			backgroundColor: theme.colors.accent,
+			paddingVertical: 14,
+			borderRadius: 12,
+			alignItems: "center",
+			justifyContent: "center",
+		},
+		goldBtnPressed: {
+			backgroundColor: theme.colors.accentLight,
+		},
+		goldBtnDisabled: {
+			opacity: 0.6,
+		},
+		goldBtnText: {
+			color: theme.colors.background,
+			fontSize: 15,
+			fontWeight: "700",
+			letterSpacing: 0.4,
+		},
+		cancelBtn: {
+			flex: 1,
+			backgroundColor: "transparent",
+			paddingVertical: 14,
+			borderRadius: 12,
+			borderWidth: 1,
+			borderColor: theme.colors.border,
+			alignItems: "center",
+			justifyContent: "center",
+		},
+		cancelBtnPressed: {
+			borderColor: theme.colors.accent,
+		},
+		cancelBtnText: {
+			color: theme.colors.textSecondary,
+			fontSize: 15,
+			fontWeight: "600",
+			letterSpacing: 0.4,
+		},
+	});

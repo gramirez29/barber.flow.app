@@ -7,6 +7,8 @@ import type {
 } from "../../features/settings/reportCalculationsForm";
 import { useTranslation } from "../../context/LanguageContext";
 import type { ReportCalculationSettings } from "../../types/settings";
+import { AppTheme } from "../../theme/themes";
+import { useAppTheme } from "../../theme/ThemeContext";
 
 interface ReportCalculationSettingsFormProps {
 	errors: ReportCalculationSettingErrors;
@@ -22,28 +24,6 @@ interface ReportCalculationSettingsFormProps {
 	values: ReportCalculationSettings;
 }
 
-const COLORS = {
-	bg: "#0D0D0D",
-	surface: "#1A1A1A",
-	gold: "#C9A84C",
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-	border: "#3A3A3A",
-} as const;
-
-const PAPER_THEME = {
-	colors: {
-		background: COLORS.surface,
-		onBackground: COLORS.textPrimary,
-		onSurface: COLORS.textPrimary,
-		onSurfaceVariant: COLORS.textSecondary,
-		outline: COLORS.border,
-		primary: COLORS.gold,
-		surface: COLORS.surface,
-		text: COLORS.textPrimary,
-	},
-};
-
 export const ReportCalculationSettingsForm = ({
 	errors,
 	loading,
@@ -55,6 +35,22 @@ export const ReportCalculationSettingsForm = ({
 	values,
 }: ReportCalculationSettingsFormProps) => {
 	const { translateText } = useTranslation();
+	const { theme } = useAppTheme();
+	const styles = React.useMemo(() => createStyles(theme), [theme]);
+
+	const paperTheme = React.useMemo(
+		() => ({
+			...theme,
+			colors: {
+				...theme.colors,
+				primary: theme.colors.accent,
+				outline: theme.colors.border,
+				surface: theme.colors.surface,
+				onSurfaceVariant: theme.colors.textSecondary,
+			},
+		}),
+		[theme],
+	);
 
 	return (
 		<View style={styles.container}>
@@ -76,8 +72,8 @@ export const ReportCalculationSettingsForm = ({
 					onBlur={() => onBlurField("commissionPercentage")}
 					error={Boolean(touched.commissionPercentage && errors.commissionPercentage)}
 					mode="outlined"
-					theme={PAPER_THEME as any}
-					textColor={COLORS.textPrimary}
+					theme={paperTheme as any}
+					textColor={theme.colors.textPrimary}
 					keyboardType="decimal-pad"
 					right={<TextInput.Affix text="%" />}
 					disabled={loading}
@@ -100,8 +96,8 @@ export const ReportCalculationSettingsForm = ({
 					onBlur={() => onBlurField("fixedDailyExpense")}
 					error={Boolean(touched.fixedDailyExpense && errors.fixedDailyExpense)}
 					mode="outlined"
-					theme={PAPER_THEME as any}
-					textColor={COLORS.textPrimary}
+					theme={paperTheme as any}
+					textColor={theme.colors.textPrimary}
 					keyboardType="decimal-pad"
 					left={<TextInput.Affix text="CRC" />}
 					disabled={loading}
@@ -131,7 +127,7 @@ export const ReportCalculationSettingsForm = ({
 	);
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
 	container: {
 		paddingHorizontal: 0,
 		paddingTop: 0,
@@ -140,13 +136,13 @@ const styles = StyleSheet.create({
 		marginBottom: 16,
 	},
 	title: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 16,
 		fontWeight: "700",
 		marginBottom: 4,
 	},
 	subtitle: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 14,
 		lineHeight: 20,
 	},
@@ -160,7 +156,7 @@ const styles = StyleSheet.create({
 	},
 	btnPrimary: {
 		alignItems: "center",
-		backgroundColor: COLORS.gold,
+		backgroundColor: theme.colors.accent,
 		borderRadius: 12,
 		flex: 1,
 		justifyContent: "center",
@@ -168,14 +164,14 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 14,
 	},
 	btnPrimaryText: {
-		color: COLORS.bg,
+		color: "#0F172A",
 		fontSize: 14,
 		fontWeight: "700",
 	},
 	btnSecondary: {
 		alignItems: "center",
-		backgroundColor: COLORS.surface,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surface,
+		borderColor: theme.colors.border,
 		borderRadius: 12,
 		borderWidth: 1,
 		flex: 1,
@@ -184,7 +180,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 14,
 	},
 	btnSecondaryText: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 14,
 		fontWeight: "600",
 	},
@@ -192,3 +188,4 @@ const styles = StyleSheet.create({
 		opacity: 0.55,
 	},
 });
+

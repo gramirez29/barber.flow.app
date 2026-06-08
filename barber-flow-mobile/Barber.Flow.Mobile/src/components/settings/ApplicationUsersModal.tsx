@@ -5,20 +5,12 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { ManageApplicationUsersForm } from "./ManageApplicationUsersForm";
 import { useTranslation } from "../../context/LanguageContext";
 import type { ApplicationUserSettingsForm, BarberApiResponse } from "../../types/settings";
+import { AppTheme } from "../../theme/themes";
+import { useAppTheme } from "../../theme/ThemeContext";
 import type {
 	ApplicationUserFormErrors,
 	ApplicationUserFormTouched,
 } from "../../features/settings/settingsForm";
-
-const COLORS = {
-	bg: "#0D0D0D",
-	surface: "#1A1A1A",
-	gold: "#C9A84C",
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-	border: "#3A3A3A",
-	backdrop: "rgba(0,0,0,0.6)",
-} as const;
 
 interface ApplicationUsersModalProps {
 	errors: ApplicationUserFormErrors;
@@ -65,6 +57,8 @@ export const ApplicationUsersModal: React.FC<ApplicationUsersModalProps> = ({
 	visible,
 }) => {
 	const { translateText } = useTranslation();
+	const { theme } = useAppTheme();
+	const styles = React.useMemo(() => createStyles(theme), [theme]);
 	const { width } = useWindowDimensions();
 	const isCompact = width < 380;
 	const isUltraCompact = width <= 360;
@@ -133,22 +127,23 @@ export const ApplicationUsersModal: React.FC<ApplicationUsersModalProps> = ({
 	);
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) =>
+	StyleSheet.create({
 	safeArea: {
-		backgroundColor: COLORS.backdrop,
+		backgroundColor: theme.colors.overlay,
 		flex: 1,
 	},
 	backdrop: {
 		alignItems: "center",
-		backgroundColor: COLORS.backdrop,
+		backgroundColor: theme.colors.overlay,
 		flex: 1,
 		justifyContent: "center",
 		paddingHorizontal: 12,
 		paddingVertical: 14,
 	},
 	modalCard: {
-		backgroundColor: COLORS.bg,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.background,
+		borderColor: theme.colors.border,
 		borderRadius: 24,
 		borderWidth: 1,
 		flex: 1,
@@ -165,7 +160,7 @@ const styles = StyleSheet.create({
 	},
 	header: {
 		alignItems: "center",
-		borderBottomColor: COLORS.border,
+		borderBottomColor: theme.colors.border,
 		borderBottomWidth: 1,
 		justifyContent: "center",
 		paddingHorizontal: 14,
@@ -173,7 +168,7 @@ const styles = StyleSheet.create({
 		position: "relative",
 	},
 	headerTitle: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 18,
 		fontWeight: "700",
 		paddingHorizontal: 44,
@@ -187,14 +182,14 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		right: 14,
 		top: 8,
-		borderColor: COLORS.border,
+		borderColor: theme.colors.border,
 		borderRadius: 10,
 		borderWidth: 1,
 		paddingHorizontal: 12,
 		paddingVertical: 7,
 	},
 	headerCloseText: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 13,
 		fontWeight: "600",
 	},
@@ -206,22 +201,22 @@ const styles = StyleSheet.create({
 		paddingTop: 12,
 	},
 	footer: {
-		borderTopColor: COLORS.border,
+		borderTopColor: theme.colors.border,
 		borderTopWidth: 1,
 		paddingHorizontal: 18,
 		paddingVertical: 14,
 	},
 	footerButton: {
 		alignItems: "center",
-		backgroundColor: COLORS.surface,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surface,
+		borderColor: theme.colors.border,
 		borderRadius: 12,
 		borderWidth: 1,
 		justifyContent: "center",
 		minHeight: 46,
 	},
 	footerButtonText: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 15,
 		fontWeight: "600",
 	},

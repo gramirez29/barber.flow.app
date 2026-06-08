@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, ImageBackground, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import type { CompositeNavigationProp } from "@react-navigation/native";
@@ -12,6 +12,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ClientListItem } from "../components/clients/ClientListItem";
 import { ClientsListEmptyState } from "../components/clients/ClientsListEmptyState";
 import { useTranslation } from "../context/LanguageContext";
+import { useAppTheme } from "../theme/ThemeContext";
+import type { AppTheme } from "../theme/themes";
 import type { AppointmentDraft, AppointmentPaymentMethod } from "../features/appointments/appointments.types";
 import { clientsService } from "../services/clientService";
 import { getErrorMessage } from '../utils/errors';
@@ -30,16 +32,6 @@ const DATE_FORMAT = "yyyy-MM-dd";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
 type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number];
-
-const COLORS = {
-	bg: "#0D0D0D",
-	surface: "#1A1A1A",
-	surfaceElevated: "#252525",
-	gold: "#C9A84C",
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-	border: "#3A3A3A",
-} as const;
 
 const mapClientPaymentMethod = (
     paymentMethod?: Client["paymentMethod"],
@@ -60,9 +52,11 @@ export const ClientsScreen: React.FC = () => {
     const navigation = useNavigation<ClientsScreenNavigation>();
     const isFocused = useIsFocused();
     const { translateText } = useTranslation();
+    const { theme } = useAppTheme();
     const { showAlert } = useDialog();
     const insets = useSafeAreaInsets();
     const tabBarHeight = useContext(BottomTabBarHeightContext) ?? 0;
+    const styles = useMemo(() => createStyles(theme, insets, tabBarHeight), [theme, insets, tabBarHeight]);
     const [allClients, setAllClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -181,10 +175,10 @@ export const ClientsScreen: React.FC = () => {
                             </Text>
 
                             <View style={styles.searchbarWrap}>
-                                <Ionicons name="search" size={18} color={COLORS.textSecondary} style={styles.searchIcon} />
+                                <Ionicons name="search" size={18} color={theme.colors.textSecondary} style={styles.searchIcon} />
                                 <TextInput
                                     placeholder={translateText("clients.list.searchPlaceholder")}
-                                    placeholderTextColor={COLORS.textSecondary}
+                                    placeholderTextColor={theme.colors.textSecondary}
                                     value={searchQuery}
                                     onChangeText={handleSearchChange}
                                     style={styles.searchInput}
@@ -226,7 +220,7 @@ export const ClientsScreen: React.FC = () => {
                     ListEmptyComponent={
                         loading ? (
                             <View style={styles.loadingWrap}>
-                                <ActivityIndicator color={COLORS.gold} size="large" />
+                                <ActivityIndicator color={theme.colors.accent} size="large" />
                             </View>
                         ) : (
                             <ClientsListEmptyState loading={loading} />
@@ -256,7 +250,7 @@ export const ClientsScreen: React.FC = () => {
                                     style={[styles.pageBtn, page === 1 && styles.pageBtnDisabled]}
                                     accessibilityLabel={translateText("clients.list.prevPage")}
                                 >
-                                    <Ionicons name="chevron-back" size={20} color={page === 1 ? COLORS.textSecondary : COLORS.gold} />
+                                    <Ionicons name="chevron-back" size={20} color={page === 1 ? theme.colors.textSecondary : theme.colors.accent} />
                                 </Pressable>
                                 <Text style={styles.pageInfo}>
                                     {translateText("clients.list.page", { current: String(page), total: String(totalPages) })}
@@ -267,7 +261,7 @@ export const ClientsScreen: React.FC = () => {
                                     style={[styles.pageBtn, page === totalPages && styles.pageBtnDisabled]}
                                     accessibilityLabel={translateText("clients.list.nextPage")}
                                 >
-                                    <Ionicons name="chevron-forward" size={20} color={page === totalPages ? COLORS.textSecondary : COLORS.gold} />
+                                    <Ionicons name="chevron-forward" size={20} color={page === totalPages ? theme.colors.textSecondary : theme.colors.accent} />
                                 </Pressable>
                             </View>
                         ) : null
@@ -281,36 +275,34 @@ export const ClientsScreen: React.FC = () => {
                     onPress={handleCreateClient}
                     accessibilityLabel={translateText("clients.buttons.newClient")}
                 >
-                    <Ionicons name="person-add" size={22} color={COLORS.bg} />
+                    <Ionicons name="person-add" size={22} color="#0F172A" />
                 </Pressable>
             </ScreenLayout>
         </ImageBackground>
     );
 };
 
-const styles = StyleSheet.create({
-    // ─── Screen background
+const createStyles = (theme: AppTheme, _insets: any, _tabBarHeight: number) => StyleSheet.create({
     screenBg: {
         flex: 1,
     },
     screenOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(13,13,13,0.65)",
+        backgroundColor: theme.colors.overlay,
     },
-    // ─── Content
     contentContainer: {
         paddingBottom: 32,
     },
     heroCard: {
-        backgroundColor: COLORS.surface,
-        borderColor: COLORS.border,
+        backgroundColor: theme.colors.surface,
+        borderColor: theme.colors.border,
         borderRadius: 20,
         borderWidth: 1,
         marginBottom: 14,
         padding: 20,
     },
     eyebrow: {
-        color: COLORS.gold,
+        color: theme.colors.accent,
         fontSize: 12,
         fontWeight: "700",
         letterSpacing: 1,
@@ -318,21 +310,20 @@ const styles = StyleSheet.create({
         textTransform: "uppercase",
     },
     title: {
-        color: COLORS.textPrimary,
+        color: theme.colors.textPrimary,
         fontSize: 28,
         fontWeight: "700",
         marginBottom: 8,
     },
     subtitle: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
         fontSize: 14,
         lineHeight: 21,
     },
-    // ─── Custom searchbar
     searchbarWrap: {
         alignItems: "center",
-        backgroundColor: COLORS.surfaceElevated,
-        borderColor: COLORS.border,
+        backgroundColor: theme.colors.surfaceElevated,
+        borderColor: theme.colors.border,
         borderRadius: 12,
         borderWidth: 1,
         flexDirection: "row",
@@ -343,18 +334,17 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     searchInput: {
-        color: COLORS.textPrimary,
+        color: theme.colors.textPrimary,
         flex: 1,
         fontSize: 15,
         paddingVertical: Platform.OS === "ios" ? 12 : 8,
     },
     helper: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
         fontSize: 13,
         lineHeight: 20,
         marginTop: 12,
     },
-    // ─── Page size selector
     pageSizeRow: {
         alignItems: "center",
         flexDirection: "row",
@@ -363,7 +353,7 @@ const styles = StyleSheet.create({
         marginTop: 14,
     },
     pageSizeLabel: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
         fontSize: 12,
         fontWeight: "600",
         letterSpacing: 0.5,
@@ -374,26 +364,26 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     pageSizeChip: {
-        borderColor: COLORS.border,
+        borderColor: theme.colors.border,
         borderRadius: 8,
         borderWidth: 1,
         paddingHorizontal: 12,
         paddingVertical: 5,
     },
     pageSizeChipActive: {
-        backgroundColor: "rgba(201, 168, 76, 0.12)",
-        borderColor: COLORS.gold,
+        backgroundColor: theme.colors.accent + "1f", // 12% opacity
+        borderColor: theme.colors.accent,
     },
     pageSizeChipText: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
         fontSize: 13,
         fontWeight: "600",
     },
     pageSizeChipTextActive: {
-        color: COLORS.gold,
+        color: theme.colors.accent,
     },
     totalCount: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
         fontSize: 12,
         marginLeft: "auto",
         opacity: 0.75,
@@ -402,13 +392,11 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingVertical: 32,
     },
-    // ─── List divider
     listDivider: {
-        backgroundColor: "#3A3A3A",
+        backgroundColor: theme.colors.border,
         height: 1,
         marginLeft: 78,
     },
-    // ─── Pagination controls
     paginationRow: {
         alignItems: "center",
         flexDirection: "row",
@@ -419,7 +407,7 @@ const styles = StyleSheet.create({
     },
     pageBtn: {
         alignItems: "center",
-        borderColor: COLORS.border,
+        borderColor: theme.colors.border,
         borderRadius: 10,
         borderWidth: 1,
         height: 40,
@@ -430,16 +418,15 @@ const styles = StyleSheet.create({
         opacity: 0.35,
     },
     pageInfo: {
-        color: COLORS.textPrimary,
+        color: theme.colors.textPrimary,
         fontSize: 14,
         fontWeight: "600",
         textAlign: "center",
     },
-    // ─── FAB
     fab: {
         alignItems: "center",
-        backgroundColor: COLORS.gold,
-        borderRadius: 18,
+        backgroundColor: theme.colors.accent,
+        borderRadius: 28, // Round
         elevation: 8,
         height: 56,
         justifyContent: "center",

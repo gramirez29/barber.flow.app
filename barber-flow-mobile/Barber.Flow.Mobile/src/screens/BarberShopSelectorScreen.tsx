@@ -9,28 +9,20 @@ import {
     ActivityIndicator,
 } from "react-native";
 import { ScreenLayout } from "../components/ScreenLayout";
-import { useTranslation } from "../context/LanguageContext";
 import { useDialog } from "../context/DialogContext";
 import { barberShopService } from "../services/barberShopService";
 import type { BarberShop, BarberShopDraft } from "../types/barberShop";
 import { getErrorMessage } from "../utils/errors";
 
-const COLORS = {
-    bg: "#0D0D0D",
-    surface: "#1A1A1A",
-    surfaceElevated: "#252525",
-    gold: "#C9A84C",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#9B9B9B",
-    border: "#3A3A3A",
-    ripple: "rgba(201, 168, 76, 0.08)",
-} as const;
+import { AppTheme } from "../theme/themes";
+import { useAppTheme } from "../theme/ThemeContext";
 
 const RADIUS = 16;
 
 export const BarberShopSelectorScreen = () => {
-    const { translateText } = useTranslation();
     const { showAlert } = useDialog();
+    const { theme } = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     
     const [shops, setShops] = useState<BarberShop[]>([]);
     const [loading, setLoading] = useState(true);
@@ -51,7 +43,7 @@ export const BarberShopSelectorScreen = () => {
         } catch (error) {
             showAlert(
                 "Error",
-                getErrorMessage(error, "Failed to load barber shops")
+                getErrorMessage(error)
             );
         } finally {
             setLoading(false);
@@ -93,7 +85,7 @@ export const BarberShopSelectorScreen = () => {
             setShowForm(false);
             await loadShops();
         } catch (error) {
-            showAlert("Error", getErrorMessage(error, "Failed to save shop"));
+            showAlert("Error", getErrorMessage(error));
         }
     };
 
@@ -113,7 +105,7 @@ export const BarberShopSelectorScreen = () => {
                         } catch (error) {
                             showAlert(
                                 "Error",
-                                getErrorMessage(error, "Failed to delete shop")
+                                getErrorMessage(error)
                             );
                         }
                     },
@@ -161,8 +153,6 @@ export const BarberShopSelectorScreen = () => {
         return (
             <ScreenLayout
                 title={editingShop ? "Edit Shop" : "New Shop"}
-                showBackButton
-                onBackPress={() => setShowForm(false)}
             >
                 <View style={styles.formContainer}>
                     <View style={styles.formGroup}>
@@ -174,7 +164,7 @@ export const BarberShopSelectorScreen = () => {
                                 setFormData({ ...formData, name: text })
                             }
                             placeholder="Enter shop name"
-                            placeholderTextColor={COLORS.textSecondary}
+                            placeholderTextColor={theme.colors.textSecondary}
                         />
                     </View>
 
@@ -187,7 +177,7 @@ export const BarberShopSelectorScreen = () => {
                                 setFormData({ ...formData, phone: text })
                             }
                             placeholder="Enter phone number"
-                            placeholderTextColor={COLORS.textSecondary}
+                            placeholderTextColor={theme.colors.textSecondary}
                             keyboardType="phone-pad"
                         />
                     </View>
@@ -201,7 +191,7 @@ export const BarberShopSelectorScreen = () => {
                                 setFormData({ ...formData, address: text })
                             }
                             placeholder="Enter address"
-                            placeholderTextColor={COLORS.textSecondary}
+                            placeholderTextColor={theme.colors.textSecondary}
                             multiline
                             numberOfLines={3}
                         />
@@ -216,13 +206,24 @@ export const BarberShopSelectorScreen = () => {
                     >
                         <Text style={styles.saveButtonText}>Save</Text>
                     </Pressable>
+
+                    <Pressable
+                        onPress={() => setShowForm(false)}
+                        style={({ pressed }) => [
+                            styles.actionButton,
+                            { marginTop: 12, width: '100%' },
+                            pressed && styles.actionButtonPressed,
+                        ]}
+                    >
+                        <Text style={styles.actionButtonText}>Cancel</Text>
+                    </Pressable>
                 </View>
             </ScreenLayout>
         );
     }
 
     return (
-        <ScreenLayout title="Barber Shops" showBackButton>
+        <ScreenLayout title="Barber Shops">
             <View style={styles.container}>
                 <Pressable
                     onPress={handleCreate}
@@ -235,7 +236,7 @@ export const BarberShopSelectorScreen = () => {
                 </Pressable>
 
                 {loading ? (
-                    <ActivityIndicator size="large" color={COLORS.gold} />
+                    <ActivityIndicator size="large" color={theme.colors.accent} />
                 ) : (
                     <FlatList
                         data={shops}
@@ -254,13 +255,13 @@ export const BarberShopSelectorScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
     container: {
         flex: 1,
         padding: 16,
     },
     createButton: {
-        backgroundColor: COLORS.gold,
+        backgroundColor: theme.colors.accent,
         padding: 16,
         borderRadius: RADIUS,
         alignItems: "center",
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
         opacity: 0.8,
     },
     createButtonText: {
-        color: COLORS.bg,
+        color: "#0F172A",
         fontSize: 16,
         fontWeight: "700",
     },
@@ -278,24 +279,24 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
     },
     shopCard: {
-        backgroundColor: COLORS.surface,
+        backgroundColor: theme.colors.surface,
         padding: 16,
         borderRadius: RADIUS,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: theme.colors.border,
     },
     shopInfo: {
         marginBottom: 12,
     },
     shopName: {
-        color: COLORS.textPrimary,
+        color: theme.colors.textPrimary,
         fontSize: 18,
         fontWeight: "700",
         marginBottom: 8,
     },
     shopDetail: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
         fontSize: 14,
         marginBottom: 4,
     },
@@ -305,27 +306,27 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         flex: 1,
-        backgroundColor: COLORS.surfaceElevated,
+        backgroundColor: theme.colors.surfaceElevated,
         padding: 12,
         borderRadius: 12,
         alignItems: "center",
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: theme.colors.border,
     },
     deleteButton: {
-        backgroundColor: "#4A1A1A",
-        borderColor: "#8A3A3A",
+        backgroundColor: theme.colors.errorBg,
+        borderColor: theme.colors.error,
     },
     actionButtonPressed: {
         opacity: 0.7,
     },
     actionButtonText: {
-        color: COLORS.textPrimary,
+        color: theme.colors.textPrimary,
         fontSize: 14,
         fontWeight: "600",
     },
     emptyText: {
-        color: COLORS.textSecondary,
+        color: theme.colors.textSecondary,
         fontSize: 16,
         textAlign: "center",
         marginTop: 32,
@@ -337,22 +338,22 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     label: {
-        color: COLORS.textPrimary,
+        color: theme.colors.textPrimary,
         fontSize: 14,
         fontWeight: "600",
         marginBottom: 8,
     },
     input: {
-        backgroundColor: COLORS.surface,
+        backgroundColor: theme.colors.surface,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: theme.colors.border,
         borderRadius: 12,
         padding: 16,
-        color: COLORS.textPrimary,
+        color: theme.colors.textPrimary,
         fontSize: 16,
     },
     saveButton: {
-        backgroundColor: COLORS.gold,
+        backgroundColor: theme.colors.accent,
         padding: 16,
         borderRadius: RADIUS,
         alignItems: "center",
@@ -362,8 +363,9 @@ const styles = StyleSheet.create({
         opacity: 0.8,
     },
     saveButtonText: {
-        color: COLORS.bg,
+        color: "#0F172A",
         fontSize: 16,
         fontWeight: "700",
     },
 });
+
