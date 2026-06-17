@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Image, StyleSheet, Text } from "react-native";
 import { useAppTheme } from "../theme/ThemeContext";
 
@@ -15,50 +15,84 @@ const getInitials = (value?: string) => {
 	return parts.map(p => p[0]?.toUpperCase() ?? "").join("");
 };
 
-export const ClientAvatar: React.FC<ClientAvatarProps> = ({ size = 96, uri, initials }) => {
+export const ClientAvatar = ({ size = 96, uri, initials }: ClientAvatarProps) => {
 	const { theme } = useAppTheme();
+
+	const innerSize = size - 8;
+	const imageSize = size - 22;
+
+	const dynamicStyles = useMemo(() => {
+		return {
+			container: {
+				backgroundColor: theme.colors.surface,
+				width: size,
+				height: size,
+				borderRadius: size / 2,
+				borderColor: theme.colors.accent,
+				borderWidth: 2,
+			},
+			inner: {
+				backgroundColor: theme.colors.background,
+				width: innerSize,
+				height: innerSize,
+				borderRadius: innerSize / 2,
+			},
+			image: {
+				width: imageSize,
+				height: imageSize,
+				borderRadius: imageSize / 2,
+			},
+			initialsText: {
+				color: theme.colors.accent,
+				fontSize: size * 0.35,
+			},
+			initialsContainerStyle: {
+				backgroundColor: "transparent",
+			},
+			containerStyles: [styles.avatarWrap, { 
+				backgroundColor: theme.colors.surface,
+				width: size,
+				height: size,
+				borderRadius: size / 2,
+				borderColor: theme.colors.accent,
+				borderWidth: 2,
+			}],
+			innerStyles: [styles.innerCircle, {
+				backgroundColor: theme.colors.background,
+				width: innerSize,
+				height: innerSize,
+				borderRadius: innerSize / 2,
+			}],
+		};
+	}, [theme, size, innerSize, imageSize]);
+
 	return (
-		<View
-			style={[
-				styles.avatarWrap,
-				{
-					backgroundColor: theme.colors.surface,
-					width: size,
-					height: size,
-					borderRadius: size / 2,
-					borderColor: theme.colors.accent,
-					borderWidth: 2
-				},
-			]}
-		>
-		<View
-			style={[
-				styles.innerCircle,
-				{
-					backgroundColor: theme.colors.background,
-					width: size - 8,
-					height: size - 8,
-					borderRadius: (size - 8) / 2,
-				},
-			]}
-		>
-			{uri ? (
-				<Image
-					source={{ uri }}
-					style={{ width: size - 22, height: size - 22, borderRadius: (size - 22) / 2 }}
-					resizeMode="cover"
-				/>
-			) : (
-				<View style={[styles.initialsContainer, { backgroundColor: theme.colors.accent + "20" }]}>
-					<Text style={[styles.initialsText, { color: theme.colors.accent, fontSize: size * 0.35 }]}>
-						{getInitials(initials)}
-					</Text>
-				</View>
-			)}
-		</View>
+		<View style={dynamicStyles.containerStyles}>
+			<View style={dynamicStyles.innerStyles}>
+				{uri ? (
+					<Image
+						source={{ uri }}
+						style={dynamicStyles.image}
+						resizeMode="cover"
+					/>
+				) : (
+					<View
+						style={[
+							styles.initialsContainer,
+							dynamicStyles.initialsContainerStyle,
+						]}
+					>
+						<Text style={[styles.initialsText, dynamicStyles.initialsText]}>
+							{getInitials(initials)}
+						</Text>
+					</View>
+				)}
+			</View>
 		</View>
 	);
 };
+
+ClientAvatar.displayName = "ClientAvatar";
 
 const styles = StyleSheet.create({
 	avatarWrap: {

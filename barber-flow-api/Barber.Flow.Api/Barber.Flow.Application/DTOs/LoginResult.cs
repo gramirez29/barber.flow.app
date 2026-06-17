@@ -2,6 +2,6 @@
 
 public record LoginResult
 (
-    string Username,
-    string Token
+	string Username,
+	string Token
 );

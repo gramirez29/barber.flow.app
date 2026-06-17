@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -6,7 +6,7 @@ import { ClientAvatar } from "./ClientAvatar";
 import { useTranslation } from "../context/LanguageContext";
 import { useDialog } from "../context/DialogContext";
 
-import { AppTheme } from "../theme/themes";
+import type { AppTheme } from "../theme/themes";
 import { useAppTheme } from "../theme/ThemeContext";
 
 interface AvatarPickerProps {
@@ -19,9 +19,9 @@ interface AvatarPickerProps {
 	/** Disables interaction while an async operation is in progress */
 	loading?: boolean;
 	/**
-	 * "compact" — avatar + two small icon buttons stacked beneath it.
+	 * "compact" - avatar + two small icon buttons stacked beneath it.
 	 *              Fits inside a narrow hero card column (e.g. ClientForm).
-	 * "full"    — centered avatar preview + two full-width labeled buttons below.
+	 * "full"    - centered avatar preview + two full-width labeled buttons below.
 	 *              Used in standalone photo-card sections (e.g. ManageApplicationUsersForm).
 	 */
 	variant?: "compact" | "full";
@@ -29,63 +29,73 @@ interface AvatarPickerProps {
 	onChangePhoto: (uri: string) => void;
 }
 
-export const AvatarPicker: React.FC<AvatarPickerProps> = ({
+export const AvatarPicker = ({
 	uri,
 	initials,
 	size = 88,
 	loading = false,
 	variant = "full",
 	onChangePhoto,
-}) => {
+}: AvatarPickerProps) => {
 	const { translateText } = useTranslation();
 	const { showAlert } = useDialog();
 	const { theme } = useAppTheme();
-	const styles = React.useMemo(() => createStyles(theme), [theme]);
+	const styles = useMemo(() => createStyles(theme), [theme]);
 
 	const handlePickFromGallery = async () => {
-		const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+		if (loading) return;
+		try {
+			const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-		if (!permission.granted) {
-			showAlert(
-				translateText("common.open"),
-				translateText("avatarPicker.galleryPermissionRequired"),
-			);
-			return;
-		}
+			if (!permission.granted) {
+				showAlert(
+					translateText("common.open"),
+					translateText("avatarPicker.galleryPermissionRequired"),
+				);
+				return;
+			}
 
-		const result = await ImagePicker.launchImageLibraryAsync({
-			allowsEditing: true,
-			aspect: [1, 1],
-			mediaTypes: ImagePicker.MediaTypeOptions.Images,
-			quality: 0.85,
-		});
+			const result = await ImagePicker.launchImageLibraryAsync({
+				allowsEditing: true,
+				aspect: [1, 1],
+				mediaTypes: ImagePicker.MediaTypeOptions.Images,
+				quality: 0.85,
+			});
 
-		if (!result.canceled && result.assets.length > 0) {
-			onChangePhoto(result.assets[0].uri);
+			if (!result.canceled && result.assets && result.assets.length > 0) {
+				onChangePhoto(result.assets[0].uri);
+			}
+		} catch (error) {
+			console.error("Error picking image from gallery:", error);
 		}
 	};
 
 	const handleTakePhoto = async () => {
-		const permission = await ImagePicker.requestCameraPermissionsAsync();
+		if (loading) return;
+		try {
+			const permission = await ImagePicker.requestCameraPermissionsAsync();
 
-		if (!permission.granted) {
-			showAlert(
-				translateText("common.open"),
-				translateText("avatarPicker.cameraPermissionRequired"),
-			);
-			return;
-		}
+			if (!permission.granted) {
+				showAlert(
+					translateText("common.open"),
+					translateText("avatarPicker.cameraPermissionRequired"),
+				);
+				return;
+			}
 
-		const result = await ImagePicker.launchCameraAsync({
-			allowsEditing: true,
-			aspect: [1, 1],
-			cameraType: ImagePicker.CameraType.front,
-			mediaTypes: ImagePicker.MediaTypeOptions.Images,
-			quality: 0.85,
-		});
+			const result = await ImagePicker.launchCameraAsync({
+				allowsEditing: true,
+				aspect: [1, 1],
+				cameraType: ImagePicker.CameraType.front,
+				mediaTypes: ImagePicker.MediaTypeOptions.Images,
+				quality: 0.85,
+			});
 
-		if (!result.canceled && result.assets.length > 0) {
-			onChangePhoto(result.assets[0].uri);
+			if (!result.canceled && result.assets && result.assets.length > 0) {
+				onChangePhoto(result.assets[0].uri);
+			}
+		} catch (error) {
+			console.error("Error taking photo:", error);
 		}
 	};
 
@@ -160,6 +170,8 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 		</View>
 	);
 };
+
+AvatarPicker.displayName = "AvatarPicker";
 
 const createStyles = (theme: AppTheme) =>
 	StyleSheet.create({
