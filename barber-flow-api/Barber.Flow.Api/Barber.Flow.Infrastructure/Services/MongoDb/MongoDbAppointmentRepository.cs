@@ -16,10 +16,13 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
         _countersCollection = database.GetCollection<BsonCounter>("counters");
     }
 
+    /// <inheritdoc/>
     public async Task<Appointments> CreateAsync(Appointments appointment, CancellationToken cancellation = default)
     {
         if (string.IsNullOrWhiteSpace(appointment.Id))
+        {
             appointment.Id = await GetNextIdAsync(cancellation);
+        }
 
         appointment.CreatedAt = DateTime.UtcNow;
         appointment.UpdatedAt = appointment.CreatedAt;
@@ -27,6 +30,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
         return appointment;
     }
 
+    /// <inheritdoc/>
     public async Task<Appointments?> UpdateAsync(string id, Appointments appointment, CancellationToken cancellation = default)
     {
         var update = Builders<Appointments>.Update
@@ -52,6 +56,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
             cancellation);
     }
 
+    /// <inheritdoc/>
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellation = default)
     {
         var result = await _collection.DeleteOneAsync(
@@ -60,6 +65,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
         return result.DeletedCount > 0;
     }
 
+    /// <inheritdoc/>
     public async Task<Appointments?> GetByIdAsync(string id, CancellationToken cancellation = default)
     {
         return await _collection
@@ -67,6 +73,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
             .FirstOrDefaultAsync(cancellation);
     }
 
+    /// <inheritdoc/>
     public async Task<IEnumerable<Appointments>> FindAsync(
         string? date = null,
         string? endDate = null,
@@ -122,6 +129,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
             .ToListAsync(cancellation);
     }
 
+    /// <inheritdoc/>
     public async Task<Appointments?> MoveAsync(string id, string newDate, CancellationToken cancellation = default)
     {
         var update = Builders<Appointments>.Update
@@ -135,6 +143,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
             cancellation);
     }
 
+    /// <inheritdoc/>
     public async Task<string> GetNextIdAsync(CancellationToken cancellation = default)
     {
         var filter = Builders<BsonCounter>.Filter.Eq(c => c.Id, "appointmentId");
@@ -149,6 +158,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
         return $"APT-{counter.SequenceValue:D4}";
     }
 
+    /// <inheritdoc/>
     public async Task<IEnumerable<Appointments>> GetClientHistoryAsync(
         string clientId,
         string createdBy,
@@ -169,6 +179,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
             .ToListAsync(cancellation);
     }
 
+    /// <inheritdoc/>
     public async Task<Appointments?> FindByPhoneAsync(
         string phone,
         string createdBy,
