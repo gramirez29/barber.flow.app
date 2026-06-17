@@ -10,25 +10,14 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AppointmentCard } from "../components/calendar/AppointmentCard";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { useTranslation } from "../context/LanguageContext";
+import { useAppTheme } from "../theme/ThemeContext";
 import { useAppointmentStore } from "../features/appointments/appointment.store";
 import type { Appointment } from "../features/appointments/appointments.types";
 import { getIntlLocale } from "../localization/i18n";
 import type { RouteProp } from "@react-navigation/native";
 import type { CalendarStackParamList } from "../navigation/CalendarNavigator";
 
-const COLORS = {
-	bg: "#0D0D0D",
-	surface: "#1A1A1A",
-	surfaceElevated: "#252525",
-	gold: "#C9A84C",
-	goldLight: "#E5C878",
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-	border: "#3A3A3A",
-	overlay: "rgba(0,0,0,0.58)",
-	error: "#F87171",
-	errorBg: "rgba(248,113,113,0.10)",
-} as const;
+
 
 LocaleConfig.locales.en = {
 	monthNames: [
@@ -112,6 +101,8 @@ LocaleConfig.locales.es = {
 	dayNamesShort: ["D", "L", "M", "M", "J", "V", "S"],
 	today: "Hoy",
 };
+import type { AppTheme } from "../theme/themes";
+
 type ViewMode = "month" | "week" | "day";
 
 const DATE_FORMAT = "yyyy-MM-dd";
@@ -143,10 +134,259 @@ const toDate = (dateString: string) => new Date(`${dateString}T12:00:00`);
 		day: "numeric",
 	}).format(toDate(dateString));
 
+const createStyles = (theme: AppTheme) => StyleSheet.create({
+	flex: {
+		flex: 1,
+	},
+	scrollContent: {
+		paddingBottom: 32,
+		gap: 16,
+	},
+	// ─── Summary card
+	summaryCard: {
+		backgroundColor: theme.colors.surface,
+		borderRadius: 20,
+		borderWidth: 1,
+		borderColor: theme.colors.border,
+		padding: 20,
+		shadowColor: theme.colors.accent,
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.08,
+		shadowRadius: 12,
+		elevation: 4,
+	},
+	summaryTopRow: {
+		gap: 16,
+	},
+	summaryTextBlock: {
+		gap: 4,
+	},
+	summaryLabel: {
+		fontSize: 11,
+		fontWeight: "700",
+		letterSpacing: 1.2,
+		textTransform: "uppercase",
+		color: theme.colors.accent,
+	},
+	summaryDate: {
+		fontSize: 26,
+		fontWeight: "700",
+		textTransform: "capitalize",
+		color: theme.colors.textPrimary,
+	},
+	summaryCount: {
+		fontSize: 14,
+		color: theme.colors.textSecondary,
+	},
+	summaryActions: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 10,
+		flexWrap: "wrap",
+	},
+	// ─── Gold button
+	goldBtn: {
+		backgroundColor: theme.colors.accent,
+		borderRadius: 14,
+		height: 44,
+		paddingHorizontal: 18,
+		justifyContent: "center",
+		alignItems: "center",
+		shadowColor: theme.colors.accent,
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.35,
+		shadowRadius: 8,
+		elevation: 6,
+	},
+	goldBtnPressed: {
+		opacity: 0.85,
+	},
+	goldBtnText: {
+		color: theme.colors.background,
+		fontWeight: "800",
+		fontSize: 14,
+		letterSpacing: 0.3,
+	},
+	// ─── Text link button
+	textBtn: {
+		paddingHorizontal: 8,
+		paddingVertical: 6,
+	},
+	textBtnLabel: {
+		color: theme.colors.accent,
+		fontWeight: "600",
+		fontSize: 14,
+	},
+	// ─── View mode pills
+	viewModeRow: {
+		flexDirection: "row",
+		marginTop: 16,
+		backgroundColor: theme.colors.surfaceElevated,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: theme.colors.border,
+		padding: 4,
+		gap: 4,
+	},
+	viewModeBtn: {
+		flex: 1,
+		paddingVertical: 8,
+		borderRadius: 10,
+		alignItems: "center",
+	},
+	viewModeBtnActive: {
+		backgroundColor: theme.colors.accent,
+	},
+	viewModeBtnText: {
+		fontSize: 11,
+		fontWeight: "600",
+		color: theme.colors.textSecondary,
+		letterSpacing: 0.4,
+	},
+	viewModeBtnTextActive: {
+		color: theme.colors.background,
+		fontWeight: "800",
+	},
+	// ─── Calendar / section card
+	calendarCard: {
+		backgroundColor: theme.colors.surface,
+		borderRadius: 20,
+		borderWidth: 1,
+		borderColor: theme.colors.border,
+		padding: 20,
+		shadowColor: theme.colors.accent,
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.08,
+		shadowRadius: 12,
+		elevation: 4,
+	},
+	calendar: {
+		marginTop: 8,
+	},
+	calendarHint: {
+		fontSize: 13,
+		marginTop: 12,
+		color: theme.colors.textSecondary,
+	},
+	// ─── Section header
+	sectionHeader: {
+		alignItems: "center",
+		flexDirection: "row",
+		justifyContent: "space-between",
+		gap: 16,
+		marginBottom: 4,
+	},
+	sectionLabel: {
+		fontSize: 11,
+		fontWeight: "700",
+		letterSpacing: 1.2,
+		textTransform: "uppercase",
+		color: theme.colors.accent,
+	},
+	sectionTitle: {
+		fontSize: 20,
+		fontWeight: "700",
+		marginTop: 4,
+		textTransform: "capitalize",
+		color: theme.colors.textPrimary,
+	},
+	goldLink: {
+		color: theme.colors.accent,
+		fontWeight: "700",
+		fontSize: 14,
+	},
+	// ─── Divider
+	divider: {
+		height: 1,
+		backgroundColor: theme.colors.border,
+		marginVertical: 20,
+	},
+	// ─── Week chips
+	weekRow: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: 8,
+		marginTop: 16,
+	},
+	weekDayChip: {
+		alignItems: "center",
+		borderRadius: 14,
+		borderWidth: 1,
+		borderColor: theme.colors.border,
+		backgroundColor: theme.colors.surfaceElevated,
+		gap: 4,
+		minWidth: 68,
+		paddingHorizontal: 10,
+		paddingVertical: 10,
+	},
+	weekDayChipActive: {
+		backgroundColor: theme.colors.accent,
+		borderColor: theme.colors.accent,
+		shadowColor: theme.colors.accent,
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.4,
+		shadowRadius: 6,
+		elevation: 4,
+	},
+	weekDayWeekday: {
+		fontSize: 11,
+		fontWeight: "600",
+		color: theme.colors.textSecondary,
+	},
+	weekDayNumber: {
+		fontSize: 18,
+		fontWeight: "700",
+		color: theme.colors.textPrimary,
+	},
+	weekDayCount: {
+		fontSize: 10,
+		color: theme.colors.textSecondary,
+	},
+	weekDayTextActive: {
+		color: theme.colors.background,
+	},
+	// ─── Screen background
+	screenBg: {
+		flex: 1,
+	},
+	screenOverlay: {
+		...StyleSheet.absoluteFillObject,
+		backgroundColor: theme.colors.overlay,
+	},
+	// ─── Appointment list
+	listContent: {
+		marginTop: 16,
+	},
+	// ─── Empty state
+	emptyState: {
+		alignItems: "center",
+		borderRadius: 16,
+		borderWidth: 1,
+		borderColor: theme.colors.border,
+		backgroundColor: theme.colors.surfaceElevated,
+		marginTop: 16,
+		paddingHorizontal: 20,
+		paddingVertical: 28,
+	},
+	emptyTitle: {
+		fontSize: 18,
+		fontWeight: "700",
+		marginBottom: 8,
+		color: theme.colors.textPrimary,
+	},
+	emptySubtitle: {
+		fontSize: 14,
+		textAlign: "center",
+		color: theme.colors.textSecondary,
+	},
+});
+
 export const CalendarScreen: React.FC = () => {
 	const navigation = useNavigation<NativeStackNavigationProp<CalendarStackParamList, "CalendarHome">>();
 	const route = useRoute<RouteProp<CalendarStackParamList, "CalendarHome">>();
 	const { language, translateText } = useTranslation();
+	const { theme } = useAppTheme();
+	const styles = useMemo(() => createStyles(theme), [theme]);
 	const {
 		appointments,
 		isLoading,
@@ -234,16 +474,16 @@ export const CalendarScreen: React.FC = () => {
 
 		markedDates[date] = {
 		marked: hasAppointments,
-		dotColor: COLORS.gold,
+		dotColor: theme.colors.accent,
 		customStyles: {
 			container: {
-				backgroundColor: isSelected ? COLORS.gold : "transparent",
-				borderColor: isToday ? COLORS.gold : COLORS.border,
+				backgroundColor: isSelected ? theme.colors.accent : "transparent",
+				borderColor: isToday ? theme.colors.accent : theme.colors.border,
 				borderRadius: 16,
 				borderWidth: isToday ? 1 : 0,
 			},
 			text: {
-				color: isSelected ? COLORS.bg : COLORS.textPrimary,
+				color: isSelected ? theme.colors.background : theme.colors.textPrimary,
 				fontWeight: isSelected || isToday ? "700" : "500",
 			},
 		},
@@ -390,7 +630,7 @@ export const CalendarScreen: React.FC = () => {
 							<View>
 								<Text style={styles.sectionLabel}>{translateText("calendar.monthView")}</Text>
 								<Text style={styles.sectionTitle}>{formatLongDate(visibleMonth, locale)}</Text>
-							{isLoading && <ActivityIndicator size="small" color={COLORS.gold} style={{ marginTop: 4 }} />}
+							{isLoading && <ActivityIndicator size="small" color={theme.colors.accent} style={{ marginTop: 4 }} />}
 						</View>
 						<Pressable onPress={() => openCreateModal(selectedDate)}>
 							<Text style={styles.goldLink}>{translateText("calendar.schedule")}</Text>
@@ -405,14 +645,14 @@ export const CalendarScreen: React.FC = () => {
 							onDayLongPress={(day) => openCreateModal(day.dateString)}
 							onMonthChange={(month) => setVisibleMonth(month.dateString)}
 							theme={{
-								backgroundColor: COLORS.surface,
-								calendarBackground: COLORS.surface,
-								dayTextColor: COLORS.textPrimary,
-								monthTextColor: COLORS.textPrimary,
-								textDisabledColor: COLORS.textSecondary,
-								todayTextColor: COLORS.gold,
-								arrowColor: COLORS.gold,
-								textSectionTitleColor: COLORS.textSecondary,
+								backgroundColor: theme.colors.surface,
+								calendarBackground: theme.colors.surface,
+								dayTextColor: theme.colors.textPrimary,
+								monthTextColor: theme.colors.textPrimary,
+								textDisabledColor: theme.colors.textSecondary,
+								todayTextColor: theme.colors.accent,
+								arrowColor: theme.colors.accent,
+								textSectionTitleColor: theme.colors.textSecondary,
 							}}
 							style={styles.calendar}
 						/>
@@ -444,7 +684,7 @@ export const CalendarScreen: React.FC = () => {
 								<Text style={styles.sectionTitle}>
 									{translateText("calendar.weekOf", { date: formatLongDate(selectedDate, locale) })}
 								</Text>
-								{isLoading && <ActivityIndicator size="small" color={COLORS.gold} style={{ marginTop: 4 }} />}
+								{isLoading && <ActivityIndicator size="small" color={theme.colors.accent} style={{ marginTop: 4 }} />}
 							</View>
 							<Pressable onPress={() => openCreateModal(selectedDate)}>
 								<Text style={styles.goldLink}>{translateText("calendar.schedule")}</Text>
@@ -498,7 +738,7 @@ export const CalendarScreen: React.FC = () => {
 							<View>
 								<Text style={styles.sectionLabel}>{translateText("calendar.viewDay")}</Text>
 								<Text style={styles.sectionTitle}>{formatLongDate(selectedDate, locale)}</Text>
-								{isLoading && <ActivityIndicator size="small" color={COLORS.gold} style={{ marginTop: 4 }} />}
+								{isLoading && <ActivityIndicator size="small" color={theme.colors.accent} style={{ marginTop: 4 }} />}
 							</View>
 							<Pressable
 								style={({ pressed }) => [styles.goldBtn, pressed && styles.goldBtnPressed]}
@@ -521,249 +761,3 @@ export const CalendarScreen: React.FC = () => {
 	);
 };
 
-const styles = StyleSheet.create({
-	flex: {
-		flex: 1,
-	},
-	scrollContent: {
-		paddingBottom: 32,
-		gap: 16,
-	},
-	// ─── Summary card
-	summaryCard: {
-		backgroundColor: COLORS.surface,
-		borderRadius: 20,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		padding: 20,
-		shadowColor: COLORS.gold,
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.08,
-		shadowRadius: 12,
-		elevation: 4,
-	},
-	summaryTopRow: {
-		gap: 16,
-	},
-	summaryTextBlock: {
-		gap: 4,
-	},
-	summaryLabel: {
-		fontSize: 11,
-		fontWeight: "700",
-		letterSpacing: 1.2,
-		textTransform: "uppercase",
-		color: COLORS.gold,
-	},
-	summaryDate: {
-		fontSize: 26,
-		fontWeight: "700",
-		textTransform: "capitalize",
-		color: COLORS.textPrimary,
-	},
-	summaryCount: {
-		fontSize: 14,
-		color: COLORS.textSecondary,
-	},
-	summaryActions: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 10,
-		flexWrap: "wrap",
-	},
-	// ─── Gold button
-	goldBtn: {
-		backgroundColor: COLORS.gold,
-		borderRadius: 14,
-		height: 44,
-		paddingHorizontal: 18,
-		justifyContent: "center",
-		alignItems: "center",
-		shadowColor: COLORS.gold,
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.35,
-		shadowRadius: 8,
-		elevation: 6,
-	},
-	goldBtnPressed: {
-		opacity: 0.85,
-	},
-	goldBtnText: {
-		color: COLORS.bg,
-		fontWeight: "800",
-		fontSize: 14,
-		letterSpacing: 0.3,
-	},
-	// ─── Text link button
-	textBtn: {
-		paddingHorizontal: 8,
-		paddingVertical: 6,
-	},
-	textBtnLabel: {
-		color: COLORS.gold,
-		fontWeight: "600",
-		fontSize: 14,
-	},
-	// ─── View mode pills
-	viewModeRow: {
-		flexDirection: "row",
-		marginTop: 16,
-		backgroundColor: COLORS.surfaceElevated,
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		padding: 4,
-		gap: 4,
-	},
-	viewModeBtn: {
-		flex: 1,
-		paddingVertical: 8,
-		borderRadius: 10,
-		alignItems: "center",
-	},
-	viewModeBtnActive: {
-		backgroundColor: COLORS.gold,
-	},
-	viewModeBtnText: {
-		fontSize: 11,
-		fontWeight: "600",
-		color: COLORS.textSecondary,
-		letterSpacing: 0.4,
-	},
-	viewModeBtnTextActive: {
-		color: COLORS.bg,
-		fontWeight: "800",
-	},
-	// ─── Calendar / section card
-	calendarCard: {
-		backgroundColor: COLORS.surface,
-		borderRadius: 20,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		padding: 20,
-		shadowColor: COLORS.gold,
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.08,
-		shadowRadius: 12,
-		elevation: 4,
-	},
-	calendar: {
-		marginTop: 8,
-	},
-	calendarHint: {
-		fontSize: 13,
-		marginTop: 12,
-		color: COLORS.textSecondary,
-	},
-	// ─── Section header
-	sectionHeader: {
-		alignItems: "center",
-		flexDirection: "row",
-		justifyContent: "space-between",
-		gap: 16,
-		marginBottom: 4,
-	},
-	sectionLabel: {
-		fontSize: 11,
-		fontWeight: "700",
-		letterSpacing: 1.2,
-		textTransform: "uppercase",
-		color: COLORS.gold,
-	},
-	sectionTitle: {
-		fontSize: 20,
-		fontWeight: "700",
-		marginTop: 4,
-		textTransform: "capitalize",
-		color: COLORS.textPrimary,
-	},
-	goldLink: {
-		color: COLORS.gold,
-		fontWeight: "700",
-		fontSize: 14,
-	},
-	// ─── Divider
-	divider: {
-		height: 1,
-		backgroundColor: COLORS.border,
-		marginVertical: 20,
-	},
-	// ─── Week chips
-	weekRow: {
-		flexDirection: "row",
-		flexWrap: "wrap",
-		gap: 8,
-		marginTop: 16,
-	},
-	weekDayChip: {
-		alignItems: "center",
-		borderRadius: 14,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		backgroundColor: COLORS.surfaceElevated,
-		gap: 4,
-		minWidth: 68,
-		paddingHorizontal: 10,
-		paddingVertical: 10,
-	},
-	weekDayChipActive: {
-		backgroundColor: COLORS.gold,
-		borderColor: COLORS.gold,
-		shadowColor: COLORS.gold,
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.4,
-		shadowRadius: 6,
-		elevation: 4,
-	},
-	weekDayWeekday: {
-		fontSize: 11,
-		fontWeight: "600",
-		color: COLORS.textSecondary,
-	},
-	weekDayNumber: {
-		fontSize: 18,
-		fontWeight: "700",
-		color: COLORS.textPrimary,
-	},
-	weekDayCount: {
-		fontSize: 10,
-		color: COLORS.textSecondary,
-	},
-	weekDayTextActive: {
-		color: COLORS.bg,
-	},
-	// ─── Screen background
-	screenBg: {
-		flex: 1,
-	},
-	screenOverlay: {
-		...StyleSheet.absoluteFillObject,
-		backgroundColor: "rgba(13,13,13,0.65)",
-	},
-	// ─── Appointment list
-	listContent: {
-		marginTop: 16,
-	},
-	// ─── Empty state
-	emptyState: {
-		alignItems: "center",
-		borderRadius: 16,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		backgroundColor: COLORS.surfaceElevated,
-		marginTop: 16,
-		paddingHorizontal: 20,
-		paddingVertical: 28,
-	},
-	emptyTitle: {
-		fontSize: 18,
-		fontWeight: "700",
-		marginBottom: 8,
-		color: COLORS.textPrimary,
-	},
-	emptySubtitle: {
-		fontSize: 14,
-		textAlign: "center",
-		color: COLORS.textSecondary,
-	},
-});

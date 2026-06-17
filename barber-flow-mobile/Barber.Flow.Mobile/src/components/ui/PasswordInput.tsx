@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "../../theme/ThemeContext";
+import { AppTheme } from "../../theme/themes";
 
 type Props = TextInputProps & {
 	containerStyle?: StyleProp<ViewStyle>;
@@ -31,6 +32,7 @@ export const PasswordInput: React.FC<Props> = ({
 }) => {
 	const [visible, setVisible] = React.useState(false);
 	const { theme } = useAppTheme();
+	const styles = React.useMemo(() => createStyles(theme), [theme]);
 
 	return (
 		<View style={[styles.wrapper, containerStyle]}>
@@ -41,11 +43,7 @@ export const PasswordInput: React.FC<Props> = ({
 					styles.input,
 					{
 						borderColor: error ? theme.colors.error : theme.colors.border,
-						borderRadius: theme.layout.components.input.radius,
-						borderWidth: 1,
 						backgroundColor: theme.colors.primaryInput,
-						paddingHorizontal: theme.layout.components.input.paddingHorizontal,
-						paddingVertical: theme.layout.components.input.paddingVertical,
 						color: theme.colors.textPrimary,
 					},
 					inputStyle,
@@ -53,7 +51,7 @@ export const PasswordInput: React.FC<Props> = ({
 				]}
 				onFocus={onFocusVisible}
 				placeholderTextColor={theme.colors.textSecondary}
-				selectionColor={theme.colors.secondary}
+				selectionColor={theme.colors.accent}
 				{...rest}
 			/>
 			<Pressable
@@ -71,18 +69,23 @@ export const PasswordInput: React.FC<Props> = ({
 	);
 };
 
-const styles = StyleSheet.create({
-	wrapper: { position: "relative", width: "100%" },
-	input: {
-		fontSize: 16,
-	},
-	eye: {
-		position: "absolute",
-		right: 12,
-		top: 0,
-		bottom: 0,
-		justifyContent: "center",
-		width: 36,
-		alignItems: "center",
-	},
-});
+const createStyles = (theme: AppTheme) =>
+	StyleSheet.create({
+		wrapper: { position: "relative", width: "100%" },
+		input: {
+			fontSize: 16,
+			borderRadius: theme.layout.components.input.radius,
+			borderWidth: 1,
+			paddingHorizontal: theme.layout.components.input.paddingHorizontal,
+			paddingVertical: theme.layout.components.input.paddingVertical,
+		},
+		eye: {
+			position: "absolute",
+			right: 12,
+			top: 0,
+			bottom: 0,
+			justifyContent: "center",
+			width: 36,
+			alignItems: "center",
+		},
+	});

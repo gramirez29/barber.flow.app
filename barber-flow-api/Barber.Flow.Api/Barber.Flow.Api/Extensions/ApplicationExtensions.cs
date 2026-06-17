@@ -13,6 +13,7 @@ using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Infrastructure.Services.InMemory;
 using Barber.Flow.Infrastructure.Services.MongoDb;
 using Barber.Flow.Infrastructure.Settings;
+using Barber.Flow.Infrastructure.Services;
 using Barber.Flow.Application.Services.Users;
 using Barber.Flow.Application.Services.Reports;
 using Barber.Flow.Api.DTOs.Requests;
@@ -45,10 +46,21 @@ public static class ApplicationExtensions
         // Bind feature flags and MongoDB settings
         services.Configure<FeatureFlags>(configuration.GetSection("Features"));
         services.Configure<MongoDbSettings>(configuration.GetSection("MongoDb"));
+        services.Configure<EmailSettings>(configuration.GetSection("Email"));
 
         var useMongoDb = configuration.GetValue<bool>("Features:UseMongoDb");
+        var useRealEmail = configuration.GetValue<bool>("Features:UseRealEmail");
 
         services.AddScoped<IClientService, ClientService>();
+
+        if (useRealEmail)
+        {
+            services.AddScoped<IEmailService, EmailService>();
+        }
+        else
+        {
+            services.AddScoped<IEmailService, ConsoleEmailService>();
+        }
 
         if (useMongoDb)
         {
@@ -67,6 +79,7 @@ public static class ApplicationExtensions
             services.AddSingleton<IClientRepository, MongoDbClientRepository>();
             services.AddSingleton<IBarberShopRepository, MongoDbBarberShopRepository>();
             services.AddSingleton<IAppointmentRepository, MongoDbAppointmentRepository>();
+            services.AddSingleton<IPasswordResetRepository, MongoDbPasswordResetRepository>();
             services.AddSingleton<Barber.Flow.Infrastructure.Services.IDataMigrationService, Barber.Flow.Infrastructure.Services.DataMigrationService>();
         }
         else
@@ -74,6 +87,7 @@ public static class ApplicationExtensions
             services.AddSingleton<IClientRepository, InMemoryClientRepository>();
             services.AddSingleton<IBarberShopRepository, InMemoryBarberShopRepository>();
             services.AddSingleton<IAppointmentRepository, InMemoryAppointmentRepository>();
+            services.AddSingleton<IPasswordResetRepository, InMemoryPasswordResetRepository>();
         }
 
         services.AddScoped<IBarberService, BarberService>();

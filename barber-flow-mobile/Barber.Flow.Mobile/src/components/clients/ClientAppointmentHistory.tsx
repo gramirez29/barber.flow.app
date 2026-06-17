@@ -9,16 +9,8 @@ import { clientHistoryService } from "../../services/clientHistoryService";
 import type { Appointment } from "../../features/appointments/appointments.types";
 import { getErrorMessage } from "../../utils/errors";
 import { useTranslation } from "../../context/LanguageContext";
-
-const COLORS = {
-    bg: "#0D0D0D",
-    surface: "#1A1A1A",
-    surfaceElevated: "#252525",
-    gold: "#C9A84C",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#9B9B9B",
-    border: "#3A3A3A",
-} as const;
+import { AppTheme } from "../../theme/themes";
+import { useAppTheme } from "../../theme/ThemeContext";
 
 const RADIUS = 14;
 
@@ -30,6 +22,8 @@ export const ClientAppointmentHistory: React.FC<ClientAppointmentHistoryProps> =
     clientId,
 }) => {
     const { translateText } = useTranslation();
+    const { theme } = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -54,15 +48,15 @@ export const ClientAppointmentHistory: React.FC<ClientAppointmentHistoryProps> =
     const getStatusColor = (status: string) => {
         switch (status) {
             case "completed":
-                return "#4CAF50";
+                return theme.colors.success;
             case "confirmed":
-                return COLORS.gold;
+                return theme.colors.accent;
             case "scheduled":
-                return "#2196F3";
+                return theme.colors.info || "#2196F3";
             case "cancelled":
-                return "#F44336";
+                return theme.colors.error;
             default:
-                return COLORS.textSecondary;
+                return theme.colors.textSecondary;
         }
     };
 
@@ -118,7 +112,7 @@ export const ClientAppointmentHistory: React.FC<ClientAppointmentHistoryProps> =
     if (loading) {
         return (
             <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color={COLORS.gold} />
+                <ActivityIndicator size="large" color={theme.colors.accent} />
             </View>
         );
     }
@@ -145,85 +139,86 @@ export const ClientAppointmentHistory: React.FC<ClientAppointmentHistoryProps> =
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        marginTop: 16,
-    },
-    centerContainer: {
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 32,
-    },
-    title: {
-        color: COLORS.textPrimary,
-        fontSize: 18,
-        fontWeight: "700",
-        marginBottom: 16,
-        paddingHorizontal: 16,
-    },
-    listContent: {
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-    },
-    appointmentCard: {
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS,
-        padding: 16,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    appointmentHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 8,
-    },
-    appointmentDate: {
-        color: COLORS.textPrimary,
-        fontSize: 16,
-        fontWeight: "600",
-    },
-    statusBadge: {
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    statusText: {
-        color: "#FFFFFF",
-        fontSize: 12,
-        fontWeight: "700",
-    },
-    serviceName: {
-        color: COLORS.gold,
-        fontSize: 16,
-        fontWeight: "600",
-        marginBottom: 8,
-    },
-    appointmentDetails: {
-        flexDirection: "row",
-        gap: 16,
-        marginBottom: 8,
-    },
-    detailText: {
-        color: COLORS.textSecondary,
-        fontSize: 14,
-    },
-    notes: {
-        color: COLORS.textSecondary,
-        fontSize: 14,
-        fontStyle: "italic",
-        marginTop: 4,
-    },
-    emptyText: {
-        color: COLORS.textSecondary,
-        fontSize: 16,
-        textAlign: "center",
-        marginTop: 32,
-    },
-    errorText: {
-        color: "#FF6B6B",
-        fontSize: 16,
-        textAlign: "center",
-    },
-});
+const createStyles = (theme: AppTheme) =>
+    StyleSheet.create({
+        container: {
+            marginTop: 16,
+        },
+        centerContainer: {
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 32,
+        },
+        title: {
+            color: theme.colors.textPrimary,
+            fontSize: 18,
+            fontWeight: "700",
+            marginBottom: 16,
+            paddingHorizontal: 16,
+        },
+        listContent: {
+            paddingHorizontal: 16,
+            paddingBottom: 16,
+        },
+        appointmentCard: {
+            backgroundColor: theme.colors.surface,
+            borderRadius: RADIUS,
+            padding: 16,
+            marginBottom: 12,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+        },
+        appointmentHeader: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 8,
+        },
+        appointmentDate: {
+            color: theme.colors.textPrimary,
+            fontSize: 16,
+            fontWeight: "600",
+        },
+        statusBadge: {
+            paddingHorizontal: 12,
+            paddingVertical: 4,
+            borderRadius: 12,
+        },
+        statusText: {
+            color: "#FFFFFF",
+            fontSize: 12,
+            fontWeight: "700",
+        },
+        serviceName: {
+            color: theme.colors.accent,
+            fontSize: 16,
+            fontWeight: "600",
+            marginBottom: 8,
+        },
+        appointmentDetails: {
+            flexDirection: "row",
+            gap: 16,
+            marginBottom: 8,
+        },
+        detailText: {
+            color: theme.colors.textSecondary,
+            fontSize: 14,
+        },
+        notes: {
+            color: theme.colors.textSecondary,
+            fontSize: 14,
+            fontStyle: "italic",
+            marginTop: 4,
+        },
+        emptyText: {
+            color: theme.colors.textSecondary,
+            fontSize: 16,
+            textAlign: "center",
+            marginTop: 32,
+        },
+        errorText: {
+            color: theme.colors.error,
+            fontSize: 16,
+            textAlign: "center",
+        },
+    });

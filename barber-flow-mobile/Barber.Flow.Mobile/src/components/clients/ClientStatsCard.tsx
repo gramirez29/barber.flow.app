@@ -2,14 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import type { ClientStats } from "../../types/clients";
 import { useTranslation } from "../../context/LanguageContext";
-
-const COLORS = {
-    surface: "#1A1A1A",
-    gold: "#C9A84C",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#9B9B9B",
-    border: "#3A3A3A",
-} as const;
+import { AppTheme } from "../../theme/themes";
+import { useAppTheme } from "../../theme/ThemeContext";
 
 const RADIUS = 14;
 
@@ -19,6 +13,8 @@ interface ClientStatsCardProps {
 
 export const ClientStatsCard: React.FC<ClientStatsCardProps> = ({ stats }) => {
     const { translateText } = useTranslation();
+    const { theme } = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
 
     const formatCurrency = (amount: number) => {
         return `₡${amount.toLocaleString("es-CR", {
@@ -88,69 +84,70 @@ export const ClientStatsCard: React.FC<ClientStatsCardProps> = ({ stats }) => {
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        marginBottom: 16,
-    },
-    title: {
-        color: COLORS.textPrimary,
-        fontSize: 18,
-        fontWeight: "700",
-        marginBottom: 16,
-    },
-    statsGrid: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 12,
-        marginBottom: 16,
-    },
-    statItem: {
-        flex: 1,
-        minWidth: "45%",
-        backgroundColor: "rgba(255, 255, 255, 0.03)",
-        padding: 12,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        alignItems: "center",
-    },
-    statValue: {
-        color: COLORS.textPrimary,
-        fontSize: 24,
-        fontWeight: "700",
-        marginBottom: 4,
-    },
-    statLabel: {
-        color: COLORS.textSecondary,
-        fontSize: 12,
-        textAlign: "center",
-    },
-    goldText: {
-        color: COLORS.gold,
-    },
-    financialStats: {
-        gap: 12,
-    },
-    financialRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    financialLabel: {
-        color: COLORS.textSecondary,
-        fontSize: 14,
-    },
-    financialValue: {
-        color: COLORS.textPrimary,
-        fontSize: 16,
-        fontWeight: "600",
-    },
-});
+const createStyles = (theme: AppTheme) =>
+    StyleSheet.create({
+        container: {
+            backgroundColor: theme.colors.surface,
+            borderRadius: RADIUS,
+            padding: 16,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            marginBottom: 16,
+        },
+        title: {
+            color: theme.colors.textPrimary,
+            fontSize: 18,
+            fontWeight: "700",
+            marginBottom: 16,
+        },
+        statsGrid: {
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 12,
+            marginBottom: 16,
+        },
+        statItem: {
+            flex: 1,
+            minWidth: "45%",
+            backgroundColor: "rgba(255, 255, 255, 0.03)",
+            padding: 12,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            alignItems: "center",
+        },
+        statValue: {
+            color: theme.colors.textPrimary,
+            fontSize: 24,
+            fontWeight: "700",
+            marginBottom: 4,
+        },
+        statLabel: {
+            color: theme.colors.textSecondary,
+            fontSize: 12,
+            textAlign: "center",
+        },
+        goldText: {
+            color: theme.colors.accent,
+        },
+        financialStats: {
+            gap: 12,
+        },
+        financialRow: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingVertical: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.border,
+        },
+        financialLabel: {
+            color: theme.colors.textSecondary,
+            fontSize: 14,
+        },
+        financialValue: {
+            color: theme.colors.textPrimary,
+            fontSize: 16,
+            fontWeight: "600",
+        },
+    });

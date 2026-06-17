@@ -117,6 +117,7 @@
 			dark: "Oscuro",
 			english: "Inglés",
 			followDeviceLanguage: "Usar idioma del dispositivo",
+			followSystemTheme: "Usar tema del dispositivo",
 			languageManualBody: "Elige el idioma que deseas mantener en la aplicación.",
 			languageSystemBody:
 				"La aplicación sigue el idioma del dispositivo. Idioma actual: %{language}.",
@@ -125,6 +126,9 @@
 			notifications: "Notificaciones (%{count})",
 			spanish: "Español",
 			system: "Sistema",
+			themeManualBody: "Elige el tema que deseas mantener en la aplicación.",
+			themeSystemBody:
+				"La aplicación sigue el tema del dispositivo. Tema actual: %{theme}.",
 		},
 		alerts: {
 			applicationUserCreated: "Usuario de aplicación %{id} creado correctamente.",
@@ -196,12 +200,14 @@
 		barberPhoneRequired: "El teléfono del barbero es obligatorio.",
 		commissionPercentageRange: "El porcentaje de comisión debe estar entre 0 y 100.",
 		emailRequired: "El correo es obligatorio.",
+		error: "Ocurrió un error inesperado.",
 		fixedDailyExpenseRange: "El gasto fijo diario debe ser 0 o mayor.",
 		invalidEmail: "Correo electrónico no válido.",
 		lastNameRequired: "El apellido es obligatorio.",
 		nameRequired: "El nombre es obligatorio.",
 		passwordLength: "La contraseña debe tener al menos 6 caracteres.",
 		passwordRequired: "La contraseña es obligatoria.",
+		passwordsMustMatch: "Las contraseñas no coinciden.",
 		phoneFormat: "El teléfono debe tener el formato 0000-0000.",
 		phoneRequired: "El teléfono es obligatorio.",
 		required: "Obligatorio.",
@@ -234,6 +240,28 @@
 			moveThisAppointmentToOtherSchedule: "Mover esta cita a otro día u hora.",
 			moveAppointmentCta: "Mover cita",
 		},
+	},
+	otp: {
+		title: "Verifica tu cuenta",
+		subtitle: "Hemos enviado un código de 6 dígitos a",
+		invalidCode: "El código ingresado es incorrecto o ha expirado.",
+		noCode: "¿No recibiste el código?",
+		resendIn: "Reenviar en",
+		resendNow: "Reenviar código ahora",
+	},
+	forgotPassword: {
+		title: "¿Olvidaste tu contraseña?",
+		subtitle: "Introduce tu correo electrónico y te enviaremos un código para restablecerla.",
+		sendCode: "Enviar código",
+		backToLogin: "Volver al inicio",
+	},
+	resetPassword: {
+		title: "Nueva contraseña",
+		subtitle: "Crea una contraseña segura para tu cuenta.",
+		newPassword: "Nueva contraseña",
+		confirmPassword: "Confirmar contraseña",
+		savePassword: "Guardar y entrar",
+		success: "Contraseña actualizada con éxito",
 	},
 	clients: {
 		alerts: {

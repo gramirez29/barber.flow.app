@@ -29,8 +29,8 @@ const mapBarberRequest = (
 	Password: values.password?.trim() || undefined,
 	PhotoUrl: values.profilePhotoUrl || undefined,
 	Settings: reportCalculations ? {
-		CommissionPercentage: reportCalculations.commissionPercentage,
-		FixedDailyExpense: reportCalculations.fixedDailyExpense,
+		commissionPercentage: reportCalculations.commissionPercentage,
+		fixedDailyExpense: reportCalculations.fixedDailyExpense,
 	} : undefined,
 });
 

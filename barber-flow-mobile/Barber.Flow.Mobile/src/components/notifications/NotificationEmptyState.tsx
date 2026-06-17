@@ -1,13 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
-
-const COLORS = {
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-	surfaceElevated: "#252525",
-	border: "#3A3A3A",
-} as const;
+import { useAppTheme } from "../../theme/ThemeContext";
+import { AppTheme } from "../../theme/themes";
 
 type NotificationEmptyStateProps = {
 	body: string;
@@ -18,10 +13,13 @@ export const NotificationEmptyState = ({
 	body,
 	title,
 }: NotificationEmptyStateProps) => {
+	const { theme } = useAppTheme();
+	const styles = useMemo(() => createStyles(theme), [theme]);
+
 	return (
 		<View style={styles.container}>
 			<Ionicons
-				color={COLORS.textSecondary}
+				color={theme.colors.textSecondary}
 				name="checkmark-done-circle-outline"
 				size={24}
 			/>
@@ -35,17 +33,17 @@ export const NotificationEmptyState = ({
 	);
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
 	body: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 13,
 		lineHeight: 18,
 		textAlign: "center",
 	},
 	container: {
 		alignItems: "center",
-		backgroundColor: COLORS.surfaceElevated,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surfaceElevated,
+		borderColor: theme.colors.border,
 		borderRadius: 12,
 		borderWidth: 1,
 		gap: 8,
@@ -53,7 +51,7 @@ const styles = StyleSheet.create({
 		paddingVertical: 20,
 	},
 	title: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 15,
 		fontWeight: "600",
 	},

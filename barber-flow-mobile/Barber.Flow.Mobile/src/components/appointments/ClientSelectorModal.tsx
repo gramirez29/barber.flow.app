@@ -13,18 +13,8 @@ import type { Client } from "../../types/clients";
 import { getErrorMessage } from "../../utils/errors";
 import { useTranslation } from "../../context/LanguageContext";
 
-const COLORS = {
-    bg: "#0D0D0D",
-    surface: "#1A1A1A",
-    surfaceElevated: "#252525",
-    gold: "#C9A84C",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#9B9B9B",
-    border: "#3A3A3A",
-    overlay: "rgba(13, 13, 13, 0.85)",
-} as const;
-
-const RADIUS = 16;
+import { AppTheme } from "../../theme/themes";
+import { useAppTheme } from "../../theme/ThemeContext";
 
 interface ClientSelectorModalProps {
     visible: boolean;
@@ -40,6 +30,8 @@ export const ClientSelectorModal: React.FC<ClientSelectorModalProps> = ({
     initialPhone = "",
 }) => {
     const { translateText } = useTranslation();
+    const { theme } = useAppTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const [phone, setPhone] = useState(initialPhone);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -98,7 +90,7 @@ export const ClientSelectorModal: React.FC<ClientSelectorModalProps> = ({
                             value={phone}
                             onChangeText={setPhone}
                             placeholder={translateText("clientHistory.searchPlaceholder")}
-                            placeholderTextColor={COLORS.textSecondary}
+                            placeholderTextColor={theme.colors.textSecondary}
                             keyboardType="phone-pad"
                             autoFocus
                         />
@@ -129,7 +121,7 @@ export const ClientSelectorModal: React.FC<ClientSelectorModalProps> = ({
                             disabled={loading}
                         >
                             {loading ? (
-                                <ActivityIndicator size="small" color={COLORS.bg} />
+                                <ActivityIndicator size="small" color="#0F172A" />
                             ) : (
                                 <Text style={styles.searchButtonText}>{translateText("common.search")}</Text>
                             )}
@@ -141,83 +133,84 @@ export const ClientSelectorModal: React.FC<ClientSelectorModalProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: COLORS.overlay,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20,
-    },
-    modal: {
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS,
-        padding: 24,
-        width: "100%",
-        maxWidth: 400,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    title: {
-        color: COLORS.textPrimary,
-        fontSize: 20,
-        fontWeight: "700",
-        marginBottom: 8,
-    },
-    description: {
-        color: COLORS.textSecondary,
-        fontSize: 14,
-        marginBottom: 20,
-        lineHeight: 20,
-    },
-    inputContainer: {
-        marginBottom: 16,
-    },
-    input: {
-        backgroundColor: COLORS.surfaceElevated,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        borderRadius: 12,
-        padding: 16,
-        color: COLORS.textPrimary,
-        fontSize: 16,
-    },
-    errorText: {
-        color: "#FF6B6B",
-        fontSize: 14,
-        marginBottom: 16,
-    },
-    actions: {
-        flexDirection: "row",
-        gap: 12,
-    },
-    button: {
-        flex: 1,
-        padding: 16,
-        borderRadius: 12,
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: 52,
-    },
-    skipButton: {
-        backgroundColor: COLORS.surfaceElevated,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    searchButton: {
-        backgroundColor: COLORS.gold,
-    },
-    buttonPressed: {
-        opacity: 0.7,
-    },
-    skipButtonText: {
-        color: COLORS.textPrimary,
-        fontSize: 16,
-        fontWeight: "600",
-    },
-    searchButtonText: {
-        color: COLORS.bg,
-        fontSize: 16,
-        fontWeight: "700",
-    },
-});
+const createStyles = (theme: AppTheme) =>
+    StyleSheet.create({
+        overlay: {
+            flex: 1,
+            backgroundColor: theme.colors.overlay,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+        },
+        modal: {
+            backgroundColor: theme.colors.surface,
+            borderRadius: 16,
+            padding: 24,
+            width: "100%",
+            maxWidth: 400,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+        },
+        title: {
+            color: theme.colors.textPrimary,
+            fontSize: 20,
+            fontWeight: "700",
+            marginBottom: 8,
+        },
+        description: {
+            color: theme.colors.textSecondary,
+            fontSize: 14,
+            marginBottom: 20,
+            lineHeight: 20,
+        },
+        inputContainer: {
+            marginBottom: 16,
+        },
+        input: {
+            backgroundColor: theme.colors.surfaceElevated,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            borderRadius: 12,
+            padding: 16,
+            color: theme.colors.textPrimary,
+            fontSize: 16,
+        },
+        errorText: {
+            color: theme.colors.error,
+            fontSize: 14,
+            marginBottom: 16,
+        },
+        actions: {
+            flexDirection: "row",
+            gap: 12,
+        },
+        button: {
+            flex: 1,
+            padding: 16,
+            borderRadius: 12,
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 52,
+        },
+        skipButton: {
+            backgroundColor: theme.colors.surfaceElevated,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+        },
+        searchButton: {
+            backgroundColor: theme.colors.accent,
+        },
+        buttonPressed: {
+            opacity: 0.7,
+        },
+        skipButtonText: {
+            color: theme.colors.textPrimary,
+            fontSize: 16,
+            fontWeight: "600",
+        },
+        searchButtonText: {
+            color: "#0F172A",
+            fontSize: 16,
+            fontWeight: "700",
+        },
+    });

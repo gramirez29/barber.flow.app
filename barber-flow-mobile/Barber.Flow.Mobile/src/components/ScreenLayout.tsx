@@ -6,6 +6,8 @@ import { useNavigation } from "@react-navigation/native";
 import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import type { AppTabParamList } from "../navigation/AppNavigator"; 
+import { useAppTheme } from "../theme/ThemeContext";
+
 interface ScreenLayoutProps {
     children: React.ReactNode;
     title?: string;
@@ -23,13 +25,13 @@ export const ScreenLayout = ({
     onMenuPress,
     hideHeaderActions = false,
     }: ScreenLayoutProps) => {
-
+        const { theme } = useAppTheme();
         const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
         const tabBarHeight = useContext(BottomTabBarHeightContext) ?? 0;
         const contentBottomPadding = tabBarHeight > 0 ? tabBarHeight + 10 : 16;
 
         return (
-            <SafeAreaView style={[styles.container, { backgroundColor: backgroundColor }, center && styles.center ]}>
+            <SafeAreaView style={[styles.container, { backgroundColor: backgroundColor || theme.colors.background }, center && styles.center ]}>
                 {title && (
                     <Header
                         title={title}

@@ -6,15 +6,8 @@ import { ClientAvatar } from "./ClientAvatar";
 import { useTranslation } from "../context/LanguageContext";
 import { useDialog } from "../context/DialogContext";
 
-const COLORS = {
-	bg: "#0D0D0D",
-	surface: "#1A1A1A",
-	surfaceElevated: "#252525",
-	gold: "#C9A84C",
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-	border: "#3A3A3A",
-} as const;
+import { AppTheme } from "../theme/themes";
+import { useAppTheme } from "../theme/ThemeContext";
 
 interface AvatarPickerProps {
 	/** Current photo URI; falls back to no-image or initials if undefined */
@@ -46,6 +39,8 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 }) => {
 	const { translateText } = useTranslation();
 	const { showAlert } = useDialog();
+	const { theme } = useAppTheme();
+	const styles = React.useMemo(() => createStyles(theme), [theme]);
 
 	const handlePickFromGallery = async () => {
 		const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -109,7 +104,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 							pressed && { opacity: 0.8 },
 						]}
 					>
-						<Ionicons name="camera" size={14} color={COLORS.bg} />
+						<Ionicons name="camera" size={14} color={theme.colors.background} />
 					</Pressable>
 					<Pressable
 						onPress={() => void handlePickFromGallery()}
@@ -121,7 +116,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 							pressed && { opacity: 0.8 },
 						]}
 					>
-						<Ionicons name="images" size={14} color={COLORS.textPrimary} />
+						<Ionicons name="images" size={14} color={theme.colors.textPrimary} />
 					</Pressable>
 				</View>
 			</View>
@@ -166,75 +161,76 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 	);
 };
 
-const styles = StyleSheet.create({
-	// ── Compact variant ────────────────────────────────────────────────────
-	compactWrap: {
-		alignItems: "center",
-		gap: 6,
-	},
-	compactBtns: {
-		flexDirection: "row",
-		gap: 5,
-	},
-	compactBtn: {
-		alignItems: "center",
-		borderRadius: 8,
-		flex: 1,
-		justifyContent: "center",
-		minHeight: 28,
-	},
-	compactBtnPrimary: {
-		backgroundColor: COLORS.gold,
-	},
-	compactBtnSecondary: {
-		backgroundColor: COLORS.surfaceElevated,
-		borderColor: COLORS.border,
-		borderWidth: 1,
-	},
-	// ── Full variant ───────────────────────────────────────────────────────
-	fullWrap: {
-		gap: 12,
-	},
-	previewWrap: {
-		alignItems: "center",
-	},
-	fullBtns: {
-		flexDirection: "row",
-		gap: 8,
-	},
-	fullBtnPrimary: {
-		alignItems: "center",
-		backgroundColor: COLORS.gold,
-		borderRadius: 12,
-		flex: 1,
-		justifyContent: "center",
-		minHeight: 42,
-		paddingHorizontal: 12,
-	},
-	fullBtnPrimaryText: {
-		color: COLORS.bg,
-		fontSize: 14,
-		fontWeight: "700",
-	},
-	fullBtnSecondary: {
-		alignItems: "center",
-		backgroundColor: COLORS.surface,
-		borderColor: COLORS.border,
-		borderRadius: 12,
-		borderWidth: 1,
-		flex: 1,
-		justifyContent: "center",
-		minHeight: 42,
-		paddingHorizontal: 12,
-	},
-	fullBtnSecondaryText: {
-		color: COLORS.textPrimary,
-		fontSize: 14,
-		fontWeight: "600",
-		textAlign: "center",
-	},
-	// ── Shared ────────────────────────────────────────────────────────────
-	btnDisabled: {
-		opacity: 0.5,
-	},
-});
+const createStyles = (theme: AppTheme) =>
+	StyleSheet.create({
+		// ── Compact variant ────────────────────────────────────────────────────
+		compactWrap: {
+			alignItems: "center",
+			gap: 6,
+		},
+		compactBtns: {
+			flexDirection: "row",
+			gap: 5,
+		},
+		compactBtn: {
+			alignItems: "center",
+			borderRadius: 8,
+			flex: 1,
+			justifyContent: "center",
+			minHeight: 28,
+		},
+		compactBtnPrimary: {
+			backgroundColor: theme.colors.accent,
+		},
+		compactBtnSecondary: {
+			backgroundColor: theme.colors.surfaceElevated,
+			borderColor: theme.colors.border,
+			borderWidth: 1,
+		},
+		// ── Full variant ───────────────────────────────────────────────────────
+		fullWrap: {
+			gap: 12,
+		},
+		previewWrap: {
+			alignItems: "center",
+		},
+		fullBtns: {
+			flexDirection: "row",
+			gap: 8,
+		},
+		fullBtnPrimary: {
+			alignItems: "center",
+			backgroundColor: theme.colors.accent,
+			borderRadius: 12,
+			flex: 1,
+			justifyContent: "center",
+			minHeight: 42,
+			paddingHorizontal: 12,
+		},
+		fullBtnPrimaryText: {
+			color: theme.colors.background,
+			fontSize: 14,
+			fontWeight: "700",
+		},
+		fullBtnSecondary: {
+			alignItems: "center",
+			backgroundColor: theme.colors.surface,
+			borderColor: theme.colors.border,
+			borderRadius: 12,
+			borderWidth: 1,
+			flex: 1,
+			justifyContent: "center",
+			minHeight: 42,
+			paddingHorizontal: 12,
+		},
+		fullBtnSecondaryText: {
+			color: theme.colors.textPrimary,
+			fontSize: 14,
+			fontWeight: "600",
+			textAlign: "center",
+		},
+		// ── Shared ────────────────────────────────────────────────────────────
+		btnDisabled: {
+			opacity: 0.5,
+		},
+	});

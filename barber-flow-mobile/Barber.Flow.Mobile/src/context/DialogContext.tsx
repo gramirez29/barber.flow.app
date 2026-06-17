@@ -1,6 +1,8 @@
 import React, { createContext, useCallback, useContext, useState } from "react";
 import { Modal, StyleSheet, Text, View } from "react-native";
 import { Button } from "react-native-paper";
+import { AppTheme } from "../theme/themes";
+import { useAppTheme } from "../theme/ThemeContext";
 
 export interface DialogButton {
 	text: string;
@@ -21,19 +23,11 @@ interface DialogContextType {
 
 const DialogContext = createContext<DialogContextType | undefined>(undefined);
 
-const DIALOG_COLORS = {
-	surface: "#1A1A1A",
-	border: "#3A3A3A",
-	title: "#FFFFFF",
-	message: "#9B9B9B",
-	gold: "#C9A84C",
-	error: "#E57373",
-	cancel: "#9B9B9B",
-} as const;
-
 const DEFAULT_BUTTONS: DialogButton[] = [{ text: "OK" }];
 
 export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+	const { theme } = useAppTheme();
+	const styles = React.useMemo(() => createStyles(theme), [theme]);
 	const [dialog, setDialog] = useState<DialogState>({
 		title: "",
 		message: undefined,
@@ -80,7 +74,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 							{cancelButton && (
 								<Button
 									onPress={() => handlePress(cancelButton.onPress)}
-									textColor={DIALOG_COLORS.cancel}
+									textColor={theme.colors.textSecondary}
 									style={styles.button}
 								>
 									{cancelButton.text}
@@ -91,7 +85,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 									key={index}
 									onPress={() => handlePress(btn.onPress)}
 									textColor={
-										btn.style === "destructive" ? DIALOG_COLORS.error : DIALOG_COLORS.gold
+										btn.style === "destructive" ? theme.colors.error : theme.colors.accent
 									}
 									style={styles.button}
 								>
@@ -112,38 +106,39 @@ export const useDialog = (): DialogContextType => {
 	return ctx;
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) =>
+	StyleSheet.create({
 	backdrop: {
 		flex: 1,
-		backgroundColor: "rgba(0,0,0,0.55)",
+		backgroundColor: theme.colors.overlay,
 		alignItems: "center",
 		justifyContent: "center",
 		paddingHorizontal: 24,
 	},
 	dialog: {
-		backgroundColor: DIALOG_COLORS.surface,
+		backgroundColor: theme.colors.surface,
 		borderRadius: 14,
 		borderWidth: 0.5,
-		borderColor: DIALOG_COLORS.gold,
+		borderColor: theme.colors.accent,
 		width: "100%",
 		maxWidth: 400,
 		paddingTop: 24,
 		paddingBottom: 8,
-		shadowColor: DIALOG_COLORS.gold,
+		shadowColor: theme.colors.accent,
 		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.25,
 		shadowRadius: 12,
 		elevation: 8,
 	},
 	title: {
-		color: DIALOG_COLORS.title,
+		color: theme.colors.textPrimary,
 		fontWeight: "700",
 		fontSize: 17,
 		marginBottom: 8,
 		paddingHorizontal: 20,
 	},
 	message: {
-		color: DIALOG_COLORS.message,
+		color: theme.colors.textSecondary,
 		fontSize: 14,
 		lineHeight: 22,
 		marginBottom: 8,

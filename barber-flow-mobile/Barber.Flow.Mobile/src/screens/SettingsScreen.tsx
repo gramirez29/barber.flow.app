@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
 	ImageBackground,
 	Platform,
@@ -36,23 +36,18 @@ import { AppTabParamList } from "../navigation/AppNavigator";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { PRIVACY_POLICY_URL } from "../config";
 
+import { AppTheme } from "../theme/themes";
+import { useAppTheme } from "../theme/ThemeContext";
+import type { ThemeMode } from "../types/settings";
+
 const APP_VERSION = "1.0.0";
 const DEVELOPER_NAME = "Guillermo Ramirez";
-
-const COLORS = {
-	bg: "#0D0D0D",
-	surface: "#1A1A1A",
-	surfaceElevated: "#252525",
-	gold: "#C9A84C",
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-	border: "#3A3A3A",
-	overlay: "rgba(13,13,13,0.65)",
-} as const;
 
 export const SettingsScreen = () => {
 	const { showAlert } = useDialog();
 	const { width } = useWindowDimensions();
+	const { theme, themeMode, setThemeMode, resolvedThemeMode } = useAppTheme();
+	const styles = useMemo(() => createStyles(theme), [theme]);
 	const isUltraCompact = width <= 360;
 	const user = useAuthStore((state) => state.user);
 	const isAdmin = user?.role === "Admin";
@@ -135,6 +130,19 @@ export const SettingsScreen = () => {
 		}
 
 		await resetToSystemLanguage();
+	};
+
+	const handleThemeChange = async (mode: ThemeMode) => {
+		await setThemeMode(mode);
+	};
+
+	const handleThemeModeToggle = async () => {
+		if (themeMode === "system") {
+			await setThemeMode(resolvedThemeMode);
+			return;
+		}
+
+		await setThemeMode("system");
 	};
 
 	const currentSystemLanguageLabel = systemLanguage === "es"
@@ -384,8 +392,8 @@ export const SettingsScreen = () => {
 									</Text>
 								</View>
 								<Switch
-									trackColor={{ false: COLORS.border, true: COLORS.gold }}
-									thumbColor={COLORS.textPrimary}
+									trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+									thumbColor={theme.colors.textPrimary}
 									onValueChange={() => void handleLanguageModeToggle()}
 									value={isUsingSystemLanguage}
 								/>
@@ -420,7 +428,60 @@ export const SettingsScreen = () => {
 								</Pressable>
 							</View>
 
-							<View style={styles.settingRow}>
+							{/* Theme Selection Section */}
+							<View style={[styles.settingRow, { marginTop: 12 }]}>
+								<View style={styles.settingCopy}>
+									<Text style={styles.settingLabel}>
+										{translateText("settings.preferencesPanel.followSystemTheme")}
+									</Text>
+									<Text style={styles.settingBody}>
+										{themeMode === "system"
+											? translateText("settings.preferencesPanel.themeSystemBody", {
+												theme: resolvedThemeMode === "dark" 
+													? translateText("settings.preferencesPanel.dark") 
+													: translateText("settings.preferencesPanel.light")
+											})
+											: translateText("settings.preferencesPanel.themeManualBody")}
+									</Text>
+								</View>
+								<Switch
+									trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+									thumbColor={theme.colors.textPrimary}
+									onValueChange={() => void handleThemeModeToggle()}
+									value={themeMode === "system"}
+								/>
+							</View>
+
+							<View style={[styles.languageOptions, themeMode === "system" && styles.languageOptionsDisabled]}>
+								<Pressable
+									onPress={() => void handleThemeChange("light")}
+									disabled={themeMode === "system"}
+									style={({ pressed }) => [
+										styles.languageOption,
+										themeMode === "light" ? styles.languageOptionActive : styles.languageOptionInactive,
+										pressed && { opacity: 0.85 },
+									]}
+								>
+									<Text style={themeMode === "light" ? styles.languageOptionTextActive : styles.languageOptionTextInactive}>
+										{translateText("settings.preferencesPanel.light")}
+									</Text>
+								</Pressable>
+								<Pressable
+									onPress={() => void handleThemeChange("dark")}
+									disabled={themeMode === "system"}
+									style={({ pressed }) => [
+										styles.languageOption,
+										themeMode === "dark" ? styles.languageOptionActive : styles.languageOptionInactive,
+										pressed && { opacity: 0.85 },
+									]}
+								>
+									<Text style={themeMode === "dark" ? styles.languageOptionTextActive : styles.languageOptionTextInactive}>
+										{translateText("settings.preferencesPanel.dark")}
+									</Text>
+								</Pressable>
+							</View>
+
+							<View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
 								<View style={styles.settingCopy}>
 									<Text style={styles.settingLabel}>
 										{translateText("settings.preferencesPanel.notifications", {
@@ -429,8 +490,8 @@ export const SettingsScreen = () => {
 									</Text>
 								</View>
 								<Switch
-									trackColor={{ false: COLORS.border, true: COLORS.gold }}
-									thumbColor={COLORS.textPrimary}
+									trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+									thumbColor={theme.colors.textPrimary}
 									onValueChange={() => void setNotificationsEnabled(!notificationsEnabled)}
 									value={notificationsEnabled}
 								/>
@@ -522,13 +583,13 @@ export const SettingsScreen = () => {
 	);
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
 	screenBg: {
 		flex: 1,
 	},
 	screenOverlay: {
 		...StyleSheet.absoluteFillObject,
-		backgroundColor: COLORS.overlay,
+		backgroundColor: theme.colors.overlay,
 		pointerEvents: "none",
 	},
 	flex: {
@@ -543,7 +604,7 @@ const styles = StyleSheet.create({
 		gap: 10,
 	},
 	sectionTitle: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 13,
 		fontWeight: "700",
 		letterSpacing: 0.8,
@@ -551,15 +612,15 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	card: {
-		backgroundColor: COLORS.surface,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.surface,
+		borderColor: theme.colors.border,
 		borderRadius: 24,
 		borderWidth: 1,
 		paddingHorizontal: 18,
 		paddingVertical: 20,
 	},
 	eyebrow: {
-		color: COLORS.gold,
+		color: theme.colors.accent,
 		fontSize: 12,
 		fontWeight: "700",
 		letterSpacing: 1,
@@ -567,7 +628,7 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	heroTitle: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 28,
 		fontWeight: "700",
 		marginBottom: 8,
@@ -576,7 +637,7 @@ const styles = StyleSheet.create({
 		fontSize: 22,
 	},
 	heroSubtitle: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 14,
 		lineHeight: 21,
 	},
@@ -586,25 +647,25 @@ const styles = StyleSheet.create({
 		marginTop: 18,
 	},
 	metricPill: {
-		backgroundColor: COLORS.surfaceElevated,
+		backgroundColor: theme.colors.surfaceElevated,
 		borderRadius: 12,
 		flex: 1,
 		paddingHorizontal: 12,
 		paddingVertical: 10,
 	},
 	metricValue: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 16,
 		fontWeight: "700",
 	},
 	metricLabel: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 12,
 		marginTop: 2,
 	},
 	settingRow: {
 		alignItems: "center",
-		borderBottomColor: COLORS.border,
+		borderBottomColor: theme.colors.border,
 		borderBottomWidth: 1,
 		flexDirection: "row",
 		justifyContent: "space-between",
@@ -616,19 +677,19 @@ const styles = StyleSheet.create({
 		paddingRight: 14,
 	},
 	settingLabel: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 15,
 		fontWeight: "600",
 	},
 	settingBody: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 13,
 		lineHeight: 19,
 		marginTop: 4,
 	},
 	languageOptions: {
-		backgroundColor: COLORS.bg,
-		borderColor: COLORS.border,
+		backgroundColor: theme.colors.background,
+		borderColor: theme.colors.border,
 		borderRadius: 12,
 		borderWidth: 1,
 		flexDirection: "row",
@@ -649,36 +710,36 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 10,
 	},
 	languageOptionActive: {
-		backgroundColor: COLORS.gold,
+		backgroundColor: theme.colors.accent,
 	},
 	languageOptionInactive: {
-		backgroundColor: COLORS.surface,
+		backgroundColor: theme.colors.surface,
 	},
 	languageOptionTextActive: {
-		color: COLORS.bg,
+		color: "#0F172A",
 		fontSize: 13,
 		fontWeight: "700",
 	},
 	languageOptionTextInactive: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 13,
 		fontWeight: "600",
 	},
 	btnPrimary: {
 		alignItems: "center",
-		backgroundColor: COLORS.gold,
+		backgroundColor: theme.colors.accent,
 		borderRadius: 12,
 		justifyContent: "center",
 		minHeight: 46,
 		paddingHorizontal: 16,
 	},
 	btnPrimaryText: {
-		color: COLORS.bg,
+		color: "#0F172A",
 		fontSize: 15,
 		fontWeight: "700",
 	},
 	aboutEyebrow: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 12,
 		fontWeight: "700",
 		letterSpacing: 1,
@@ -686,19 +747,19 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	aboutTitle: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 22,
 		fontWeight: "700",
 		marginBottom: 8,
 	},
 	aboutSubtitle: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 14,
 		lineHeight: 20,
 		marginBottom: 16,
- 	},
+	},
 	aboutInfoRow: {
-		borderBottomColor: COLORS.border,
+		borderBottomColor: theme.colors.border,
 		borderBottomWidth: 1,
 		paddingVertical: 14,
 	},
@@ -709,12 +770,12 @@ const styles = StyleSheet.create({
 		opacity: 0.6,
 	},
 	aboutLinkValue: {
-		color: "#C9A84C",
+		color: theme.colors.accent,
 		fontSize: 15,
 		fontWeight: "600",
 	},
 	aboutLabel: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 12,
 		fontWeight: "700",
 		letterSpacing: 0.8,
@@ -722,7 +783,7 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 	aboutValue: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 16,
 		fontWeight: "600",
 	},

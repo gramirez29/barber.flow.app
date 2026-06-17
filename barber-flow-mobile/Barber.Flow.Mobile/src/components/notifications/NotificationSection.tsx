@@ -1,11 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { NotificationItem } from "../../types/notifications";
+import { useAppTheme } from "../../theme/ThemeContext";
+import { AppTheme } from "../../theme/themes";
 
-const COLORS = {
-	textPrimary: "#FFFFFF",
-	textSecondary: "#9B9B9B",
-} as const;
 import { NotificationEmptyState } from "./NotificationEmptyState";
 import { NotificationItemCard } from "./NotificationItemCard";
 
@@ -28,6 +26,9 @@ export const NotificationSection = ({
 		onItemPress,
 		title,
 	}: NotificationSectionProps) => {
+	const { theme } = useAppTheme();
+	const styles = useMemo(() => createStyles(theme), [theme]);
+
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
@@ -57,12 +58,12 @@ export const NotificationSection = ({
 	);
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
 	container: {
 		gap: 12,
 	},
 	description: {
-		color: COLORS.textSecondary,
+		color: theme.colors.textSecondary,
 		fontSize: 14,
 		lineHeight: 20,
 	},
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
 		gap: 12,
 	},
 	title: {
-		color: COLORS.textPrimary,
+		color: theme.colors.textPrimary,
 		fontSize: 18,
 		fontWeight: "700",
 	},
