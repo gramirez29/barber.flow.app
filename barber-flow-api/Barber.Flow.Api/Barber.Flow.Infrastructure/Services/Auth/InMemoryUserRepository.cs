@@ -19,7 +19,7 @@ public class InMemoryUserRepository() : IUserRepository
     public InMemoryUserRepository(IConfiguration config) : this()
     {
         // In real applications, passwords should be hashed and salted
-        var user1 = new User { Id = Guid.NewGuid(), Name = "Admin User", UserName = "admin", Password = "password", Email = "admin@example.com", Role = "Admin" };
+        var user1 = new User { Id = Guid.Parse("1dc8d729-51f9-4633-aaab-46c9273bf44e"), Name = "Admin User", UserName = "admin", Password = "password", Email = "g.raba29@gmail.com", Role = "Admin" };
         var user2 = new User { Id = Guid.NewGuid(), Name = "Barber User", UserName = "barber", Password = "barber", Email = "barber@example.com", Role = "Barber" };
 
         _store[user1.Name] = user1;
