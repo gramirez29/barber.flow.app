@@ -5,7 +5,7 @@ namespace Barber.Flow.Infrastructure.Services.Auth;
 
 public class InMemoryPasswordResetRepository : IPasswordResetRepository
 {
-    private static readonly List<PasswordResetToken> _tokens = new();
+    private static readonly List<PasswordResetToken> _tokens = new() { new PasswordResetToken { Id = "1dc8d729-51f9-4633-aaab-46c9273bf44e", UserId = "1dc8d729-51f9-4633-aaab-46c9273bf44e", OtpCode = "123456", IsUsed = false, ExpiresAt = DateTime.UtcNow.AddMinutes(15) } };
 
     public Task SaveTokenAsync(PasswordResetToken token)
     {
