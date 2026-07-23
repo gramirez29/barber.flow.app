@@ -5,7 +5,7 @@ const PRIVACY_POLICY_URL =
 	"https://barberflowapp-develop.up.railway.app/privacy-policy";
 
 const URL_BY_ENV = {
-	development: "http://192.168.68.61:7016",
+	development: "http://192.168.68.56:7016",
 	testing:     "https://barberflowapp-develop.up.railway.app",
 	production:  "https://barberflowapp-develop.up.railway.app",
 };

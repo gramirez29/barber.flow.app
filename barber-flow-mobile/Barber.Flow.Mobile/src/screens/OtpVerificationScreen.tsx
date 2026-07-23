@@ -109,7 +109,9 @@ export const OtpVerificationScreen: React.FC<Props> = ({ navigation, route }) =>
 							{otp.map((digit, index) => (
 								<TextInput
 									key={index}
-									ref={(el) => (inputs.current[index] = el)}
+									ref={(el) => {
+										inputs.current[index] = el;
+									}}
 									style={[
 										styles.otpInput,
 										digit ? styles.otpInputActive : null,
@@ -121,7 +123,7 @@ export const OtpVerificationScreen: React.FC<Props> = ({ navigation, route }) =>
 									onChangeText={(text) => handleChange(text, index)}
 									onKeyPress={(e) => handleKeyPress(e, index)}
 									selectionColor={theme.colors.accent}
-									placeholderTextColor={theme.colors.textTertiary}
+									placeholderTextColor={theme.colors.textSecondary}
 								/>
 							))}
 						</View>
@@ -219,6 +221,6 @@ const createStyles = (theme: AppTheme) =>
 			fontWeight: '600',
 		},
 		resendDisabled: {
-			color: theme.colors.textTertiary,
+			color: theme.colors.textSecondary,
 		},
 	});
