@@ -412,3 +412,683 @@ This project is licensed under the **MIT License**. See the `LICENSE` file for d
 ---
 
 ⭐ If you find this project useful, don't forget to give it a star on GitHub!
+
+```
+barber.flow.app
+├─ .easignore
+├─ .expo
+│  ├─ devices.json
+│  └─ README.md
+├─ app.json
+├─ barber-flow-api
+│  ├─ .env
+│  ├─ application-backend-docs
+│  │  ├─ GMAIL_SMTP_SETUP.md
+│  │  ├─ MONGODB_IMPLEMENTATION.md
+│  │  └─ PERFORMANCE_AND_SECURITY_AUDIT.md
+│  ├─ Barber.Flow.Api
+│  │  ├─ .dockerignore
+│  │  ├─ Barber.Flow.Api
+│  │  │  ├─ Apis
+│  │  │  │  ├─ AppointmentsApi.cs
+│  │  │  │  ├─ AuthApi.cs
+│  │  │  │  ├─ BarbersApi.cs
+│  │  │  │  ├─ BarberShopsApi.cs
+│  │  │  │  ├─ ClientsApi.cs
+│  │  │  │  ├─ ReportsApi.cs
+│  │  │  │  ├─ SampleApi.cs
+│  │  │  │  └─ UsersApi.cs
+│  │  │  ├─ appsettings.Development.json
+│  │  │  ├─ appsettings.json
+│  │  │  ├─ appsettings.Production.json
+│  │  │  ├─ appsettings.Testing.json
+│  │  │  ├─ Barber.Flow.Api.csproj
+│  │  │  ├─ Barber.Flow.Api.csproj.user
+│  │  │  ├─ Barber.Flow.Api.http
+│  │  │  ├─ bin
+│  │  │  │  └─ Debug
+│  │  │  │     ├─ net8.0
+│  │  │  │     └─ net9.0
+│  │  │  │        ├─ appsettings.Development.json
+│  │  │  │        ├─ appsettings.json
+│  │  │  │        ├─ appsettings.Production.json
+│  │  │  │        ├─ appsettings.Testing.json
+│  │  │  │        ├─ Barber.Flow.Api.deps.json
+│  │  │  │        ├─ Barber.Flow.Api.dll
+│  │  │  │        ├─ Barber.Flow.Api.exe
+│  │  │  │        ├─ Barber.Flow.Api.pdb
+│  │  │  │        ├─ Barber.Flow.Api.runtimeconfig.json
+│  │  │  │        ├─ Barber.Flow.Api.staticwebassets.endpoints.json
+│  │  │  │        ├─ Barber.Flow.Api.staticwebassets.runtime.json
+│  │  │  │        ├─ Barber.Flow.Application.dll
+│  │  │  │        ├─ Barber.Flow.Application.pdb
+│  │  │  │        ├─ Barber.Flow.Domain.dll
+│  │  │  │        ├─ Barber.Flow.Domain.pdb
+│  │  │  │        ├─ Barber.Flow.Infrastructure.dll
+│  │  │  │        ├─ Barber.Flow.Infrastructure.pdb
+│  │  │  │        ├─ BouncyCastle.Cryptography.dll
+│  │  │  │        ├─ DnsClient.dll
+│  │  │  │        ├─ FluentValidation.dll
+│  │  │  │        ├─ MailKit.dll
+│  │  │  │        ├─ Microsoft.AspNetCore.Authentication.JwtBearer.dll
+│  │  │  │        ├─ Microsoft.IdentityModel.Abstractions.dll
+│  │  │  │        ├─ Microsoft.IdentityModel.JsonWebTokens.dll
+│  │  │  │        ├─ Microsoft.IdentityModel.Logging.dll
+│  │  │  │        ├─ Microsoft.IdentityModel.Protocols.dll
+│  │  │  │        ├─ Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+│  │  │  │        ├─ Microsoft.IdentityModel.Tokens.dll
+│  │  │  │        ├─ Microsoft.OpenApi.dll
+│  │  │  │        ├─ MimeKit.dll
+│  │  │  │        ├─ MongoDB.Bson.dll
+│  │  │  │        ├─ MongoDB.Driver.dll
+│  │  │  │        ├─ SharpCompress.dll
+│  │  │  │        ├─ Snappier.dll
+│  │  │  │        ├─ Swashbuckle.AspNetCore.Swagger.dll
+│  │  │  │        ├─ Swashbuckle.AspNetCore.SwaggerGen.dll
+│  │  │  │        ├─ Swashbuckle.AspNetCore.SwaggerUI.dll
+│  │  │  │        ├─ System.IdentityModel.Tokens.Jwt.dll
+│  │  │  │        └─ ZstdSharp.dll
+│  │  │  ├─ DTOs
+│  │  │  │  ├─ Requests
+│  │  │  │  │  ├─ AppointmentRequest.cs
+│  │  │  │  │  ├─ AuthRequest.cs
+│  │  │  │  │  ├─ BarberRequest.cs
+│  │  │  │  │  ├─ BarberRequestValidator.cs
+│  │  │  │  │  ├─ BarberSettingsDto.cs
+│  │  │  │  │  ├─ BarberShopRequest.cs
+│  │  │  │  │  ├─ ClientRequest.cs
+│  │  │  │  │  ├─ LoginRequest.cs
+│  │  │  │  │  ├─ MoveAppointmentRequest.cs
+│  │  │  │  │  └─ PasswordRecoveryRequests.cs
+│  │  │  │  └─ Responses
+│  │  │  │     ├─ AppointmentResponse.cs
+│  │  │  │     ├─ BarberResponse.cs
+│  │  │  │     ├─ BarberShopResponse.cs
+│  │  │  │     ├─ ClientResponse.cs
+│  │  │  │     ├─ ClientStatsResponse.cs
+│  │  │  │     ├─ DailyReportResponse.cs
+│  │  │  │     └─ UserResponse.cs
+│  │  │  ├─ Extensions
+│  │  │  │  └─ ApplicationExtensions.cs
+│  │  │  ├─ obj
+│  │  │  │  ├─ Barber.Flow.Api.csproj.nuget.dgspec.json
+│  │  │  │  ├─ Barber.Flow.Api.csproj.nuget.g.props
+│  │  │  │  ├─ Debug
+│  │  │  │  │  ├─ net8.0
+│  │  │  │  │  │  ├─ .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+│  │  │  │  │  │  ├─ Barber.Flow.Api.AssemblyInfo.cs
+│  │  │  │  │  │  ├─ Barber.Flow.Api.AssemblyInfoInputs.cache
+│  │  │  │  │  │  ├─ Barber.Flow.Api.assets.cache
+│  │  │  │  │  │  ├─ Barber.Flow.Api.csproj.AssemblyReference.cache
+│  │  │  │  │  │  ├─ Barber.Flow.Api.GeneratedMSBuildEditorConfig.editorconfig
+│  │  │  │  │  │  ├─ Barber.Flow.Api.GlobalUsings.g.cs
+│  │  │  │  │  │  ├─ ref
+│  │  │  │  │  │  └─ refint
+│  │  │  │  │  └─ net9.0
+│  │  │  │  │     ├─ .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+│  │  │  │  │     ├─ ApiEndpoints.json
+│  │  │  │  │     ├─ apphost.exe
+│  │  │  │  │     ├─ Barber.F.BB97B182.Up2Date
+│  │  │  │  │     ├─ Barber.Flow.Api.AssemblyInfo.cs
+│  │  │  │  │     ├─ Barber.Flow.Api.AssemblyInfoInputs.cache
+│  │  │  │  │     ├─ Barber.Flow.Api.assets.cache
+│  │  │  │  │     ├─ Barber.Flow.Api.csproj.AssemblyReference.cache
+│  │  │  │  │     ├─ Barber.Flow.Api.csproj.BuildWithSkipAnalyzers
+│  │  │  │  │     ├─ Barber.Flow.Api.csproj.CoreCompileInputs.cache
+│  │  │  │  │     ├─ Barber.Flow.Api.csproj.FileListAbsolute.txt
+│  │  │  │  │     ├─ Barber.Flow.Api.dll
+│  │  │  │  │     ├─ Barber.Flow.Api.GeneratedMSBuildEditorConfig.editorconfig
+│  │  │  │  │     ├─ Barber.Flow.Api.genruntimeconfig.cache
+│  │  │  │  │     ├─ Barber.Flow.Api.GlobalUsings.g.cs
+│  │  │  │  │     ├─ Barber.Flow.Api.MvcApplicationPartsAssemblyInfo.cache
+│  │  │  │  │     ├─ Barber.Flow.Api.MvcApplicationPartsAssemblyInfo.cs
+│  │  │  │  │     ├─ Barber.Flow.Api.pdb
+│  │  │  │  │     ├─ Barber.Flow.Api.sourcelink.json
+│  │  │  │  │     ├─ compressed
+│  │  │  │  │     │  └─ k3wzcril2t-{0}-w2bs8gey4e-w2bs8gey4e.gz
+│  │  │  │  │     ├─ EndpointInfo
+│  │  │  │  │     │  ├─ Barber.Flow.Api.json
+│  │  │  │  │     │  └─ Barber.Flow.Api.OpenApiFiles.cache
+│  │  │  │  │     ├─ hayg5uep.jan~
+│  │  │  │  │     ├─ rbcswa.dswa.cache.json
+│  │  │  │  │     ├─ ref
+│  │  │  │  │     │  └─ Barber.Flow.Api.dll
+│  │  │  │  │     ├─ refint
+│  │  │  │  │     │  └─ Barber.Flow.Api.dll
+│  │  │  │  │     ├─ rjimswa.dswa.cache.json
+│  │  │  │  │     ├─ rjsmcshtml.dswa.cache.json
+│  │  │  │  │     ├─ rjsmrazor.dswa.cache.json
+│  │  │  │  │     ├─ rpswa.dswa.cache.json
+│  │  │  │  │     ├─ staticwebassets
+│  │  │  │  │     ├─ staticwebassets.build.endpoints.json
+│  │  │  │  │     ├─ staticwebassets.build.json
+│  │  │  │  │     ├─ staticwebassets.build.json.cache
+│  │  │  │  │     ├─ staticwebassets.development.json
+│  │  │  │  │     ├─ staticwebassets.references.upToDateCheck.txt
+│  │  │  │  │     ├─ staticwebassets.removed.txt
+│  │  │  │  │     ├─ staticwebassets.upToDateCheck.txt
+│  │  │  │  │     └─ swae.build.ex.cache
+│  │  │  │  ├─ project.assets.json
+│  │  │  │  ├─ project.nuget.cache
+│  │  │  │  ├─ project.packagespec.json
+│  │  │  │  ├─ rider.project.model.nuget.info
+│  │  │  │  └─ rider.project.restore.info
+│  │  │  ├─ Program.cs
+│  │  │  ├─ Properties
+│  │  │  │  └─ launchSettings.json
+│  │  │  └─ wwwroot
+│  │  │     └─ privacy-policy
+│  │  │        └─ index.html
+│  │  ├─ Barber.Flow.Api.slnx
+│  │  ├─ Barber.Flow.Application
+│  │  │  ├─ Barber.Flow.Application.csproj
+│  │  │  ├─ bin
+│  │  │  │  └─ Debug
+│  │  │  │     ├─ net8.0
+│  │  │  │     └─ net9.0
+│  │  │  │        ├─ Barber.Flow.Application.deps.json
+│  │  │  │        ├─ Barber.Flow.Application.dll
+│  │  │  │        ├─ Barber.Flow.Application.pdb
+│  │  │  │        ├─ Barber.Flow.Domain.dll
+│  │  │  │        └─ Barber.Flow.Domain.pdb
+│  │  │  ├─ DTOs
+│  │  │  │  └─ LoginResult.cs
+│  │  │  ├─ obj
+│  │  │  │  ├─ Barber.Flow.Application.csproj.nuget.dgspec.json
+│  │  │  │  ├─ Barber.Flow.Application.csproj.nuget.g.props
+│  │  │  │  ├─ Debug
+│  │  │  │  │  ├─ net8.0
+│  │  │  │  │  │  ├─ .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+│  │  │  │  │  │  ├─ Barber.Flow.Application.AssemblyInfo.cs
+│  │  │  │  │  │  ├─ Barber.Flow.Application.AssemblyInfoInputs.cache
+│  │  │  │  │  │  ├─ Barber.Flow.Application.assets.cache
+│  │  │  │  │  │  ├─ Barber.Flow.Application.GeneratedMSBuildEditorConfig.editorconfig
+│  │  │  │  │  │  ├─ Barber.Flow.Application.GlobalUsings.g.cs
+│  │  │  │  │  │  ├─ ref
+│  │  │  │  │  │  └─ refint
+│  │  │  │  │  └─ net9.0
+│  │  │  │  │     ├─ .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+│  │  │  │  │     ├─ Barber.F.2637CF31.Up2Date
+│  │  │  │  │     ├─ Barber.Flow.Application.AssemblyInfo.cs
+│  │  │  │  │     ├─ Barber.Flow.Application.AssemblyInfoInputs.cache
+│  │  │  │  │     ├─ Barber.Flow.Application.assets.cache
+│  │  │  │  │     ├─ Barber.Flow.Application.csproj.AssemblyReference.cache
+│  │  │  │  │     ├─ Barber.Flow.Application.csproj.BuildWithSkipAnalyzers
+│  │  │  │  │     ├─ Barber.Flow.Application.csproj.CoreCompileInputs.cache
+│  │  │  │  │     ├─ Barber.Flow.Application.csproj.FileListAbsolute.txt
+│  │  │  │  │     ├─ Barber.Flow.Application.dll
+│  │  │  │  │     ├─ Barber.Flow.Application.GeneratedMSBuildEditorConfig.editorconfig
+│  │  │  │  │     ├─ Barber.Flow.Application.GlobalUsings.g.cs
+│  │  │  │  │     ├─ Barber.Flow.Application.pdb
+│  │  │  │  │     ├─ Barber.Flow.Application.sourcelink.json
+│  │  │  │  │     ├─ ref
+│  │  │  │  │     │  └─ Barber.Flow.Application.dll
+│  │  │  │  │     └─ refint
+│  │  │  │  │        └─ Barber.Flow.Application.dll
+│  │  │  │  ├─ project.assets.json
+│  │  │  │  ├─ project.nuget.cache
+│  │  │  │  ├─ project.packagespec.json
+│  │  │  │  ├─ rider.project.model.nuget.info
+│  │  │  │  └─ rider.project.restore.info
+│  │  │  └─ Services
+│  │  │     ├─ Appointments
+│  │  │     │  ├─ AppointmentService.cs
+│  │  │     │  └─ IAppointmentService.cs
+│  │  │     ├─ Auth
+│  │  │     │  ├─ AuthService.cs
+│  │  │     │  └─ IAuthService.cs
+│  │  │     ├─ Barbers
+│  │  │     │  ├─ BarberService.cs
+│  │  │     │  └─ IBarberService.cs
+│  │  │     ├─ Clients
+│  │  │     │  ├─ ClientService.cs
+│  │  │     │  └─ IClientService.cs
+│  │  │     ├─ Reports
+│  │  │     │  ├─ IReportService.cs
+│  │  │     │  └─ ReportService.cs
+│  │  │     ├─ Sample
+│  │  │     │  └─ Queries
+│  │  │     │     ├─ ISampleQuery.cs
+│  │  │     │     └─ SampleQuery.cs
+│  │  │     └─ Users
+│  │  │        ├─ IUserService.cs
+│  │  │        └─ UserService.cs
+│  │  ├─ Barber.Flow.Domain
+│  │  │  ├─ Barber.Flow.Domain.csproj
+│  │  │  ├─ bin
+│  │  │  │  └─ Debug
+│  │  │  │     ├─ net8.0
+│  │  │  │     └─ net9.0
+│  │  │  │        ├─ Barber.Flow.Domain.deps.json
+│  │  │  │        ├─ Barber.Flow.Domain.dll
+│  │  │  │        └─ Barber.Flow.Domain.pdb
+│  │  │  ├─ Entities
+│  │  │  │  ├─ Appointments.cs
+│  │  │  │  ├─ Barber.cs
+│  │  │  │  ├─ BarberShop.cs
+│  │  │  │  ├─ Client.cs
+│  │  │  │  ├─ DailyReport.cs
+│  │  │  │  ├─ PasswordResetToken.cs
+│  │  │  │  └─ User.cs
+│  │  │  ├─ Interfaces
+│  │  │  │  ├─ IAppointmentRepository.cs
+│  │  │  │  ├─ IBarberRepository.cs
+│  │  │  │  ├─ IBarberShopRepository.cs
+│  │  │  │  ├─ IClientRepository.cs
+│  │  │  │  ├─ IEmailService.cs
+│  │  │  │  ├─ IJwtAuthService.cs
+│  │  │  │  ├─ IPasswordResetRepository.cs
+│  │  │  │  ├─ IReportRepository.cs
+│  │  │  │  └─ IUserRepository.cs
+│  │  │  ├─ obj
+│  │  │  │  ├─ Barber.Flow.Domain.csproj.nuget.dgspec.json
+│  │  │  │  ├─ Barber.Flow.Domain.csproj.nuget.g.props
+│  │  │  │  ├─ Debug
+│  │  │  │  │  ├─ net8.0
+│  │  │  │  │  │  ├─ .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+│  │  │  │  │  │  ├─ Barber.Flow.Domain.AssemblyInfo.cs
+│  │  │  │  │  │  ├─ Barber.Flow.Domain.AssemblyInfoInputs.cache
+│  │  │  │  │  │  ├─ Barber.Flow.Domain.assets.cache
+│  │  │  │  │  │  ├─ Barber.Flow.Domain.GeneratedMSBuildEditorConfig.editorconfig
+│  │  │  │  │  │  ├─ Barber.Flow.Domain.GlobalUsings.g.cs
+│  │  │  │  │  │  ├─ ref
+│  │  │  │  │  │  └─ refint
+│  │  │  │  │  └─ net9.0
+│  │  │  │  │     ├─ .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+│  │  │  │  │     ├─ Barber.Flow.Domain.AssemblyInfo.cs
+│  │  │  │  │     ├─ Barber.Flow.Domain.AssemblyInfoInputs.cache
+│  │  │  │  │     ├─ Barber.Flow.Domain.assets.cache
+│  │  │  │  │     ├─ Barber.Flow.Domain.csproj.BuildWithSkipAnalyzers
+│  │  │  │  │     ├─ Barber.Flow.Domain.csproj.CoreCompileInputs.cache
+│  │  │  │  │     ├─ Barber.Flow.Domain.csproj.FileListAbsolute.txt
+│  │  │  │  │     ├─ Barber.Flow.Domain.dll
+│  │  │  │  │     ├─ Barber.Flow.Domain.GeneratedMSBuildEditorConfig.editorconfig
+│  │  │  │  │     ├─ Barber.Flow.Domain.GlobalUsings.g.cs
+│  │  │  │  │     ├─ Barber.Flow.Domain.pdb
+│  │  │  │  │     ├─ Barber.Flow.Domain.sourcelink.json
+│  │  │  │  │     ├─ ref
+│  │  │  │  │     │  └─ Barber.Flow.Domain.dll
+│  │  │  │  │     └─ refint
+│  │  │  │  │        └─ Barber.Flow.Domain.dll
+│  │  │  │  ├─ project.assets.json
+│  │  │  │  ├─ project.nuget.cache
+│  │  │  │  ├─ project.packagespec.json
+│  │  │  │  ├─ rider.project.model.nuget.info
+│  │  │  │  └─ rider.project.restore.info
+│  │  │  └─ ValueObjects
+│  │  │     ├─ AuthResult.cs
+│  │  │     └─ BarberSettings.cs
+│  │  ├─ Barber.Flow.Infrastructure
+│  │  │  ├─ Barber.Flow.Infrastructure.csproj
+│  │  │  ├─ bin
+│  │  │  │  └─ Debug
+│  │  │  │     ├─ net8.0
+│  │  │  │     └─ net9.0
+│  │  │  │        ├─ Barber.Flow.Domain.dll
+│  │  │  │        ├─ Barber.Flow.Domain.pdb
+│  │  │  │        ├─ Barber.Flow.Infrastructure.deps.json
+│  │  │  │        ├─ Barber.Flow.Infrastructure.dll
+│  │  │  │        └─ Barber.Flow.Infrastructure.pdb
+│  │  │  ├─ obj
+│  │  │  │  ├─ Barber.Flow.Infrastructure.csproj.nuget.dgspec.json
+│  │  │  │  ├─ Barber.Flow.Infrastructure.csproj.nuget.g.props
+│  │  │  │  ├─ Debug
+│  │  │  │  │  ├─ net8.0
+│  │  │  │  │  │  ├─ .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+│  │  │  │  │  │  ├─ Barber.Flow.Infrastructure.AssemblyInfo.cs
+│  │  │  │  │  │  ├─ Barber.Flow.Infrastructure.AssemblyInfoInputs.cache
+│  │  │  │  │  │  ├─ Barber.Flow.Infrastructure.assets.cache
+│  │  │  │  │  │  ├─ Barber.Flow.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+│  │  │  │  │  │  ├─ Barber.Flow.Infrastructure.GlobalUsings.g.cs
+│  │  │  │  │  │  ├─ ref
+│  │  │  │  │  │  └─ refint
+│  │  │  │  │  └─ net9.0
+│  │  │  │  │     ├─ .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+│  │  │  │  │     ├─ Barber.F.729205DD.Up2Date
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.AssemblyInfo.cs
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.AssemblyInfoInputs.cache
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.assets.cache
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.csproj.AssemblyReference.cache
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.csproj.BuildWithSkipAnalyzers
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.csproj.CoreCompileInputs.cache
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.csproj.FileListAbsolute.txt
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.dll
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.GlobalUsings.g.cs
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.pdb
+│  │  │  │  │     ├─ Barber.Flow.Infrastructure.sourcelink.json
+│  │  │  │  │     ├─ ref
+│  │  │  │  │     │  └─ Barber.Flow.Infrastructure.dll
+│  │  │  │  │     └─ refint
+│  │  │  │  │        └─ Barber.Flow.Infrastructure.dll
+│  │  │  │  ├─ project.assets.json
+│  │  │  │  ├─ project.nuget.cache
+│  │  │  │  ├─ project.packagespec.json
+│  │  │  │  ├─ rider.project.model.nuget.info
+│  │  │  │  └─ rider.project.restore.info
+│  │  │  ├─ Services
+│  │  │  │  ├─ Auth
+│  │  │  │  │  ├─ DTOs
+│  │  │  │  │  │  └─ LoginResult.cs
+│  │  │  │  │  ├─ InMemoryPasswordResetRepository.cs
+│  │  │  │  │  ├─ InMemoryUserRepository.cs
+│  │  │  │  │  └─ JwtAuthService.cs
+│  │  │  │  ├─ ConsoleEmailService.cs
+│  │  │  │  ├─ DataMigrationService.cs
+│  │  │  │  ├─ EmailService.cs
+│  │  │  │  ├─ InMemory
+│  │  │  │  │  ├─ InMemoryAppointmentRepository.cs
+│  │  │  │  │  ├─ InMemoryBarberRepository.cs
+│  │  │  │  │  ├─ InMemoryBarberShopRepository.cs
+│  │  │  │  │  ├─ InMemoryClientRepository.cs
+│  │  │  │  │  └─ InMemoryReportRepository.cs
+│  │  │  │  └─ MongoDb
+│  │  │  │     ├─ MongoDbAppointmentRepository.cs
+│  │  │  │     ├─ MongoDbBarberShopRepository.cs
+│  │  │  │     ├─ MongoDbBootstrapper.cs
+│  │  │  │     ├─ MongoDbClientRepository.cs
+│  │  │  │     └─ MongoDbPasswordResetRepository.cs
+│  │  │  └─ Settings
+│  │  │     ├─ EmailSettings.cs
+│  │  │     ├─ FeatureFlags.cs
+│  │  │     └─ MongoDbSettings.cs
+│  │  ├─ Dockerfile
+│  │  └─ tests
+│  │     └─ Barber.Flow.Infrastructure.Tests
+│  │        ├─ Barber.Flow.Infrastructure.Tests.csproj
+│  │        ├─ BarberRepositoryTests.cs
+│  │        ├─ bin
+│  │        │  └─ Debug
+│  │        │     └─ net9.0
+│  │        │        ├─ .msCoverageSourceRootsMapping_Barber.Flow.Infrastructure.Tests
+│  │        │        ├─ Barber.Flow.Domain.dll
+│  │        │        ├─ Barber.Flow.Domain.pdb
+│  │        │        ├─ Barber.Flow.Infrastructure.dll
+│  │        │        ├─ Barber.Flow.Infrastructure.pdb
+│  │        │        ├─ Barber.Flow.Infrastructure.Tests.deps.json
+│  │        │        ├─ Barber.Flow.Infrastructure.Tests.dll
+│  │        │        ├─ Barber.Flow.Infrastructure.Tests.pdb
+│  │        │        ├─ Barber.Flow.Infrastructure.Tests.runtimeconfig.json
+│  │        │        ├─ cs
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        ├─ de
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        ├─ es
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        ├─ fr
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        ├─ it
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        ├─ ja
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        ├─ ko
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        ├─ Microsoft.AspNetCore.Authentication.JwtBearer.dll
+│  │        │        ├─ Microsoft.IdentityModel.Abstractions.dll
+│  │        │        ├─ Microsoft.IdentityModel.JsonWebTokens.dll
+│  │        │        ├─ Microsoft.IdentityModel.Logging.dll
+│  │        │        ├─ Microsoft.IdentityModel.Protocols.dll
+│  │        │        ├─ Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+│  │        │        ├─ Microsoft.IdentityModel.Tokens.dll
+│  │        │        ├─ Microsoft.TestPlatform.CommunicationUtilities.dll
+│  │        │        ├─ Microsoft.TestPlatform.CoreUtilities.dll
+│  │        │        ├─ Microsoft.TestPlatform.CrossPlatEngine.dll
+│  │        │        ├─ Microsoft.TestPlatform.PlatformAbstractions.dll
+│  │        │        ├─ Microsoft.TestPlatform.Utilities.dll
+│  │        │        ├─ Microsoft.VisualStudio.CodeCoverage.Shim.dll
+│  │        │        ├─ Microsoft.VisualStudio.TestPlatform.Common.dll
+│  │        │        ├─ Microsoft.VisualStudio.TestPlatform.ObjectModel.dll
+│  │        │        ├─ Newtonsoft.Json.dll
+│  │        │        ├─ pl
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        ├─ pt-BR
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        ├─ ru
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        ├─ System.IdentityModel.Tokens.Jwt.dll
+│  │        │        ├─ testhost.dll
+│  │        │        ├─ testhost.exe
+│  │        │        ├─ tr
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        ├─ xunit.abstractions.dll
+│  │        │        ├─ xunit.assert.dll
+│  │        │        ├─ xunit.core.dll
+│  │        │        ├─ xunit.execution.dotnet.dll
+│  │        │        ├─ xunit.runner.reporters.netcoreapp10.dll
+│  │        │        ├─ xunit.runner.utility.netcoreapp10.dll
+│  │        │        ├─ xunit.runner.visualstudio.dotnetcore.testadapter.dll
+│  │        │        ├─ zh-Hans
+│  │        │        │  ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │        │  ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │        │  ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │        │  └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        │        └─ zh-Hant
+│  │        │           ├─ Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+│  │        │           ├─ Microsoft.TestPlatform.CoreUtilities.resources.dll
+│  │        │           ├─ Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+│  │        │           ├─ Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+│  │        │           └─ Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+│  │        └─ obj
+│  │           ├─ Barber.Flow.Infrastructure.Tests.csproj.nuget.dgspec.json
+│  │           ├─ Barber.Flow.Infrastructure.Tests.csproj.nuget.g.props
+│  │           ├─ Debug
+│  │           │  └─ net9.0
+│  │           │     ├─ .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+│  │           │     ├─ Barber.F.95866739.Up2Date
+│  │           │     ├─ Barber.Flow.Infrastructure.Tests.AssemblyInfo.cs
+│  │           │     ├─ Barber.Flow.Infrastructure.Tests.AssemblyInfoInputs.cache
+│  │           │     ├─ Barber.Flow.Infrastructure.Tests.assets.cache
+│  │           │     ├─ Barber.Flow.Infrastructure.Tests.csproj.AssemblyReference.cache
+│  │           │     ├─ Barber.Flow.Infrastructure.Tests.csproj.CoreCompileInputs.cache
+│  │           │     ├─ Barber.Flow.Infrastructure.Tests.csproj.FileListAbsolute.txt
+│  │           │     ├─ Barber.Flow.Infrastructure.Tests.dll
+│  │           │     ├─ Barber.Flow.Infrastructure.Tests.GeneratedMSBuildEditorConfig.editorconfig
+│  │           │     ├─ Barber.Flow.Infrastructure.Tests.genruntimeconfig.cache
+│  │           │     ├─ Barber.Flow.Infrastructure.Tests.pdb
+│  │           │     ├─ Barber.Flow.Infrastructure.Tests.sourcelink.json
+│  │           │     ├─ ref
+│  │           │     │  └─ Barber.Flow.Infrastructure.Tests.dll
+│  │           │     └─ refint
+│  │           │        └─ Barber.Flow.Infrastructure.Tests.dll
+│  │           ├─ project.assets.json
+│  │           └─ project.nuget.cache
+│  ├─ docker-compose-OLD.yml
+│  ├─ docker-compose.yml
+│  └─ mongo-init
+├─ barber-flow-mobile
+│  └─ Barber.Flow.Mobile
+│     ├─ .easignore
+│     ├─ .expo
+│     │  ├─ devices.json
+│     │  ├─ README.md
+│     │  └─ web
+│     │     └─ cache
+│     │        └─ production
+│     │           └─ images
+│     │              └─ favicon
+│     │                 └─ favicon-24272cdaeff82cc5facdaccd982a6f05b60c4504704bbf94c19a6388659880bb-contain-transparent
+│     │                    └─ favicon-48.png
+│     ├─ app.config.js
+│     ├─ app.json.bak
+│     ├─ App.tsx
+│     ├─ application-docs
+│     │  ├─ DATABASE_SCHEMA.md
+│     │  ├─ FRONTEND_ARCHITECTURE.md
+│     │  ├─ PASSWORD_RECOVERY_PLAN.md
+│     │  ├─ SETTINGS_SYNC_IMPLEMENTATION.md
+│     │  ├─ STORE_COMPLIANCE_PLAN.md
+│     │  └─ STORE_SUBMISSION_CONTENT.md
+│     ├─ assets
+│     │  ├─ adaptive-icon-old.png
+│     │  ├─ adaptive-icon.png
+│     │  ├─ favicon.png
+│     │  ├─ icon-old.png
+│     │  ├─ icon.png
+│     │  ├─ images
+│     │  │  ├─ barber-flow-background-image.jpg
+│     │  │  ├─ client-default.jpg
+│     │  │  ├─ login-temporal.jpg
+│     │  │  ├─ no-image.jpg
+│     │  │  └─ no-photo-available.png
+│     │  ├─ splash-icon-old.png
+│     │  └─ splash-icon.png
+│     ├─ eas.json
+│     ├─ eslint.config.js
+│     ├─ index.ts
+│     ├─ package-lock.json
+│     ├─ package.json
+│     ├─ src
+│     │  ├─ components
+│     │  │  ├─ appointments
+│     │  │  │  └─ ClientSelectorModal.tsx
+│     │  │  ├─ AvatarPicker.tsx
+│     │  │  ├─ calendar
+│     │  │  │  ├─ AppointmentCard.tsx
+│     │  │  │  ├─ AppointmentForm.tsx
+│     │  │  │  ├─ AppointmentModal.tsx
+│     │  │  │  ├─ CalendarHeader.tsx
+│     │  │  │  ├─ CalendarView.tsx
+│     │  │  │  └─ DayAppointments.tsx
+│     │  │  ├─ ClientAvatar.tsx
+│     │  │  ├─ clients
+│     │  │  │  ├─ ClientAppointmentHistory.tsx
+│     │  │  │  ├─ ClientForm.tsx
+│     │  │  │  ├─ ClientListItem.tsx
+│     │  │  │  ├─ ClientSearchModal.tsx
+│     │  │  │  ├─ ClientsListEmptyState.tsx
+│     │  │  │  └─ ClientStatsCard.tsx
+│     │  │  ├─ notifications
+│     │  │  │  ├─ NotificationEmptyState.tsx
+│     │  │  │  ├─ NotificationItemCard.tsx
+│     │  │  │  └─ NotificationSection.tsx
+│     │  │  ├─ ScreenLayout.tsx
+│     │  │  ├─ settings
+│     │  │  │  ├─ ApplicationUsersModal.tsx
+│     │  │  │  ├─ ManageApplicationUsersForm.tsx
+│     │  │  │  ├─ ReportCalculationSettingsForm.tsx
+│     │  │  │  ├─ SettingItem.tsx
+│     │  │  │  └─ SettingSection.tsx
+│     │  │  └─ ui
+│     │  │     ├─ AnimatedTabIcon.tsx
+│     │  │     ├─ AppDrawerContent.tsx
+│     │  │     ├─ FormCard.tsx
+│     │  │     ├─ Header.tsx
+│     │  │     ├─ PasswordInput.tsx
+│     │  │     └─ ScreenTitle.tsx
+│     │  ├─ config.ts
+│     │  ├─ context
+│     │  │  ├─ DialogContext.tsx
+│     │  │  ├─ LanguageContext.tsx
+│     │  │  └─ NotificationContext.tsx
+│     │  ├─ features
+│     │  │  ├─ appointments
+│     │  │  │  ├─ appointment.store.ts
+│     │  │  │  ├─ appointments.types.ts
+│     │  │  │  └─ useAppointmentForm.ts
+│     │  │  ├─ clients
+│     │  │  │  └─ clientForm.ts
+│     │  │  ├─ reports
+│     │  │  │  └─ dailyReport.ts
+│     │  │  └─ settings
+│     │  │     ├─ reportCalculationsForm.ts
+│     │  │     └─ settingsForm.ts
+│     │  ├─ localization
+│     │  │  ├─ en.ts
+│     │  │  ├─ es.ts
+│     │  │  └─ i18n.ts
+│     │  ├─ navigation
+│     │  │  ├─ AppNavigator.tsx
+│     │  │  ├─ CalendarNavigator.tsx
+│     │  │  ├─ ClientsNavigator.tsx
+│     │  │  ├─ DrawerNavigator.tsx
+│     │  │  └─ RootNavigator.tsx
+│     │  ├─ screens
+│     │  │  ├─ AppointmentFormScreen.tsx
+│     │  │  ├─ BarberShopSelectorScreen.tsx
+│     │  │  ├─ CalendarScreen.tsx
+│     │  │  ├─ ClientFormScreen.tsx
+│     │  │  ├─ ClientsScreen.tsx
+│     │  │  ├─ DailyReportScreen.tsx
+│     │  │  ├─ ForgotPasswordScreen.tsx
+│     │  │  ├─ LoginScreen.tsx
+│     │  │  ├─ NotificationScreen.tsx
+│     │  │  ├─ OtpVerificationScreen.tsx
+│     │  │  ├─ ResetPasswordScreen.tsx
+│     │  │  └─ SettingsScreen.tsx
+│     │  ├─ services
+│     │  │  ├─ apis
+│     │  │  │  └─ apiClient.ts
+│     │  │  ├─ appointmentService.ts
+│     │  │  ├─ authService.ts
+│     │  │  ├─ barberShopService.ts
+│     │  │  ├─ clientHistoryService.ts
+│     │  │  ├─ clientService.ts
+│     │  │  ├─ notificationService.ts
+│     │  │  └─ settingsService.ts
+│     │  ├─ store
+│     │  │  └─ auth.store.ts
+│     │  ├─ theme
+│     │  │  ├─ fonts.ts
+│     │  │  ├─ ThemeContext.tsx
+│     │  │  └─ themes.ts
+│     │  ├─ types
+│     │  │  ├─ applicationUser.ts
+│     │  │  ├─ barberShop.ts
+│     │  │  ├─ clients.ts
+│     │  │  ├─ notifications.ts
+│     │  │  └─ settings.ts
+│     │  └─ utils
+│     │     ├─ contactActions.ts
+│     │     ├─ errors.ts
+│     │     └─ formatUtil.ts
+│     └─ tsconfig.json
+├─ package-lock.json
+├─ package.json
+└─ README.md
+
+```

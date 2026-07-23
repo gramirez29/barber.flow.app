@@ -1,0 +1,59 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "logout": "Cerrar Sesión",
+    "settings": "Configuración",
+    "dashboard": "Dashboard"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "resetPassword": "Restablecer Contraseña",
+    "username": "Usuario",
+    "password": "Contraseña",
+    "email": "Correo",
+    "invalidCredentials": "Usuario o contraseña incorrectos"
+  },
+  "appointments": {
+    "title": "Citas",
+    "new": "Nueva Cita",
+    "edit": "Editar Cita",
+    "delete": "Eliminar Cita",
+    "clientName": "Nombre del Cliente",
+    "phone": "Teléfono",
+    "date": "Fecha",
+    "time": "Hora",
+    "status": "Estado",
+    "service": "Servicio",
+    "price": "Precio",
+    "notes": "Notas"
+  },
+  "clients": {
+    "title": "Clientes",
+    "new": "Nuevo Cliente",
+    "edit": "Editar Cliente",
+    "delete": "Eliminar Cliente",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "phone": "Teléfono",
+    "email": "Correo",
+    "address": "Dirección",
+    "birthday": "Cumpleaños",
+    "paymentMethod": "Método de Pago"
+  },
+  "reports": {
+    "title": "Reportes",
+    "daily": "Reporte Diario",
+    "totalAppointments": "Total de Citas",
+    "completedAppointments": "Citas Completadas",
+    "totalIncome": "Ingreso Total",
+    "netIncome": "Ingreso Neto"
+  }
+}
