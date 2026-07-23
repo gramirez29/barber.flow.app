@@ -1,0 +1,59 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "logout": "Logout",
+    "settings": "Settings",
+    "dashboard": "Dashboard"
+  },
+  "auth": {
+    "login": "Login",
+    "forgotPassword": "Forgot your password?",
+    "resetPassword": "Reset Password",
+    "username": "Username",
+    "password": "Password",
+    "email": "Email",
+    "invalidCredentials": "Invalid username or password"
+  },
+  "appointments": {
+    "title": "Appointments",
+    "new": "New Appointment",
+    "edit": "Edit Appointment",
+    "delete": "Delete Appointment",
+    "clientName": "Client Name",
+    "phone": "Phone",
+    "date": "Date",
+    "time": "Time",
+    "status": "Status",
+    "service": "Service",
+    "price": "Price",
+    "notes": "Notes"
+  },
+  "clients": {
+    "title": "Clients",
+    "new": "New Client",
+    "edit": "Edit Client",
+    "delete": "Delete Client",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "birthday": "Birthday",
+    "paymentMethod": "Payment Method"
+  },
+  "reports": {
+    "title": "Reports",
+    "daily": "Daily Report",
+    "totalAppointments": "Total Appointments",
+    "completedAppointments": "Completed Appointments",
+    "totalIncome": "Total Income",
+    "netIncome": "Net Income"
+  }
+}
