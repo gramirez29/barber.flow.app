@@ -21,7 +21,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
     {
         if (string.IsNullOrWhiteSpace(appointment.Id))
         {
-            appointment.Id = await GetNextIdAsync(cancellation);
+            appointment.Id = await GenerateNextIdAsync(cancellation);
         }
 
         appointment.CreatedAt = DateTime.UtcNow;
@@ -147,14 +147,40 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
     public async Task<string> GetNextIdAsync(CancellationToken cancellation = default)
     {
         var filter = Builders<BsonCounter>.Filter.Eq(c => c.Id, "appointmentId");
+        var counter = await _countersCollection.Find(filter).FirstOrDefaultAsync(cancellation);
+
+        var nextValue = counter?.SequenceValue ?? 0;
+        return $"APT-{nextValue:D4}";
+    }
+
+    private async Task<string> GenerateNextIdAsync(CancellationToken cancellation = default)
+    {
+        var filter = Builders<BsonCounter>.Filter.Eq(c => c.Id, "appointmentId");
+
+        // First try to increment existing counter
         var update = Builders<BsonCounter>.Update.Inc(c => c.SequenceValue, 1);
         var options = new FindOneAndUpdateOptions<BsonCounter>
         {
-            IsUpsert = true,
             ReturnDocument = ReturnDocument.After
         };
 
         var counter = await _countersCollection.FindOneAndUpdateAsync(filter, update, options, cancellation);
+
+        // If counter didn't exist, create it with initial value 0
+        if (counter == null)
+        {
+            counter = new BsonCounter { Id = "appointmentId", SequenceValue = 0 };
+            try
+            {
+                await _countersCollection.InsertOneAsync(counter, cancellationToken: cancellation);
+            }
+            catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+            {
+                // Race condition: another thread created it, try increment again
+                counter = await _countersCollection.FindOneAndUpdateAsync(filter, update, options, cancellation);
+            }
+        }
+
         return $"APT-{counter.SequenceValue:D4}";
     }
 

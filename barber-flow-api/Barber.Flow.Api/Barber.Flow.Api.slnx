@@ -5,4 +5,10 @@
     <Project Path="Barber.Flow.Domain/Barber.Flow.Domain.csproj" />
     <Project Path="Barber.Flow.Infrastructure/Barber.Flow.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Barber.Flow.Api.Tests/Barber.Flow.Api.Tests.csproj" />
+    <Project Path="tests/Barber.Flow.Application.Tests/Barber.Flow.Application.Tests.csproj" />
+    <Project Path="tests/Barber.Flow.Domain.Tests/Barber.Flow.Domain.Tests.csproj" />
+    <Project Path="tests/Barber.Flow.Infrastructure.Tests/Barber.Flow.Infrastructure.Tests.csproj" />
+  </Folder>
 </Solution>

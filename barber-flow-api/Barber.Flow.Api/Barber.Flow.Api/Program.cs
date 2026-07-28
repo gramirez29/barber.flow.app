@@ -51,3 +51,7 @@ app.MapReportsApi();
 app.MapUsersApi();
 app.MapAppointmentsApi();
 app.Run();
+
+// Exposes the top-level-statements Program class so WebApplicationFactory<Program> in
+// Barber.Flow.Api.Tests can reference it from another assembly.
+public partial class Program { }

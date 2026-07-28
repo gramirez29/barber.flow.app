@@ -65,13 +65,13 @@ jobs:
           dotnet-version: ${{ matrix.dotnet-version }}
 
       - name: Restore dependencies
-        run: dotnet restore barber-flow-api/Barber.Flow.Api/Barber.Flow.Api.csproj
+        run: dotnet restore barber-flow-api/Barber.Flow.Api/Barber.Flow.Api.slnx
 
       - name: Build
-        run: dotnet build barber-flow-api/Barber.Flow.Api/Barber.Flow.Api.csproj --no-restore --configuration Release
+        run: dotnet build barber-flow-api/Barber.Flow.Api/Barber.Flow.Api.slnx --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test barber-flow-api/tests/ --no-build --verbosity normal
+        run: dotnet test barber-flow-api/Barber.Flow.Api/Barber.Flow.Api.slnx --no-build --configuration Release --verbosity normal
 
   # Docker Build & Push (on main branch only)
   docker:

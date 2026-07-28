@@ -25,6 +25,7 @@ public sealed class MongoDbBootstrapper : IHostedService
     {
         RegisterClassMaps();
         await EnsureIndexesAsync(cancellationToken);
+        await SeedInitialAdminUserAsync(cancellationToken);
         _logger.LogInformation("MongoDB bootstrapped against '{Database}'.", _database.DatabaseNamespace.DatabaseName);
     }
 
@@ -88,6 +89,7 @@ public sealed class MongoDbBootstrapper : IHostedService
         await CreateAppointmentIndexesAsync(cancellationToken);
         await CreateBarberIndexesAsync(cancellationToken);
         await CreateBarberShopIndexesAsync(cancellationToken);
+        await CreateUserIndexesAsync(cancellationToken);
     }
 
     /// <summary>
@@ -167,7 +169,7 @@ public sealed class MongoDbBootstrapper : IHostedService
     private async Task CreateBarberShopIndexesAsync(CancellationToken cancellationToken = default)
     {
         // BarberShops collection indexes
-        var barberShops = _database.GetCollection<BarberShop>("barbershops");
+        var barberShops = _database.GetCollection<BarberShop>("barberShops");
         var barberShopIndexes = new List<CreateIndexModel<BarberShop>>
         {
             new(
@@ -178,5 +180,53 @@ public sealed class MongoDbBootstrapper : IHostedService
                 new CreateIndexOptions { Name = "idx_barbershops_name" }),
         };
         await barberShops.Indexes.CreateManyAsync(barberShopIndexes, cancellationToken);
+    }
+
+    /// <summary>
+    /// Creates indexes for the Users collection to optimize query performance and enforce unique usernames.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task CreateUserIndexesAsync(CancellationToken cancellationToken = default)
+    {
+        // Users collection indexes
+        var users = _database.GetCollection<User>("users");
+        var userIndexes = new List<CreateIndexModel<User>>
+        {
+            new(
+                Builders<User>.IndexKeys.Ascending(u => u.UserName),
+                new CreateIndexOptions { Name = "idx_users_userName", Unique = true }),
+            new(
+                Builders<User>.IndexKeys.Ascending(u => u.Email),
+                new CreateIndexOptions { Name = "idx_users_email" }),
+        };
+        await users.Indexes.CreateManyAsync(userIndexes, cancellationToken);
+    }
+
+    /// <summary>
+    /// Seeds the initial admin user the first time the Users collection is empty, mirroring the
+    /// default credentials used by InMemoryUserRepository so login keeps working right after
+    /// switching from in-memory storage to MongoDB.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task SeedInitialAdminUserAsync(CancellationToken cancellationToken = default)
+    {
+        var users = _database.GetCollection<User>("users");
+        var hasAnyUser = await users.Find(FilterDefinition<User>.Empty).AnyAsync(cancellationToken);
+        if (hasAnyUser) return;
+
+        var adminUser = new User
+        {
+            Id = Guid.Parse("1dc8d729-51f9-4633-aaab-46c9273bf44e"),
+            Name = "Admin User",
+            UserName = "admin",
+            Password = "password",
+            Email = "g.raba29@gmail.com",
+            Role = "Admin"
+        };
+
+        await users.InsertOneAsync(adminUser, cancellationToken: cancellationToken);
+        _logger.LogInformation("Seeded initial admin user '{UserName}' into MongoDB.", adminUser.UserName);
     }
 }

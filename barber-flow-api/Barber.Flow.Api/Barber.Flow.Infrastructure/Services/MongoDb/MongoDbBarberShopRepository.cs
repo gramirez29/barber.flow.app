@@ -37,7 +37,7 @@ public sealed class MongoDbBarberShopRepository : IBarberShopRepository
 
     public async Task<BarberShop> CreateAsync(BarberShop barberShop)
     {
-        barberShop.Id = await GetNextIdAsync();
+        barberShop.Id = await GenerateNextIdAsync();
         barberShop.CreatedAt = DateTime.UtcNow;
         barberShop.UpdatedAt = barberShop.CreatedAt;
         await _collection.InsertOneAsync(barberShop);
@@ -83,14 +83,40 @@ public sealed class MongoDbBarberShopRepository : IBarberShopRepository
     public async Task<string> GetNextIdAsync()
     {
         var filter = Builders<BsonCounter>.Filter.Eq(c => c.Id, "barberShopId");
+        var counter = await _countersCollection.Find(filter).FirstOrDefaultAsync();
+
+        var nextValue = counter?.SequenceValue ?? 0;
+        return $"SHOP-{nextValue:D4}";
+    }
+
+    private async Task<string> GenerateNextIdAsync()
+    {
+        var filter = Builders<BsonCounter>.Filter.Eq(c => c.Id, "barberShopId");
+
+        // First try to increment existing counter
         var update = Builders<BsonCounter>.Update.Inc(c => c.SequenceValue, 1);
         var options = new FindOneAndUpdateOptions<BsonCounter>
         {
-            IsUpsert = true,
             ReturnDocument = ReturnDocument.After
         };
 
         var counter = await _countersCollection.FindOneAndUpdateAsync(filter, update, options);
+
+        // If counter didn't exist, create it with initial value 0
+        if (counter == null)
+        {
+            counter = new BsonCounter { Id = "barberShopId", SequenceValue = 0 };
+            try
+            {
+                await _countersCollection.InsertOneAsync(counter);
+            }
+            catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+            {
+                // Race condition: another thread created it, try increment again
+                counter = await _countersCollection.FindOneAndUpdateAsync(filter, update, options);
+            }
+        }
+
         return $"SHOP-{counter.SequenceValue:D4}";
     }
 

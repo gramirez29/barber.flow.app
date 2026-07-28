@@ -1,0 +1,641 @@
+<title>Barber Flow — Mapa de Arquitectura</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --surface: #ffffff;
+    --surface-2: #efece4;
+    --border: #ddd7c8;
+    --text: #23201b;
+    --text-dim: #6b6558;
+    --accent: #b6602a;
+    --accent-soft: #e9d3bf;
+    --role-entry: #b6602a;
+    --role-orch: #4c56a6;
+    --role-contract: #6f6a5e;
+    --role-infra: #2f7d70;
+    --role-domain: #8a6a26;
+    --shadow: 0 1px 2px rgba(35,32,27,0.06), 0 6px 20px -8px rgba(35,32,27,0.15);
+    --radius: 7px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c;
+      --surface: #1b1f26;
+      --surface-2: #21262f;
+      --border: #2d333f;
+      --text: #eae7e0;
+      --text-dim: #9aa0ab;
+      --accent: #d98a4c;
+      --accent-soft: #3a2c20;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c;
+    --surface: #1b1f26;
+    --surface-2: #21262f;
+    --border: #2d333f;
+    --text: #eae7e0;
+    --text-dim: #9aa0ab;
+    --accent: #d98a4c;
+    --accent-soft: #3a2c20;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 30px -10px rgba(0,0,0,0.5);
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f4ef;
+    --surface: #ffffff;
+    --surface-2: #efece4;
+    --border: #ddd7c8;
+    --text: #23201b;
+    --text-dim: #6b6558;
+    --accent: #b6602a;
+    --accent-soft: #e9d3bf;
+    --shadow: 0 1px 2px rgba(35,32,27,0.06), 0 6px 20px -8px rgba(35,32,27,0.15);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(ellipse at top left, var(--accent-soft) 0%, transparent 45%),
+      repeating-linear-gradient(0deg, transparent, transparent 27px, var(--border) 27px, var(--border) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, var(--border) 27px, var(--border) 28px),
+      var(--bg);
+    background-blend-mode: normal, normal, normal, normal;
+    opacity: 1;
+    color: var(--text);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before { content: none; }
+
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  header.page-head {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-bottom: 28px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(1.6rem, 3vw, 2.35rem);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .subtitle {
+    margin: 0;
+    max-width: 62ch;
+    color: var(--text-dim);
+    font-size: 1rem;
+  }
+  .stat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .stat-chip {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 14px;
+    box-shadow: var(--shadow);
+  }
+  .stat-chip strong {
+    font-variant-numeric: tabular-nums;
+    font-size: 1rem;
+    color: var(--text);
+  }
+  .stat-chip span {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 36px;
+    box-shadow: var(--shadow);
+  }
+  .legend-title {
+    width: 100%;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.85rem;
+  }
+  .swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex: none;
+  }
+  .rel-key {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+  }
+  .rel-line {
+    width: 26px;
+    height: 0;
+    border-top: 2px solid var(--text-dim);
+  }
+  .rel-line.dashed { border-top-style: dashed; }
+
+  section.block {
+    margin-bottom: 44px;
+  }
+  .block-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .block-head h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+  .block-head .path {
+    font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+  .block-note {
+    margin: 0 0 14px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    max-width: 78ch;
+  }
+
+  .diagram-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+    overflow-x: auto;
+  }
+  .diagram-card pre.mermaid {
+    margin: 0;
+    min-width: 640px;
+  }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  footer code {
+    font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    background: var(--surface-2);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+</style>
+
+<main>
+  <header class="page-head">
+    <div class="eyebrow">Codebase Memory — Knowledge Graph</div>
+    <h1>Barber Flow · Mapa de arquitectura</h1>
+    <p class="subtitle">
+      Vista generada a partir del grafo guardado en <code style="font-family:ui-monospace,monospace">codebase-memory</code>:
+      tres apps independientes (.NET&nbsp;9 API, React web, Expo mobile) que comparten el mismo contrato de backend.
+    </p>
+    <div class="stat-row">
+      <div class="stat-chip"><strong>86</strong><span>entidades</span></div>
+      <div class="stat-chip"><strong>85</strong><span>relaciones</span></div>
+      <div class="stat-chip"><strong>3</strong><span>apps</span></div>
+      <div class="stat-chip"><strong>8</strong><span>puentes CALLS_API</span></div>
+    </div>
+  </header>
+
+  <div class="legend">
+    <div class="legend-title">Rol de cada nodo (mismo color en los cuatro diagramas)</div>
+    <div class="legend-item"><span class="swatch" style="background:#b6602a"></span> Entrada (Api / Screen / Page / Navigator)</div>
+    <div class="legend-item"><span class="swatch" style="background:#4c56a6"></span> Orquestación (Service / UseCase / Hook / Context)</div>
+    <div class="legend-item"><span class="swatch" style="background:#3d434f;border:1px dashed #8b93a1"></span> Contrato (Interface)</div>
+    <div class="legend-item"><span class="swatch" style="background:#2f7d70"></span> Infraestructura (Repository / Store / HttpClient)</div>
+    <div class="legend-item"><span class="swatch" style="background:#8a6a26"></span> Entidad de dominio</div>
+    <div class="legend-item"><span class="swatch" style="background:#20242b;border:1px solid #4c5566"></span> Referencia externa (otra app)</div>
+    <div class="legend-title" style="margin-top:6px">Tipo de relación</div>
+    <div class="rel-key"><span class="rel-line"></span> USES / CALLS / RENDERS</div>
+    <div class="rel-key"><span class="rel-line dashed"></span> IMPLEMENTS / PERSISTS / CALLS_API</div>
+  </div>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>1 · Backend — Clean Architecture</h2>
+      <span class="path">barber-flow-api/Barber.Flow.Api/</span>
+    </div>
+    <p class="block-note">La dependencia fluye hacia adentro: los siete endpoints llaman a un Service de Application, que solo conoce interfaces de Domain; MongoDB (Infrastructure) implementa esas interfaces y persiste las entidades.</p>
+    <div class="diagram-card">
+<pre class="mermaid">
+%%{init: {'flowchart': {'curve': 'basis'}}}%%
+flowchart TB
+  subgraph API["Api — Endpoints"]
+    direction LR
+    AuthApi["AuthApi"]
+    UsersApi["UsersApi"]
+    AppointmentsApi["AppointmentsApi"]
+    BarbersApi["BarbersApi"]
+    BarberShopsApi["BarberShopsApi"]
+    ClientsApi["ClientsApi"]
+    ReportsApi["ReportsApi"]
+  end
+
+  subgraph APP["Application — Services"]
+    direction LR
+    AuthSvc["AuthService"]
+    UserSvc["UserService"]
+    ClientSvc["ClientService"]
+    ApptSvc["AppointmentService"]
+    BarberSvc["BarberService"]
+    ReportSvc["ReportService"]
+  end
+
+  subgraph DOM["Domain — Contratos"]
+    direction LR
+    IUserRepo["IUserRepository"]
+    IClientRepo["IClientRepository"]
+    IBarberRepo["IBarberRepository"]
+    IApptRepo["IAppointmentRepository"]
+    IShopRepo["IBarberShopRepository"]
+    IJwt["IJwtAuthService"]
+    IEmail["IEmailService"]
+  end
+
+  subgraph ENT["Domain — Entidades"]
+    direction LR
+    UserE["User"]
+    ClientE["Client"]
+    BarberE["Barber"]
+    ShopE["BarberShop"]
+    ApptE["Appointments"]
+  end
+
+  subgraph INF["Infrastructure — MongoDB & externos"]
+    direction LR
+    MUser["MongoDbUserRepository"]
+    MBarber["MongoDbBarberRepository"]
+    MClient["MongoDbClientRepository"]
+    MAppt["MongoDbAppointmentRepository"]
+    MShop["MongoDbBarberShopRepository"]
+    Jwt["JwtAuthService"]
+    Email["EmailService"]
+  end
+
+  AuthApi --> AuthSvc
+  UsersApi --> UserSvc
+  AppointmentsApi --> ApptSvc
+  BarbersApi --> BarberSvc
+  BarberShopsApi --> BarberSvc
+  ClientsApi --> ClientSvc
+  ReportsApi --> ReportSvc
+
+  AuthSvc --> IUserRepo
+  AuthSvc --> IJwt
+  AuthSvc --> IEmail
+  UserSvc --> IUserRepo
+  ClientSvc --> IClientRepo
+  ApptSvc --> IApptRepo
+  BarberSvc --> IBarberRepo
+  BarberSvc --> IShopRepo
+  ReportSvc --> IApptRepo
+
+  MUser -.IMPLEMENTS.-> IUserRepo
+  MBarber -.IMPLEMENTS.-> IBarberRepo
+  MClient -.IMPLEMENTS.-> IClientRepo
+  MAppt -.IMPLEMENTS.-> IApptRepo
+  MShop -.IMPLEMENTS.-> IShopRepo
+  Jwt -.IMPLEMENTS.-> IJwt
+  Email -.IMPLEMENTS.-> IEmail
+
+  MUser -.PERSISTS.-> UserE
+  MClient -.PERSISTS.-> ClientE
+  MBarber -.PERSISTS.-> BarberE
+  MShop -.PERSISTS.-> ShopE
+  MAppt -.PERSISTS.-> ApptE
+
+  classDef entry fill:#b6602a,stroke:#7c3f16,color:#fff8f0;
+  classDef orch fill:#4c56a6,stroke:#333c82,color:#f2f2fb;
+  classDef contract fill:#3d434f,stroke:#8b93a1,color:#dfe3e8,stroke-dasharray: 3 2;
+  classDef infra fill:#2f7d70,stroke:#1f584f,color:#f0faf8;
+  classDef domain fill:#8a6a26,stroke:#664e1c,color:#fbf3e0;
+
+  class AuthApi,UsersApi,AppointmentsApi,BarbersApi,BarberShopsApi,ClientsApi,ReportsApi entry
+  class AuthSvc,UserSvc,ClientSvc,ApptSvc,BarberSvc,ReportSvc orch
+  class IUserRepo,IClientRepo,IBarberRepo,IApptRepo,IShopRepo,IJwt,IEmail contract
+  class MUser,MBarber,MClient,MAppt,MShop,Jwt,Email infra
+  class UserE,ClientE,BarberE,ShopE,ApptE domain
+</pre>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>2 · Web — SPA React + MUI</h2>
+      <span class="path">barber-flow-web/src/</span>
+    </div>
+    <p class="block-note">Misma disciplina de capas que el backend: los Use Cases no conocen React, y el único archivo que conoce Axios es <em>AxiosHttpClient</em>. Los API clients cruzan hacia el backend (líneas punteadas azules, CALLS_API).</p>
+    <div class="diagram-card">
+<pre class="mermaid">
+%%{init: {'flowchart': {'curve': 'basis'}}}%%
+flowchart TB
+  subgraph PRES["Presentation"]
+    direction LR
+    Router["Router"]
+    ProtectedRoute["ProtectedRoute"]
+    LoginPage["LoginPage"]
+    LoginForm["LoginForm"]
+    DashboardPage["DashboardPage"]
+    ReportsPage["ReportsPage"]
+    AuthCtx["AuthContext"]
+    useForm["useForm"]
+    useApiError["useApiError"]
+    useAppointments["useAppointments"]
+    useClients["useClients"]
+  end
+
+  subgraph APPL["Application — Use Cases"]
+    direction LR
+    LoginUC["LoginUseCase"]
+    LogoutUC["LogoutUseCase"]
+    ForgotUC["ForgotPasswordUseCase"]
+    GetUserUC["GetStoredUserUseCase"]
+  end
+
+  subgraph DOMW["Domain — Contratos"]
+    direction LR
+    IAuthRepo["IAuthRepository"]
+    IClientRepoW["IClientRepository"]
+    IApptRepoW["IAppointmentRepository"]
+    IReportRepoW["IReportRepository"]
+  end
+
+  subgraph INFW["Infrastructure"]
+    direction LR
+    HttpClient["HttpClient"]
+    AxiosHttpClient["AxiosHttpClient"]
+    AuthApiW["AuthApi (client)"]
+    ClientApiW["ClientApi (client)"]
+    ApptApiW["AppointmentApi (client)"]
+    ReportApiW["ReportApi (client)"]
+    LocalStorageAuth["LocalStorageAuthStorage"]
+  end
+
+  subgraph BEREF["Backend"]
+    direction LR
+    BAuth["AuthApi"]
+    BClients["ClientsApi"]
+    BAppt["AppointmentsApi"]
+    BReports["ReportsApi"]
+  end
+
+  Router --> ProtectedRoute
+  Router --> LoginPage
+  Router --> DashboardPage
+  Router --> ReportsPage
+  LoginPage --> LoginForm
+  LoginForm --> AuthCtx
+  LoginForm --> useForm
+  ProtectedRoute --> AuthCtx
+  ReportsPage --> useApiError
+  useAppointments --> ApptApiW
+  useClients --> ClientApiW
+
+  AuthCtx --> LoginUC
+  AuthCtx --> LogoutUC
+  AuthCtx --> GetUserUC
+
+  LoginUC --> IAuthRepo
+  LogoutUC --> IAuthRepo
+  ForgotUC --> IAuthRepo
+  GetUserUC --> IAuthRepo
+
+  AuthApiW -.IMPLEMENTS.-> IAuthRepo
+  ClientApiW -.IMPLEMENTS.-> IClientRepoW
+  ApptApiW -.IMPLEMENTS.-> IApptRepoW
+  ReportApiW -.IMPLEMENTS.-> IReportRepoW
+
+  AxiosHttpClient -.IMPLEMENTS.-> HttpClient
+  AuthApiW --> HttpClient
+  ClientApiW --> HttpClient
+  ApptApiW --> HttpClient
+  ReportApiW --> HttpClient
+  AuthApiW --> LocalStorageAuth
+
+  AuthApiW -.CALLS_API.-> BAuth
+  ClientApiW -.CALLS_API.-> BClients
+  ApptApiW -.CALLS_API.-> BAppt
+  ReportApiW -.CALLS_API.-> BReports
+
+  classDef entry fill:#b6602a,stroke:#7c3f16,color:#fff8f0;
+  classDef orch fill:#4c56a6,stroke:#333c82,color:#f2f2fb;
+  classDef contract fill:#3d434f,stroke:#8b93a1,color:#dfe3e8,stroke-dasharray: 3 2;
+  classDef infra fill:#2f7d70,stroke:#1f584f,color:#f0faf8;
+  classDef external fill:#20242b,stroke:#4c5566,color:#c8cdd6;
+
+  class Router,ProtectedRoute,LoginPage,DashboardPage,ReportsPage entry
+  class LoginForm,AuthCtx,useForm,useApiError,useAppointments,useClients,LoginUC,LogoutUC,ForgotUC,GetUserUC orch
+  class IAuthRepo,IClientRepoW,IApptRepoW,IReportRepoW contract
+  class HttpClient,AxiosHttpClient,AuthApiW,ClientApiW,ApptApiW,ReportApiW,LocalStorageAuth infra
+  class BAuth,BClients,BAppt,BReports external
+</pre>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>3 · Mobile — Expo / React Native</h2>
+      <span class="path">barber-flow-mobile/Barber.Flow.Mobile/src/</span>
+    </div>
+    <p class="block-note">Más pragmático que web: los servicios llaman <em>fetch</em> directo vía <em>apiClient</em>, sin capa de interfaces formal. <em>notificationService</em> es el único nodo sin salida al backend — todo lo deriva del store local.</p>
+    <div class="diagram-card">
+<pre class="mermaid">
+%%{init: {'flowchart': {'curve': 'basis'}}}%%
+flowchart TB
+  subgraph NAV["Navegación & Pantallas"]
+    direction LR
+    RootNav["RootNavigator"]
+    DrawerNav["DrawerNavigator"]
+    CalNav["CalendarNavigator"]
+    ClientsNav["ClientsNavigator"]
+    CalScreen["CalendarScreen"]
+    LoginScreen["LoginScreen"]
+    SettingsScreen["SettingsScreen"]
+  end
+
+  subgraph CTX["Contexts"]
+    direction LR
+    ThemeCtxM["ThemeContext"]
+    LangCtx["LanguageContext"]
+    NotifCtxM["NotificationContext"]
+    DialogCtx["DialogContext"]
+  end
+
+  subgraph SVC["Services"]
+    direction LR
+    authSvc["authService"]
+    clientSvc["clientService"]
+    apptSvc["appointmentService"]
+    shopSvc["barberShopService"]
+    notifSvc["notificationService"]
+  end
+
+  subgraph STATE["Estado (Zustand)"]
+    direction LR
+    authStore["useAuthStore"]
+    apptStore["appointment.store"]
+  end
+
+  subgraph INFM["Infraestructura HTTP"]
+    apiClient["apiClient (fetch)"]
+  end
+
+  subgraph BEREF2["Backend"]
+    direction LR
+    BAuth2["AuthApi"]
+    BClients2["ClientsApi"]
+    BAppt2["AppointmentsApi"]
+    BShop2["BarberShopsApi"]
+  end
+
+  RootNav --> DrawerNav
+  RootNav --> LoginScreen
+  RootNav --> authSvc
+  DrawerNav --> CalNav
+  DrawerNav --> ClientsNav
+  CalNav --> CalScreen
+  CalScreen --> apptStore
+  SettingsScreen --> authSvc
+
+  DialogCtx --> ThemeCtxM
+  NotifCtxM --> notifSvc
+  notifSvc --> apptStore
+
+  authSvc --> apiClient
+  clientSvc --> apiClient
+  apptSvc --> apiClient
+  shopSvc --> apiClient
+  apiClient --> authStore
+
+  authSvc -.CALLS_API.-> BAuth2
+  clientSvc -.CALLS_API.-> BClients2
+  apptSvc -.CALLS_API.-> BAppt2
+  shopSvc -.CALLS_API.-> BShop2
+
+  classDef entry fill:#b6602a,stroke:#7c3f16,color:#fff8f0;
+  classDef orch fill:#4c56a6,stroke:#333c82,color:#f2f2fb;
+  classDef infra fill:#2f7d70,stroke:#1f584f,color:#f0faf8;
+  classDef external fill:#20242b,stroke:#4c5566,color:#c8cdd6;
+
+  class RootNav,DrawerNav,CalNav,ClientsNav,CalScreen,LoginScreen,SettingsScreen entry
+  class ThemeCtxM,LangCtx,NotifCtxM,DialogCtx,authSvc,clientSvc,apptSvc,shopSvc,notifSvc orch
+  class authStore,apptStore,apiClient infra
+  class BAuth2,BClients2,BAppt2,BShop2 external
+</pre>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>4 · Puente Frontend ↔ Backend</h2>
+      <span class="path">CALLS_API — el contrato compartido</span>
+    </div>
+    <p class="block-note">Las ocho conexiones que realmente acoplan las tres apps: web y mobile llegan a los mismos cuatro controllers. Si cambia un DTO aquí, hay que tocar los tres proyectos (regla explícita del CLAUDE.md raíz).</p>
+    <div class="diagram-card">
+<pre class="mermaid">
+%%{init: {'flowchart': {'curve': 'basis'}}}%%
+flowchart LR
+  subgraph WEB["Web"]
+    direction TB
+    AuthApiW2["AuthApi (client)"]
+    ClientApiW2["ClientApi (client)"]
+    ApptApiW2["AppointmentApi (client)"]
+    ReportApiW2["ReportApi (client)"]
+  end
+
+  subgraph BACK["Backend — Apis"]
+    direction TB
+    BAuth3["AuthApi"]
+    BClients3["ClientsApi"]
+    BAppt3["AppointmentsApi"]
+    BShop3["BarberShopsApi"]
+    BReports3["ReportsApi"]
+  end
+
+  subgraph MOB["Mobile"]
+    direction TB
+    authSvc2["authService"]
+    clientSvc2["clientService"]
+    apptSvc2["appointmentService"]
+    shopSvc2["barberShopService"]
+  end
+
+  AuthApiW2 -.CALLS_API.-> BAuth3
+  ClientApiW2 -.CALLS_API.-> BClients3
+  ApptApiW2 -.CALLS_API.-> BAppt3
+  ReportApiW2 -.CALLS_API.-> BReports3
+
+  authSvc2 -.CALLS_API.-> BAuth3
+  clientSvc2 -.CALLS_API.-> BClients3
+  apptSvc2 -.CALLS_API.-> BAppt3
+  shopSvc2 -.CALLS_API.-> BShop3
+
+  classDef infra fill:#2f7d70,stroke:#1f584f,color:#f0faf8;
+  classDef entry fill:#b6602a,stroke:#7c3f16,color:#fff8f0;
+
+  class AuthApiW2,ClientApiW2,ApptApiW2,ReportApiW2,authSvc2,clientSvc2,apptSvc2,shopSvc2 infra
+  class BAuth3,BClients3,BAppt3,BShop3,BReports3 entry
+</pre>
+    </div>
+  </section>
+
+  <footer>
+    <span>Fuente: <code>mcp__codebase-memory__read_graph</code> · rama <code>features/ConnectingFrontendWithBackend</code></span>
+    <span>Generado 2026-07-25</span>
+  </footer>
+</main>
