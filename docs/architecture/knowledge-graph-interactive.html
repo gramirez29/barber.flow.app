@@ -1,0 +1,886 @@
+<title>Barber Flow — Grafo Completo Interactivo</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --surface: #ffffff;
+    --surface-2: #efece4;
+    --border: #ddd7c8;
+    --text: #23201b;
+    --text-dim: #6b6558;
+    --accent: #b6602a;
+    --accent-soft: #e9d3bf;
+    --role-entry: #b6602a;
+    --role-orch: #4c56a6;
+    --role-contract: #6f6a5e;
+    --role-infra: #2f7d70;
+    --role-domain: #8a6a26;
+    --shadow: 0 1px 2px rgba(35,32,27,0.06), 0 6px 20px -8px rgba(35,32,27,0.15);
+    --radius: 8px;
+    --focus-ring: #b6602a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c; --surface: #1b1f26; --surface-2: #21262f; --border: #2d333f;
+      --text: #eae7e0; --text-dim: #9aa0ab; --accent: #d98a4c; --accent-soft: #3a2c20;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171c; --surface: #1b1f26; --surface-2: #21262f; --border: #2d333f;
+    --text: #eae7e0; --text-dim: #9aa0ab; --accent: #d98a4c; --accent-soft: #3a2c20;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 30px -10px rgba(0,0,0,0.5);
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f4ef; --surface: #ffffff; --surface-2: #efece4; --border: #ddd7c8;
+    --text: #23201b; --text-dim: #6b6558; --accent: #b6602a; --accent-soft: #e9d3bf;
+    --shadow: 0 1px 2px rgba(35,32,27,0.06), 0 6px 20px -8px rgba(35,32,27,0.15);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, var(--border) 27px, var(--border) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, var(--border) 27px, var(--border) 28px),
+      var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 1240px; margin: 0 auto; padding: 40px 24px 90px; }
+
+  header.page-head { display: flex; flex-direction: column; gap: 14px; padding-bottom: 26px; margin-bottom: 26px; border-bottom: 1px solid var(--border); }
+  .eyebrow { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.72rem; font-weight: 700; color: var(--accent); }
+  h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: -0.01em; text-wrap: balance; }
+  .subtitle { margin: 0; max-width: 70ch; color: var(--text-dim); font-size: 0.98rem; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .stat-chip { display: flex; align-items: baseline; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 100px; padding: 6px 14px; box-shadow: var(--shadow); }
+  .stat-chip strong { font-variant-numeric: tabular-nums; font-size: 1rem; }
+  .stat-chip span { font-size: 0.78rem; color: var(--text-dim); }
+
+  .howto { display:flex; gap:10px; align-items:flex-start; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 22px; font-size: 0.86rem; color: var(--text); }
+  .howto b { color: var(--accent); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 18px; margin-bottom: 22px; box-shadow: var(--shadow); }
+  .legend-title { width: 100%; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); font-weight: 700; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 0.83rem; }
+  .swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+
+  .diagram-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 0; margin-bottom: 14px; position: relative; overflow: hidden; }
+  .pan-viewport { height: 78vh; overflow: hidden; cursor: grab; position: relative; touch-action: none; }
+  .pan-viewport.grabbing { cursor: grabbing; }
+  .pan-canvas { transform-origin: 0 0; will-change: transform; padding: 16px; display: inline-block; }
+  .diagram-card pre.mermaid { margin: 0; min-width: 1400px; }
+  .diagram-card svg { max-width: none !important; }
+
+  .zoom-controls {
+    position: absolute; top: 12px; right: 12px; z-index: 5;
+    display: flex; flex-direction: column; gap: 4px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: var(--shadow); padding: 4px;
+  }
+  .zoom-controls button {
+    width: 30px; height: 30px; border-radius: 6px; border: none; background: transparent;
+    color: var(--text); font-size: 1rem; cursor: pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .zoom-controls button:hover { background: var(--surface-2); color: var(--accent); }
+  .zoom-controls button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+  .zoom-controls .sep { height: 1px; background: var(--border); margin: 2px 4px; }
+  .zoom-level {
+    position: absolute; bottom: 12px; right: 12px; z-index: 5;
+    font-size: 0.72rem; color: var(--text-dim); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 100px; padding: 3px 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .drag-hint {
+    position: absolute; bottom: 12px; left: 12px; z-index: 5;
+    font-size: 0.72rem; color: var(--text-dim); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 100px; padding: 3px 10px;
+  }
+
+  details.source-details { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; }
+  details.source-details summary { cursor: pointer; padding: 12px 16px; font-size: 0.86rem; font-weight: 600; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  details.source-details summary::-webkit-details-marker { display: none; }
+  details.source-details summary::after { content: "▾"; color: var(--text-dim); transition: transform .15s; }
+  details.source-details[open] summary::after { transform: rotate(180deg); }
+  .source-body { border-top: 1px solid var(--border); padding: 14px 16px; }
+  .source-body pre { margin: 0 0 10px; max-height: 340px; overflow: auto; background: var(--surface-2); border-radius: 6px; padding: 12px; }
+  .source-body code { font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace; font-size: 0.78rem; white-space: pre; color: var(--text); }
+
+  .toolbar-row { display:flex; justify-content:flex-end; margin-bottom: 34px; }
+  button.copy-btn {
+    font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    border-radius: 100px; padding: 7px 16px; box-shadow: var(--shadow);
+    display:flex; align-items:center; gap:6px;
+  }
+  button.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  button.copy-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+  section.explorer { margin-top: 10px; }
+  .explorer-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
+  .explorer-head h2 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .search-box { position: relative; }
+  .search-box input {
+    font: inherit; font-size: 0.88rem; padding: 8px 14px 8px 32px; border-radius: 100px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); width: 240px;
+  }
+  .search-box input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+  .search-box::before { content: "🔍"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; opacity: 0.6; }
+  .chip-filter {
+    font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-dim);
+    border-radius: 100px; padding: 6px 13px;
+  }
+  .chip-filter[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .chip-filter:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  #resultCount { font-size: 0.8rem; color: var(--text-dim); }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    scroll-margin-top: 20px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; box-shadow: var(--shadow); transition: box-shadow .15s, border-color .15s;
+  }
+  .card:target {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow);
+    animation: pop .5s ease;
+  }
+  @keyframes pop { from { transform: scale(1.015); } to { transform: scale(1); } }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .card-name { font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace; font-size: 0.92rem; font-weight: 700; word-break: break-word; }
+  .role-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .card-meta { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .card-obs { margin: 0 0 10px; padding-left: 18px; font-size: 0.84rem; color: var(--text); }
+  .card-obs li { margin-bottom: 3px; }
+  .rel-group { margin-top: 8px; }
+  .rel-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); font-weight: 700; margin-bottom: 4px; }
+  .rel-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .rel-chip {
+    font-size: 0.74rem; text-decoration: none; color: var(--text);
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 2px 8px; font-family: ui-monospace, monospace;
+  }
+  .rel-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .rel-chip .tag { color: var(--text-dim); font-family: ui-sans-serif, sans-serif; margin-right: 3px; }
+
+  footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 0.82rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  footer code { font-family: ui-monospace, monospace; background: var(--surface-2); padding: 1px 6px; border-radius: 4px; }
+
+  #mermaidSource { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+</style>
+
+<main>
+  <header class="page-head">
+    <div class="eyebrow">Codebase Memory — Knowledge Graph completo</div>
+    <h1>Barber Flow · Todas las entidades y relaciones</h1>
+    <p class="subtitle">
+      Un único diagrama Mermaid con las 86 entidades y 85 relaciones guardadas en <code style="font-family:ui-monospace,monospace">codebase-memory</code>,
+      agrupadas por app y capa. Interactivo: haz clic en cualquier nodo para saltar a su ficha con observaciones y conexiones.
+    </p>
+    <div class="stat-row">
+      <div class="stat-chip"><strong>86</strong><span>entidades</span></div>
+      <div class="stat-chip"><strong>85</strong><span>relaciones</span></div>
+      <div class="stat-chip"><strong>7</strong><span>tipos de relación</span></div>
+    </div>
+  </header>
+
+  <div class="howto">
+    <span>👉</span>
+    <span><b>Cómo usar:</b> arrastra el diagrama para moverte, usa la rueda del mouse o los botones +/− para hacer zoom, y haz clic en cualquier nodo para saltar a su ficha abajo (se resalta con borde naranja). Mermaid no soporta arrastrar nodos individuales — eso requeriría una librería de grafos distinta (D3/Cytoscape); esto es pan &amp; zoom real sobre el SVG que genera Mermaid.</span>
+  </div>
+
+  <div class="legend">
+    <div class="legend-title">Rol del nodo</div>
+    <div class="legend-item"><span class="swatch" style="background:#b6602a"></span> Entrada (Api / Screen / Page / Navigator)</div>
+    <div class="legend-item"><span class="swatch" style="background:#4c56a6"></span> Orquestación (Service / UseCase / Hook / Context)</div>
+    <div class="legend-item"><span class="swatch" style="background:#3d434f;border:1px dashed #8b93a1"></span> Contrato (Interface)</div>
+    <div class="legend-item"><span class="swatch" style="background:#2f7d70"></span> Infraestructura (Repository / Store / HttpClient)</div>
+    <div class="legend-item"><span class="swatch" style="background:#8a6a26"></span> Entidad de dominio</div>
+  </div>
+
+  <div class="diagram-card">
+    <div class="zoom-controls">
+      <button id="zoomInBtn" type="button" aria-label="Acercar">＋</button>
+      <div class="sep"></div>
+      <button id="zoomOutBtn" type="button" aria-label="Alejar">－</button>
+      <div class="sep"></div>
+      <button id="zoomResetBtn" type="button" aria-label="Restablecer vista">⟲</button>
+    </div>
+    <span class="drag-hint">✋ arrastra para mover</span>
+    <span class="zoom-level" id="zoomLevel">100%</span>
+    <div class="pan-viewport" id="panViewport">
+      <div class="pan-canvas" id="panCanvas">
+<pre class="mermaid" id="mermaidDiagram">
+%%{init: {'flowchart': {'curve': 'basis', 'nodeSpacing': 24, 'rankSpacing': 46}}}%%
+flowchart TB
+
+subgraph BACKEND[".NET API — Clean Architecture"]
+  subgraph BE_API["Api"]
+    direction LR
+    be_AuthApi["AuthApi"]
+    be_UsersApi["UsersApi"]
+    be_AppointmentsApi["AppointmentsApi"]
+    be_BarbersApi["BarbersApi"]
+    be_BarberShopsApi["BarberShopsApi"]
+    be_ClientsApi["ClientsApi"]
+    be_ReportsApi["ReportsApi"]
+  end
+  subgraph BE_APP["Application"]
+    direction LR
+    be_AuthService["AuthService"]
+    be_UserService["UserService"]
+    be_ClientService["ClientService"]
+    be_AppointmentService["AppointmentService"]
+    be_BarberService["BarberService"]
+    be_ReportService["ReportService"]
+  end
+  subgraph BE_DOM["Domain — Contratos"]
+    direction LR
+    be_IUserRepo["IUserRepository"]
+    be_IClientRepo["IClientRepository"]
+    be_IBarberRepo["IBarberRepository"]
+    be_IApptRepo["IAppointmentRepository"]
+    be_IShopRepo["IBarberShopRepository"]
+    be_IJwt["IJwtAuthService"]
+    be_IEmail["IEmailService"]
+  end
+  subgraph BE_ENT["Domain — Entidades"]
+    direction LR
+    be_UserEntity["User"]
+    be_ClientEntity["Client"]
+    be_BarberEntity["Barber"]
+    be_ShopEntity["BarberShop"]
+    be_ApptEntity["Appointments"]
+    be_DailyReportEntity["DailyReport"]
+    be_PwdResetTokenEntity["PasswordResetToken"]
+  end
+  subgraph BE_INF["Infrastructure"]
+    direction LR
+    be_MongoUserRepo["MongoDbUserRepository"]
+    be_MongoBarberRepo["MongoDbBarberRepository"]
+    be_MongoClientRepo["MongoDbClientRepository"]
+    be_MongoApptRepo["MongoDbAppointmentRepository"]
+    be_MongoShopRepo["MongoDbBarberShopRepository"]
+    be_MongoPwdResetRepo["MongoDbPasswordResetRepository"]
+    be_MongoBootstrapper["MongoDbBootstrapper"]
+    be_JwtAuthService["JwtAuthService"]
+    be_EmailService["EmailService"]
+    be_AppExtensions["ApplicationExtensions"]
+    be_ProgramCs["Program.cs"]
+  end
+end
+
+subgraph WEBAPP["Web — React + MUI"]
+  subgraph WEB_PRES["Presentation"]
+    direction LR
+    web_LoginPage["LoginPage"]
+    web_LoginForm["LoginForm"]
+    web_DashboardPage["DashboardPage"]
+    web_ReportsPage["ReportsPage"]
+    web_AppointmentCalendar["AppointmentCalendar"]
+    web_ProtectedRoute["ProtectedRoute"]
+    web_Router["Router"]
+  end
+  subgraph WEB_APP["Application / State"]
+    direction LR
+    web_AuthContext["AuthContext"]
+    web_ThemeContext["ThemeContext · web"]
+    web_NotificationContext["NotificationContext · web"]
+    web_useForm["useForm"]
+    web_useApiError["useApiError"]
+    web_useAppointments["useAppointments"]
+    web_useClients["useClients"]
+    web_LoginUC["LoginUseCase"]
+    web_LogoutUC["LogoutUseCase"]
+    web_ForgotUC["ForgotPasswordUseCase"]
+    web_GetUserUC["GetStoredUserUseCase"]
+  end
+  subgraph WEB_DOM["Domain — Contratos"]
+    direction LR
+    web_HttpClient["HttpClient"]
+    web_IAuthRepo["IAuthRepository"]
+    web_IClientRepo["IClientRepository · web"]
+    web_IApptRepo["IAppointmentRepository · web"]
+    web_IReportRepo["IReportRepository"]
+  end
+  subgraph WEB_INF["Infrastructure"]
+    direction LR
+    web_AxiosHttpClient["AxiosHttpClient"]
+    web_AuthApi["AuthApi · web"]
+    web_ClientApi["ClientApi"]
+    web_AppointmentApi["AppointmentApi"]
+    web_ReportApi["ReportApi"]
+    web_LocalStorageAuth["LocalStorageAuthStorage"]
+  end
+end
+
+subgraph MOBILEAPP["Mobile — Expo / React Native"]
+  subgraph MOB_ENTRY["Navegación & Pantallas"]
+    direction LR
+    mob_RootNavigator["RootNavigator"]
+    mob_DrawerNavigator["DrawerNavigator"]
+    mob_CalendarNavigator["CalendarNavigator"]
+    mob_ClientsNavigator["ClientsNavigator"]
+    mob_CalendarScreen["CalendarScreen"]
+    mob_LoginScreen["LoginScreen"]
+    mob_SettingsScreen["SettingsScreen"]
+  end
+  subgraph MOB_ORCH["Contexts & Services"]
+    direction LR
+    mob_ThemeContext["ThemeContext · mobile"]
+    mob_LanguageContext["LanguageContext"]
+    mob_NotificationContext["NotificationContext · mobile"]
+    mob_DialogContext["DialogContext"]
+    mob_authService["authService"]
+    mob_clientService["clientService"]
+    mob_appointmentService["appointmentService"]
+    mob_barberShopService["barberShopService"]
+    mob_notificationService["notificationService"]
+  end
+  subgraph MOB_INF["Infra & Estado"]
+    direction LR
+    mob_apiClient["apiClient"]
+    mob_useAuthStore["useAuthStore"]
+    mob_apptStore["appointment.store"]
+  end
+end
+
+be_AuthApi --> be_AuthService
+be_UsersApi --> be_UserService
+be_AppointmentsApi --> be_AppointmentService
+be_BarbersApi --> be_BarberService
+be_BarberShopsApi --> be_BarberService
+be_ClientsApi --> be_ClientService
+be_ReportsApi --> be_ReportService
+be_AuthService --> be_IUserRepo
+be_AuthService --> be_IJwt
+be_AuthService --> be_IEmail
+be_UserService --> be_IUserRepo
+be_ClientService --> be_IClientRepo
+be_AppointmentService --> be_IApptRepo
+be_BarberService --> be_IBarberRepo
+be_BarberService --> be_IShopRepo
+be_ReportService --> be_IApptRepo
+be_MongoUserRepo -.IMPLEMENTS.-> be_IUserRepo
+be_MongoBarberRepo -.IMPLEMENTS.-> be_IBarberRepo
+be_MongoClientRepo -.IMPLEMENTS.-> be_IClientRepo
+be_MongoApptRepo -.IMPLEMENTS.-> be_IApptRepo
+be_MongoShopRepo -.IMPLEMENTS.-> be_IShopRepo
+be_JwtAuthService -.IMPLEMENTS.-> be_IJwt
+be_EmailService -.IMPLEMENTS.-> be_IEmail
+be_MongoUserRepo -.PERSISTS.-> be_UserEntity
+be_MongoClientRepo -.PERSISTS.-> be_ClientEntity
+be_MongoBarberRepo -.PERSISTS.-> be_BarberEntity
+be_MongoApptRepo -.PERSISTS.-> be_ApptEntity
+be_MongoShopRepo -.PERSISTS.-> be_ShopEntity
+be_AppExtensions --> be_MongoUserRepo
+be_AppExtensions --> be_MongoBarberRepo
+be_AppExtensions --> be_AuthService
+be_ProgramCs --> be_AppExtensions
+be_ProgramCs --> be_MongoBootstrapper
+
+web_AxiosHttpClient -.IMPLEMENTS.-> web_HttpClient
+web_AuthApi -.IMPLEMENTS.-> web_IAuthRepo
+web_ClientApi -.IMPLEMENTS.-> web_IClientRepo
+web_AppointmentApi -.IMPLEMENTS.-> web_IApptRepo
+web_ReportApi -.IMPLEMENTS.-> web_IReportRepo
+web_AuthApi --> web_HttpClient
+web_ClientApi --> web_HttpClient
+web_AppointmentApi --> web_HttpClient
+web_ReportApi --> web_HttpClient
+web_AuthApi --> web_LocalStorageAuth
+web_AuthApi -.CALLS_API.-> be_AuthApi
+web_ClientApi -.CALLS_API.-> be_ClientsApi
+web_AppointmentApi -.CALLS_API.-> be_AppointmentsApi
+web_ReportApi -.CALLS_API.-> be_ReportsApi
+web_LoginUC --> web_IAuthRepo
+web_LogoutUC --> web_IAuthRepo
+web_ForgotUC --> web_IAuthRepo
+web_GetUserUC --> web_IAuthRepo
+web_AuthContext --> web_LoginUC
+web_AuthContext --> web_LogoutUC
+web_AuthContext --> web_GetUserUC
+web_LoginForm --> web_AuthContext
+web_LoginForm --> web_useForm
+web_LoginPage --> web_LoginForm
+web_ReportsPage --> web_useApiError
+web_useAppointments --> web_AppointmentApi
+web_useClients --> web_ClientApi
+web_ProtectedRoute --> web_AuthContext
+web_Router --> web_ProtectedRoute
+web_Router --> web_LoginPage
+web_Router --> web_DashboardPage
+web_Router --> web_ReportsPage
+
+mob_authService --> mob_apiClient
+mob_clientService --> mob_apiClient
+mob_appointmentService --> mob_apiClient
+mob_barberShopService --> mob_apiClient
+mob_apiClient --> mob_useAuthStore
+mob_authService -.CALLS_API.-> be_AuthApi
+mob_clientService -.CALLS_API.-> be_ClientsApi
+mob_appointmentService -.CALLS_API.-> be_AppointmentsApi
+mob_barberShopService -.CALLS_API.-> be_BarberShopsApi
+mob_notificationService --> mob_apptStore
+mob_RootNavigator --> mob_authService
+mob_RootNavigator --> mob_DrawerNavigator
+mob_DrawerNavigator --> mob_CalendarNavigator
+mob_DrawerNavigator --> mob_ClientsNavigator
+mob_CalendarNavigator --> mob_CalendarScreen
+mob_CalendarScreen --> mob_apptStore
+mob_SettingsScreen --> mob_authService
+mob_RootNavigator --> mob_LoginScreen
+mob_NotificationContext --> mob_notificationService
+mob_DialogContext --> mob_ThemeContext
+
+click be_AuthApi "#card-be_AuthApi" "_self"
+click be_UsersApi "#card-be_UsersApi" "_self"
+click be_AppointmentsApi "#card-be_AppointmentsApi" "_self"
+click be_BarbersApi "#card-be_BarbersApi" "_self"
+click be_BarberShopsApi "#card-be_BarberShopsApi" "_self"
+click be_ClientsApi "#card-be_ClientsApi" "_self"
+click be_ReportsApi "#card-be_ReportsApi" "_self"
+click be_AuthService "#card-be_AuthService" "_self"
+click be_UserService "#card-be_UserService" "_self"
+click be_ClientService "#card-be_ClientService" "_self"
+click be_AppointmentService "#card-be_AppointmentService" "_self"
+click be_BarberService "#card-be_BarberService" "_self"
+click be_ReportService "#card-be_ReportService" "_self"
+click be_MongoUserRepo "#card-be_MongoUserRepo" "_self"
+click be_MongoBarberRepo "#card-be_MongoBarberRepo" "_self"
+click be_MongoClientRepo "#card-be_MongoClientRepo" "_self"
+click be_MongoApptRepo "#card-be_MongoApptRepo" "_self"
+click be_MongoShopRepo "#card-be_MongoShopRepo" "_self"
+click be_MongoPwdResetRepo "#card-be_MongoPwdResetRepo" "_self"
+click be_MongoBootstrapper "#card-be_MongoBootstrapper" "_self"
+click be_JwtAuthService "#card-be_JwtAuthService" "_self"
+click be_EmailService "#card-be_EmailService" "_self"
+click be_AppExtensions "#card-be_AppExtensions" "_self"
+click be_ProgramCs "#card-be_ProgramCs" "_self"
+click be_UserEntity "#card-be_UserEntity" "_self"
+click be_ClientEntity "#card-be_ClientEntity" "_self"
+click be_BarberEntity "#card-be_BarberEntity" "_self"
+click be_ShopEntity "#card-be_ShopEntity" "_self"
+click be_ApptEntity "#card-be_ApptEntity" "_self"
+click be_DailyReportEntity "#card-be_DailyReportEntity" "_self"
+click be_PwdResetTokenEntity "#card-be_PwdResetTokenEntity" "_self"
+click be_IUserRepo "#card-be_IUserRepo" "_self"
+click be_IClientRepo "#card-be_IClientRepo" "_self"
+click be_IBarberRepo "#card-be_IBarberRepo" "_self"
+click be_IApptRepo "#card-be_IApptRepo" "_self"
+click be_IShopRepo "#card-be_IShopRepo" "_self"
+click be_IJwt "#card-be_IJwt" "_self"
+click be_IEmail "#card-be_IEmail" "_self"
+click web_HttpClient "#card-web_HttpClient" "_self"
+click web_AxiosHttpClient "#card-web_AxiosHttpClient" "_self"
+click web_AuthApi "#card-web_AuthApi" "_self"
+click web_ClientApi "#card-web_ClientApi" "_self"
+click web_AppointmentApi "#card-web_AppointmentApi" "_self"
+click web_ReportApi "#card-web_ReportApi" "_self"
+click web_LocalStorageAuth "#card-web_LocalStorageAuth" "_self"
+click web_IAuthRepo "#card-web_IAuthRepo" "_self"
+click web_IClientRepo "#card-web_IClientRepo" "_self"
+click web_IApptRepo "#card-web_IApptRepo" "_self"
+click web_IReportRepo "#card-web_IReportRepo" "_self"
+click web_LoginUC "#card-web_LoginUC" "_self"
+click web_LogoutUC "#card-web_LogoutUC" "_self"
+click web_ForgotUC "#card-web_ForgotUC" "_self"
+click web_GetUserUC "#card-web_GetUserUC" "_self"
+click web_AuthContext "#card-web_AuthContext" "_self"
+click web_ThemeContext "#card-web_ThemeContext" "_self"
+click web_NotificationContext "#card-web_NotificationContext" "_self"
+click web_useForm "#card-web_useForm" "_self"
+click web_useApiError "#card-web_useApiError" "_self"
+click web_useAppointments "#card-web_useAppointments" "_self"
+click web_useClients "#card-web_useClients" "_self"
+click web_LoginPage "#card-web_LoginPage" "_self"
+click web_LoginForm "#card-web_LoginForm" "_self"
+click web_DashboardPage "#card-web_DashboardPage" "_self"
+click web_ReportsPage "#card-web_ReportsPage" "_self"
+click web_AppointmentCalendar "#card-web_AppointmentCalendar" "_self"
+click web_ProtectedRoute "#card-web_ProtectedRoute" "_self"
+click web_Router "#card-web_Router" "_self"
+click mob_apiClient "#card-mob_apiClient" "_self"
+click mob_useAuthStore "#card-mob_useAuthStore" "_self"
+click mob_apptStore "#card-mob_apptStore" "_self"
+click mob_authService "#card-mob_authService" "_self"
+click mob_clientService "#card-mob_clientService" "_self"
+click mob_appointmentService "#card-mob_appointmentService" "_self"
+click mob_barberShopService "#card-mob_barberShopService" "_self"
+click mob_notificationService "#card-mob_notificationService" "_self"
+click mob_RootNavigator "#card-mob_RootNavigator" "_self"
+click mob_DrawerNavigator "#card-mob_DrawerNavigator" "_self"
+click mob_CalendarNavigator "#card-mob_CalendarNavigator" "_self"
+click mob_ClientsNavigator "#card-mob_ClientsNavigator" "_self"
+click mob_CalendarScreen "#card-mob_CalendarScreen" "_self"
+click mob_LoginScreen "#card-mob_LoginScreen" "_self"
+click mob_SettingsScreen "#card-mob_SettingsScreen" "_self"
+click mob_ThemeContext "#card-mob_ThemeContext" "_self"
+click mob_LanguageContext "#card-mob_LanguageContext" "_self"
+click mob_NotificationContext "#card-mob_NotificationContext" "_self"
+click mob_DialogContext "#card-mob_DialogContext" "_self"
+
+classDef entry fill:#b6602a,stroke:#7c3f16,color:#fff8f0;
+classDef orch fill:#4c56a6,stroke:#333c82,color:#f2f2fb;
+classDef contract fill:#3d434f,stroke:#8b93a1,color:#dfe3e8,stroke-dasharray: 3 2;
+classDef infra fill:#2f7d70,stroke:#1f584f,color:#f0faf8;
+classDef domain fill:#8a6a26,stroke:#664e1c,color:#fbf3e0;
+
+class be_AuthApi,be_UsersApi,be_AppointmentsApi,be_BarbersApi,be_BarberShopsApi,be_ClientsApi,be_ReportsApi entry
+class be_AuthService,be_UserService,be_ClientService,be_AppointmentService,be_BarberService,be_ReportService orch
+class be_IUserRepo,be_IClientRepo,be_IBarberRepo,be_IApptRepo,be_IShopRepo,be_IJwt,be_IEmail contract
+class be_MongoUserRepo,be_MongoBarberRepo,be_MongoClientRepo,be_MongoApptRepo,be_MongoShopRepo,be_MongoPwdResetRepo,be_MongoBootstrapper,be_JwtAuthService,be_EmailService,be_AppExtensions,be_ProgramCs infra
+class be_UserEntity,be_ClientEntity,be_BarberEntity,be_ShopEntity,be_ApptEntity,be_DailyReportEntity,be_PwdResetTokenEntity domain
+
+class web_LoginPage,web_DashboardPage,web_ReportsPage,web_Router,web_ProtectedRoute,web_LoginForm,web_AppointmentCalendar entry
+class web_AuthContext,web_ThemeContext,web_NotificationContext,web_useForm,web_useApiError,web_useAppointments,web_useClients,web_LoginUC,web_LogoutUC,web_ForgotUC,web_GetUserUC orch
+class web_HttpClient,web_IAuthRepo,web_IClientRepo,web_IApptRepo,web_IReportRepo contract
+class web_AxiosHttpClient,web_AuthApi,web_ClientApi,web_AppointmentApi,web_ReportApi,web_LocalStorageAuth infra
+
+class mob_RootNavigator,mob_DrawerNavigator,mob_CalendarNavigator,mob_ClientsNavigator,mob_CalendarScreen,mob_LoginScreen,mob_SettingsScreen entry
+class mob_ThemeContext,mob_LanguageContext,mob_NotificationContext,mob_DialogContext,mob_authService,mob_clientService,mob_appointmentService,mob_barberShopService,mob_notificationService orch
+class mob_apiClient,mob_useAuthStore,mob_apptStore infra
+</pre>
+      </div>
+    </div>
+  </div>
+
+  <details class="source-details" id="sourceDetails">
+    <summary>📄 Ver código fuente Mermaid completo</summary>
+    <div class="source-body">
+      <pre><code id="sourceCode"></code></pre>
+      <button class="copy-btn" id="copyBtn" type="button">📋 Copiar código Mermaid</button>
+    </div>
+  </details>
+
+  <section class="explorer">
+    <div class="explorer-head">
+      <h2>Explorador de entidades</h2>
+      <div class="controls">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Buscar por nombre u observación…" aria-label="Buscar entidad">
+        </div>
+        <button class="chip-filter" data-app="all" aria-pressed="true">Todas</button>
+        <button class="chip-filter" data-app="Backend" aria-pressed="false">Backend</button>
+        <button class="chip-filter" data-app="Web" aria-pressed="false">Web</button>
+        <button class="chip-filter" data-app="Mobile" aria-pressed="false">Mobile</button>
+        <span id="resultCount"></span>
+      </div>
+    </div>
+    <div class="card-grid" id="cardGrid"></div>
+  </section>
+
+  <footer>
+    <span>Fuente: <code>mcp__codebase-memory__read_graph</code> · rama <code>features/ConnectingFrontendWithBackend</code></span>
+    <span>Generado 2026-07-25</span>
+  </footer>
+</main>
+
+<script>
+const ROLE_COLORS = { entry: "#b6602a", orch: "#4c56a6", contract: "#3d434f", infra: "#2f7d70", domain: "#8a6a26" };
+
+const ENTITIES = [
+  {id:"be_AuthApi", label:"AuthApi", full:"AuthApi (Controller)", app:"Backend", kind:"API Endpoint", role:"entry", obs:["Ubicado en barber-flow-api/Barber.Flow.Api/Barber.Flow.Api/Apis/AuthApi.cs","Expone endpoints minimal API para login, forgot-password y reset-password","Retorna ActionResult<T> con códigos de estado explícitos según convención del proyecto"]},
+  {id:"be_UsersApi", label:"UsersApi", full:"UsersApi (Controller)", app:"Backend", kind:"API Endpoint", role:"entry", obs:["Apis/UsersApi.cs — endpoints CRUD de usuarios de aplicación"]},
+  {id:"be_AppointmentsApi", label:"AppointmentsApi", full:"AppointmentsApi (Controller)", app:"Backend", kind:"API Endpoint", role:"entry", obs:["Apis/AppointmentsApi.cs — endpoints CRUD y de movimiento (MoveAppointmentRequest) de citas"]},
+  {id:"be_BarbersApi", label:"BarbersApi", full:"BarbersApi (Controller)", app:"Backend", kind:"API Endpoint", role:"entry", obs:["Apis/BarbersApi.cs — endpoints CRUD de barberos"]},
+  {id:"be_BarberShopsApi", label:"BarberShopsApi", full:"BarberShopsApi (Controller)", app:"Backend", kind:"API Endpoint", role:"entry", obs:["Apis/BarberShopsApi.cs — endpoints CRUD de barbershops (tenants)"]},
+  {id:"be_ClientsApi", label:"ClientsApi", full:"ClientsApi (Controller)", app:"Backend", kind:"API Endpoint", role:"entry", obs:["Apis/ClientsApi.cs — endpoints CRUD de clientes"]},
+  {id:"be_ReportsApi", label:"ReportsApi", full:"ReportsApi (Controller)", app:"Backend", kind:"API Endpoint", role:"entry", obs:["Apis/ReportsApi.cs — expone reportes diarios (DailyReportResponse)"]},
+  {id:"be_AuthService", label:"AuthService", full:"AuthService (Service)", app:"Backend", kind:"Application Service", role:"orch", obs:["Barber.Flow.Application/Services/Auth/AuthService.cs implementa IAuthService","Orquesta login, recuperación de contraseña; usa IUserRepository, IJwtAuthService, IEmailService, IPasswordResetRepository","Patrón: interfaz en Application, implementación real en Infrastructure salvo lógica de orquestación que vive aquí"]},
+  {id:"be_UserService", label:"UserService", full:"UserService (Service)", app:"Backend", kind:"Application Service", role:"orch", obs:["Services/Users/UserService.cs implementa IUserService — casos de uso de gestión de usuarios"]},
+  {id:"be_ClientService", label:"ClientService", full:"ClientService (Service)", app:"Backend", kind:"Application Service", role:"orch", obs:["Services/Clients/ClientService.cs implementa IClientService — casos de uso de clientes, usa IClientRepository"]},
+  {id:"be_AppointmentService", label:"AppointmentService", full:"AppointmentService (Service)", app:"Backend", kind:"Application Service", role:"orch", obs:["Services/Appointments/AppointmentService.cs implementa IAppointmentService — reglas de negocio de citas (crear, mover, cancelar)"]},
+  {id:"be_BarberService", label:"BarberService", full:"BarberService (Service)", app:"Backend", kind:"Application Service", role:"orch", obs:["Services/Barbers/BarberService.cs implementa IBarberService"]},
+  {id:"be_ReportService", label:"ReportService", full:"ReportService (Service)", app:"Backend", kind:"Application Service", role:"orch", obs:["Services/Reports/ReportService.cs implementa IReportService — cálculo de reportes diarios agregando datos de citas"]},
+  {id:"be_MongoUserRepo", label:"MongoDbUserRepository", full:"MongoDbUserRepository (Repository)", app:"Backend", kind:"Infrastructure Repository", role:"infra", obs:["Infrastructure/Services/MongoDb/MongoDbUserRepository.cs implementa IUserRepository","Usa IMongoCollection<User> con Builders<T>.Filter, sin queries de string crudo","Archivo nuevo añadido junto a MongoDbBarberRepository"]},
+  {id:"be_MongoBarberRepo", label:"MongoDbBarberRepository", full:"MongoDbBarberRepository (Repository)", app:"Backend", kind:"Infrastructure Repository", role:"infra", obs:["Infrastructure/Services/MongoDb/MongoDbBarberRepository.cs implementa IBarberRepository","Archivo nuevo añadido en esta rama features/ConnectingFrontendWithBackend"]},
+  {id:"be_MongoClientRepo", label:"MongoDbClientRepository", full:"MongoDbClientRepository (Repository)", app:"Backend", kind:"Infrastructure Repository", role:"infra", obs:["Infrastructure/Services/MongoDb/MongoDbClientRepository.cs implementa IClientRepository"]},
+  {id:"be_MongoApptRepo", label:"MongoDbAppointmentRepository", full:"MongoDbAppointmentRepository (Repository)", app:"Backend", kind:"Infrastructure Repository", role:"infra", obs:["Infrastructure/Services/MongoDb/MongoDbAppointmentRepository.cs implementa IAppointmentRepository"]},
+  {id:"be_MongoShopRepo", label:"MongoDbBarberShopRepository", full:"MongoDbBarberShopRepository (Repository)", app:"Backend", kind:"Infrastructure Repository", role:"infra", obs:["Infrastructure/Services/MongoDb/MongoDbBarberShopRepository.cs implementa IBarberShopRepository"]},
+  {id:"be_MongoPwdResetRepo", label:"MongoDbPasswordResetRepository", full:"MongoDbPasswordResetRepository (Repository)", app:"Backend", kind:"Infrastructure Repository", role:"infra", obs:["Infrastructure/Services/MongoDb/MongoDbPasswordResetRepository.cs implementa IPasswordResetRepository"]},
+  {id:"be_MongoBootstrapper", label:"MongoDbBootstrapper", full:"MongoDbBootstrapper (Infrastructure Component)", app:"Backend", kind:"Infrastructure Component", role:"infra", obs:["Infrastructure/Services/MongoDb/MongoDbBootstrapper.cs — inicializa índices/colecciones de MongoDB al arrancar la app","Modificado recientemente junto con ApplicationExtensions y Program.cs"]},
+  {id:"be_JwtAuthService", label:"JwtAuthService", full:"JwtAuthService (Service)", app:"Backend", kind:"Infrastructure Service", role:"infra", obs:["Infrastructure/Services/Auth/JwtAuthService.cs implementa IJwtAuthService (Domain) — generación/validación de tokens JWT"]},
+  {id:"be_EmailService", label:"EmailService", full:"EmailService (Service)", app:"Backend", kind:"Infrastructure Service", role:"infra", obs:["Infrastructure/Services/EmailService.cs implementa IEmailService usando MailKit","Config vía IOptions<EmailSettings> — nunca credenciales hardcodeadas"]},
+  {id:"be_AppExtensions", label:"ApplicationExtensions", full:"ApplicationExtensions (Composition Root)", app:"Backend", kind:"Infrastructure Component", role:"infra", obs:["Barber.Flow.Api/Extensions/ApplicationExtensions.cs — registra DI de servicios/repositorios","Modificado en esta rama, probablemente para registrar los repos Mongo nuevos"]},
+  {id:"be_ProgramCs", label:"Program.cs", full:"Program.cs (Entry Point)", app:"Backend", kind:"Composition Root", role:"infra", obs:["Barber.Flow.Api/Program.cs — arranque de la app .NET 9, configura middleware, Swagger, DI vía ApplicationExtensions"]},
+  {id:"be_UserEntity", label:"User", full:"User (Domain Entity)", app:"Backend", kind:"Domain Entity", role:"domain", obs:["Domain/Entities/User.cs — entidad de dominio, sin dependencias externas"]},
+  {id:"be_ClientEntity", label:"Client", full:"Client (Domain Entity)", app:"Backend", kind:"Domain Entity", role:"domain", obs:["Domain/Entities/Client.cs"]},
+  {id:"be_BarberEntity", label:"Barber", full:"Barber (Domain Entity)", app:"Backend", kind:"Domain Entity", role:"domain", obs:["Domain/Entities/Barber.cs"]},
+  {id:"be_ShopEntity", label:"BarberShop", full:"BarberShop (Domain Entity)", app:"Backend", kind:"Domain Entity", role:"domain", obs:["Domain/Entities/BarberShop.cs — representa el tenant/negocio"]},
+  {id:"be_ApptEntity", label:"Appointments", full:"Appointments (Domain Entity)", app:"Backend", kind:"Domain Entity", role:"domain", obs:["Domain/Entities/Appointments.cs — entidad de citas"]},
+  {id:"be_DailyReportEntity", label:"DailyReport", full:"DailyReport (Domain Entity)", app:"Backend", kind:"Domain Entity", role:"domain", obs:["Domain/Entities/DailyReport.cs"]},
+  {id:"be_PwdResetTokenEntity", label:"PasswordResetToken", full:"PasswordResetToken (Domain Entity)", app:"Backend", kind:"Domain Entity", role:"domain", obs:["Domain/Entities/PasswordResetToken.cs"]},
+  {id:"be_IUserRepo", label:"IUserRepository", full:"IUserRepository (Repository Interface)", app:"Backend", kind:"Domain Interface", role:"contract", obs:["Domain/Interfaces/IUserRepository.cs — contrato implementado por MongoDbUserRepository e InMemoryUserRepository"]},
+  {id:"be_IClientRepo", label:"IClientRepository", full:"IClientRepository (Repository Interface)", app:"Backend", kind:"Domain Interface", role:"contract", obs:["Domain/Interfaces/IClientRepository.cs"]},
+  {id:"be_IBarberRepo", label:"IBarberRepository", full:"IBarberRepository (Repository Interface)", app:"Backend", kind:"Domain Interface", role:"contract", obs:["Domain/Interfaces/IBarberRepository.cs"]},
+  {id:"be_IApptRepo", label:"IAppointmentRepository", full:"IAppointmentRepository (Repository Interface)", app:"Backend", kind:"Domain Interface", role:"contract", obs:["Domain/Interfaces/IAppointmentRepository.cs"]},
+  {id:"be_IShopRepo", label:"IBarberShopRepository", full:"IBarberShopRepository (Repository Interface)", app:"Backend", kind:"Domain Interface", role:"contract", obs:["Domain/Interfaces/IBarberShopRepository.cs"]},
+  {id:"be_IJwt", label:"IJwtAuthService", full:"IJwtAuthService (Service Interface)", app:"Backend", kind:"Domain Interface", role:"contract", obs:["Domain/Interfaces/IJwtAuthService.cs"]},
+  {id:"be_IEmail", label:"IEmailService", full:"IEmailService (Service Interface)", app:"Backend", kind:"Domain Interface", role:"contract", obs:["Domain/Interfaces/IEmailService.cs"]},
+
+  {id:"web_HttpClient", label:"HttpClient", full:"HttpClient (Interface)", app:"Web", kind:"Web Infrastructure Interface", role:"contract", obs:["infrastructure/http/HttpClient.ts — abstracción sobre la librería HTTP","Único contrato que conocen application/domain; permite intercambiar Axios sin tocar el resto"]},
+  {id:"web_AxiosHttpClient", label:"AxiosHttpClient", full:"AxiosHttpClient (Client)", app:"Web", kind:"Web Infrastructure", role:"infra", obs:["infrastructure/http/AxiosHttpClient.ts implementa HttpClient usando axios","Único archivo que conoce Axios directamente","Interceptor de respuesta: en 401 limpia el token y redirige a /login"]},
+  {id:"web_AuthApi", label:"AuthApi · web", full:"AuthApi (Web Client)", app:"Web", kind:"Web Infrastructure API", role:"infra", obs:["infrastructure/api/AuthApi.ts implementa IAuthRepository (domain)","Usa HttpClient para POST a /api/users/authentication, /api/auth/forgot-password, /api/auth/verify-otp, /api/auth/reset-password","Delega persistencia local de sesión a LocalStorageAuthStorage"]},
+  {id:"web_ClientApi", label:"ClientApi", full:"ClientApi (Web Client)", app:"Web", kind:"Web Infrastructure API", role:"infra", obs:["infrastructure/api/ClientApi.ts implementa IClientRepository, usa HttpClient para /api/clients"]},
+  {id:"web_AppointmentApi", label:"AppointmentApi", full:"AppointmentApi (Web Client)", app:"Web", kind:"Web Infrastructure API", role:"infra", obs:["infrastructure/api/AppointmentApi.ts implementa IAppointmentRepository, usa HttpClient"]},
+  {id:"web_ReportApi", label:"ReportApi", full:"ReportApi (Web Client)", app:"Web", kind:"Web Infrastructure API", role:"infra", obs:["infrastructure/api/ReportApi.ts implementa IReportRepository, usa HttpClient"]},
+  {id:"web_LocalStorageAuth", label:"LocalStorageAuthStorage", full:"LocalStorageAuthStorage (Storage)", app:"Web", kind:"Web Infrastructure", role:"infra", obs:["infrastructure/storage/LocalStorageAuthStorage.ts — persiste el usuario autenticado en localStorage"]},
+  {id:"web_IAuthRepo", label:"IAuthRepository", full:"IAuthRepository (Web Interface)", app:"Web", kind:"Web Domain Interface", role:"contract", obs:["domain/interfaces/IAuthRepository.ts — contrato de autenticación, sin dependencias de framework"]},
+  {id:"web_IClientRepo", label:"IClientRepository · web", full:"IClientRepository (Web Interface)", app:"Web", kind:"Web Domain Interface", role:"contract", obs:["domain/interfaces/IClientRepository.ts"]},
+  {id:"web_IApptRepo", label:"IAppointmentRepository · web", full:"IAppointmentRepository (Web Interface)", app:"Web", kind:"Web Domain Interface", role:"contract", obs:["domain/interfaces/IAppointmentRepository.ts"]},
+  {id:"web_IReportRepo", label:"IReportRepository", full:"IReportRepository (Web Interface)", app:"Web", kind:"Web Domain Interface", role:"contract", obs:["domain/interfaces/IReportRepository.ts"]},
+  {id:"web_LoginUC", label:"LoginUseCase", full:"LoginUseCase (Use Case)", app:"Web", kind:"Web Application Use Case", role:"orch", obs:["application/use-cases/auth/LoginUseCase.ts — lógica de negocio de login, sin React, depende de IAuthRepository"]},
+  {id:"web_LogoutUC", label:"LogoutUseCase", full:"LogoutUseCase (Use Case)", app:"Web", kind:"Web Application Use Case", role:"orch", obs:["application/use-cases/auth/LogoutUseCase.ts"]},
+  {id:"web_ForgotUC", label:"ForgotPasswordUseCase", full:"ForgotPasswordUseCase (Use Case)", app:"Web", kind:"Web Application Use Case", role:"orch", obs:["application/use-cases/auth/ForgotPasswordUseCase.ts"]},
+  {id:"web_GetUserUC", label:"GetStoredUserUseCase", full:"GetStoredUserUseCase (Use Case)", app:"Web", kind:"Web Application Use Case", role:"orch", obs:["application/use-cases/auth/GetStoredUserUseCase.ts"]},
+  {id:"web_AuthContext", label:"AuthContext", full:"AuthContext (React Context)", app:"Web", kind:"Web Presentation Context", role:"orch", obs:["presentation/context/AuthContext.tsx — estado global de autenticación, expone user/login/logout a toda la app","Consume los use cases de auth, no llama a AuthApi directamente"]},
+  {id:"web_ThemeContext", label:"ThemeContext · web", full:"ThemeContext (React Context, Web)", app:"Web", kind:"Web Presentation Context", role:"orch", obs:["presentation/context/ThemeContext.tsx — maneja tema claro/oscuro MUI v6, sincronizado conceptualmente con el theme del mobile"]},
+  {id:"web_NotificationContext", label:"NotificationContext · web", full:"NotificationContext (React Context, Web)", app:"Web", kind:"Web Presentation Context", role:"orch", obs:["presentation/context/NotificationContext.tsx — notificaciones/snackbars globales"]},
+  {id:"web_useForm", label:"useForm", full:"useForm (Hook)", app:"Web", kind:"Web Presentation Hook", role:"orch", obs:["presentation/hooks/useForm.ts — estado de formularios con schema Zod + values/errors/touched"]},
+  {id:"web_useApiError", label:"useApiError", full:"useApiError (Hook)", app:"Web", kind:"Web Presentation Hook", role:"orch", obs:["presentation/hooks/useApiError.ts — manejo centralizado de errores de API"]},
+  {id:"web_useAppointments", label:"useAppointments", full:"useAppointments (Hook)", app:"Web", kind:"Web Presentation Hook", role:"orch", obs:["presentation/hooks/useAppointments.ts — envuelve casos de uso de appointments para componentes de calendario"]},
+  {id:"web_useClients", label:"useClients", full:"useClients (Hook)", app:"Web", kind:"Web Presentation Hook", role:"orch", obs:["presentation/hooks/useClients.ts"]},
+  {id:"web_LoginPage", label:"LoginPage", full:"LoginPage (Page)", app:"Web", kind:"Web Presentation Page", role:"entry", obs:["presentation/pages/LoginPage.tsx — renderiza LoginForm dentro del layout de auth"]},
+  {id:"web_LoginForm", label:"LoginForm", full:"LoginForm (Component)", app:"Web", kind:"Web UI Component", role:"entry", obs:["presentation/components/auth/LoginForm.tsx — formulario de login, usa useForm + AuthContext"]},
+  {id:"web_DashboardPage", label:"DashboardPage", full:"DashboardPage (Page)", app:"Web", kind:"Web Presentation Page", role:"entry", obs:["presentation/pages/DashboardPage.tsx"]},
+  {id:"web_ReportsPage", label:"ReportsPage", full:"ReportsPage (Page)", app:"Web", kind:"Web Presentation Page", role:"entry", obs:["presentation/pages/ReportsPage.tsx — renderiza ReportChart, ReportFilter, ReportStats, ReportTable"]},
+  {id:"web_AppointmentCalendar", label:"AppointmentCalendar", full:"AppointmentCalendar (Component)", app:"Web", kind:"Web UI Component", role:"entry", obs:["presentation/components/appointments/AppointmentCalendar.tsx"]},
+  {id:"web_ProtectedRoute", label:"ProtectedRoute", full:"ProtectedRoute (Component)", app:"Web", kind:"Web UI Component", role:"entry", obs:["presentation/components/shared/ProtectedRoute.tsx — guarda de rutas que consulta AuthContext para redirigir si no hay sesión"]},
+  {id:"web_Router", label:"Router", full:"Router (Web Routes)", app:"Web", kind:"Web Presentation Routing", role:"entry", obs:["presentation/routes/index.ts — define el ruteo de la SPA, monta ProtectedRoute alrededor de las páginas privadas"]},
+
+  {id:"mob_apiClient", label:"apiClient", full:"apiClient (Mobile HTTP)", app:"Mobile", kind:"Mobile Infrastructure", role:"infra", obs:["services/apis/apiClient.ts exporta apiFetch(path, opts) — wrapper sobre fetch nativo (no axios)","Adjunta JWT desde useAuthStore o SecureStore, serializa opts.json automáticamente","En 401 limpia SecureStore + useAuthStore.clearUser() y fuerza logout — sin refresh-token flow"]},
+  {id:"mob_useAuthStore", label:"useAuthStore", full:"useAuthStore (Zustand Store)", app:"Mobile", kind:"Mobile State Store", role:"infra", obs:["store/auth.store.ts — store Zustand simple {user, setUser, clearUser}","Sin persistencia propia; la restauración ocurre una vez en RootNavigator vía SecureStore"]},
+  {id:"mob_apptStore", label:"appointment.store", full:"appointment.store (Zustand Store)", app:"Mobile", kind:"Mobile State Store", role:"infra", obs:["features/appointments/appointment.store.ts — store de citas persistido con zustand/middleware/persist + AsyncStorage","fetchAppointmentsByDateRange fusiona resultados en vez de reemplazar el array completo"]},
+  {id:"mob_authService", label:"authService", full:"authService (Mobile Service)", app:"Mobile", kind:"Mobile Service", role:"orch", obs:["services/authService.ts — login, getStoredUser, clearStoredUser; usa apiClient y SecureStore","Normaliza casing de respuestas del backend (response.id ?? response.Id)"]},
+  {id:"mob_clientService", label:"clientService", full:"clientService (Mobile Service)", app:"Mobile", kind:"Mobile Service", role:"orch", obs:["services/clientService.ts — CRUD de clientes vía apiFetch"]},
+  {id:"mob_appointmentService", label:"appointmentService", full:"appointmentService (Mobile Service)", app:"Mobile", kind:"Mobile Service", role:"orch", obs:["services/appointmentService.ts — CRUD/movimiento de citas vía apiFetch"]},
+  {id:"mob_barberShopService", label:"barberShopService", full:"barberShopService (Mobile Service)", app:"Mobile", kind:"Mobile Service", role:"orch", obs:["services/barberShopService.ts — /api/barbershops/*, soporte multi-shop"]},
+  {id:"mob_notificationService", label:"notificationService", full:"notificationService (Mobile Service)", app:"Mobile", kind:"Mobile Service", role:"orch", obs:["services/notificationService.ts — enteramente local, sin llamadas al backend; deriva notificaciones desde appointment.store y persiste en AsyncStorage"]},
+  {id:"mob_RootNavigator", label:"RootNavigator", full:"RootNavigator (Navigator)", app:"Mobile", kind:"Mobile Navigation", role:"entry", obs:["navigation/RootNavigator.tsx — gate de autenticación; restaura sesión desde SecureStore vía authService.getStoredUser()","Sin logout explícito: SettingsScreen limpia useAuthStore y el árbol re-renderiza a Login"]},
+  {id:"mob_DrawerNavigator", label:"DrawerNavigator", full:"DrawerNavigator (Navigator)", app:"Mobile", kind:"Mobile Navigation", role:"entry", obs:["navigation/DrawerNavigator.tsx — contiene AppNavigator (bottom tabs) tras autenticación"]},
+  {id:"mob_CalendarNavigator", label:"CalendarNavigator", full:"CalendarNavigator (Navigator)", app:"Mobile", kind:"Mobile Navigation", role:"entry", obs:["navigation/CalendarNavigator.tsx — stack CalendarScreen → AppointmentFormScreen"]},
+  {id:"mob_ClientsNavigator", label:"ClientsNavigator", full:"ClientsNavigator (Navigator)", app:"Mobile", kind:"Mobile Navigation", role:"entry", obs:["navigation/ClientsNavigator.tsx — stack ClientsScreen → ClientFormScreen"]},
+  {id:"mob_CalendarScreen", label:"CalendarScreen", full:"CalendarScreen (Screen)", app:"Mobile", kind:"Mobile Screen", role:"entry", obs:["screens/CalendarScreen.tsx — pantalla principal de calendario, usa appointment.store"]},
+  {id:"mob_LoginScreen", label:"LoginScreen", full:"LoginScreen (Screen)", app:"Mobile", kind:"Mobile Screen", role:"entry", obs:["screens/LoginScreen.tsx — única pantalla que no usa el theme system (COLORS local) para verse igual en claro/oscuro"]},
+  {id:"mob_SettingsScreen", label:"SettingsScreen", full:"SettingsScreen (Screen)", app:"Mobile", kind:"Mobile Screen", role:"entry", obs:["screens/SettingsScreen.tsx — dispara authService.clearStoredUser() para cerrar sesión"]},
+  {id:"mob_ThemeContext", label:"ThemeContext · mobile", full:"ThemeContext (Mobile Context)", app:"Mobile", kind:"Mobile Context", role:"orch", obs:["theme/ThemeContext.tsx expone useAppTheme(); themes.ts define lightTheme/darkTheme para react-native-paper y React Navigation a la vez"]},
+  {id:"mob_LanguageContext", label:"LanguageContext", full:"LanguageContext (Mobile Context)", app:"Mobile", kind:"Mobile Context", role:"orch", obs:["context/LanguageContext.tsx — i18n custom (i18n-js), no react-i18next; locale por defecto es"]},
+  {id:"mob_NotificationContext", label:"NotificationContext · mobile", full:"NotificationContext (Mobile Context)", app:"Mobile", kind:"Mobile Context", role:"orch", obs:["context/NotificationContext.tsx — consume notificationService, dentro de LanguageProvider porque el texto necesita traducción"]},
+  {id:"mob_DialogContext", label:"DialogContext", full:"DialogContext (Mobile Context)", app:"Mobile", kind:"Mobile Context", role:"orch", obs:["context/DialogContext.tsx — envuelve ThemeProvider porque los diálogos necesitan acceso al tema"]}
+];
+
+const RELATIONS = [
+  ["be_AuthApi","be_AuthService","CALLS"],["be_UsersApi","be_UserService","CALLS"],["be_AppointmentsApi","be_AppointmentService","CALLS"],
+  ["be_BarbersApi","be_BarberService","CALLS"],["be_BarberShopsApi","be_BarberService","CALLS"],["be_ClientsApi","be_ClientService","CALLS"],["be_ReportsApi","be_ReportService","CALLS"],
+  ["be_AuthService","be_IUserRepo","USES"],["be_AuthService","be_IJwt","USES"],["be_AuthService","be_IEmail","USES"],["be_UserService","be_IUserRepo","USES"],
+  ["be_ClientService","be_IClientRepo","USES"],["be_AppointmentService","be_IApptRepo","USES"],["be_BarberService","be_IBarberRepo","USES"],["be_BarberService","be_IShopRepo","USES"],["be_ReportService","be_IApptRepo","USES"],
+  ["be_MongoUserRepo","be_IUserRepo","IMPLEMENTS"],["be_MongoBarberRepo","be_IBarberRepo","IMPLEMENTS"],["be_MongoClientRepo","be_IClientRepo","IMPLEMENTS"],["be_MongoApptRepo","be_IApptRepo","IMPLEMENTS"],["be_MongoShopRepo","be_IShopRepo","IMPLEMENTS"],
+  ["be_JwtAuthService","be_IJwt","IMPLEMENTS"],["be_EmailService","be_IEmail","IMPLEMENTS"],
+  ["be_MongoUserRepo","be_UserEntity","PERSISTS"],["be_MongoClientRepo","be_ClientEntity","PERSISTS"],["be_MongoBarberRepo","be_BarberEntity","PERSISTS"],["be_MongoApptRepo","be_ApptEntity","PERSISTS"],["be_MongoShopRepo","be_ShopEntity","PERSISTS"],
+  ["be_AppExtensions","be_MongoUserRepo","INJECTS"],["be_AppExtensions","be_MongoBarberRepo","INJECTS"],["be_AppExtensions","be_AuthService","INJECTS"],
+  ["be_ProgramCs","be_AppExtensions","USES"],["be_ProgramCs","be_MongoBootstrapper","USES"],
+
+  ["web_AxiosHttpClient","web_HttpClient","IMPLEMENTS"],["web_AuthApi","web_IAuthRepo","IMPLEMENTS"],["web_ClientApi","web_IClientRepo","IMPLEMENTS"],["web_AppointmentApi","web_IApptRepo","IMPLEMENTS"],["web_ReportApi","web_IReportRepo","IMPLEMENTS"],
+  ["web_AuthApi","web_HttpClient","USES"],["web_ClientApi","web_HttpClient","USES"],["web_AppointmentApi","web_HttpClient","USES"],["web_ReportApi","web_HttpClient","USES"],["web_AuthApi","web_LocalStorageAuth","USES"],
+  ["web_AuthApi","be_AuthApi","CALLS_API"],["web_ClientApi","be_ClientsApi","CALLS_API"],["web_AppointmentApi","be_AppointmentsApi","CALLS_API"],["web_ReportApi","be_ReportsApi","CALLS_API"],
+  ["web_LoginUC","web_IAuthRepo","USES"],["web_LogoutUC","web_IAuthRepo","USES"],["web_ForgotUC","web_IAuthRepo","USES"],["web_GetUserUC","web_IAuthRepo","USES"],
+  ["web_AuthContext","web_LoginUC","USES"],["web_AuthContext","web_LogoutUC","USES"],["web_AuthContext","web_GetUserUC","USES"],
+  ["web_LoginForm","web_AuthContext","USES"],["web_LoginForm","web_useForm","USES"],["web_LoginPage","web_LoginForm","RENDERS"],["web_ReportsPage","web_useApiError","USES"],
+  ["web_useAppointments","web_AppointmentApi","USES"],["web_useClients","web_ClientApi","USES"],["web_ProtectedRoute","web_AuthContext","USES"],
+  ["web_Router","web_ProtectedRoute","USES"],["web_Router","web_LoginPage","RENDERS"],["web_Router","web_DashboardPage","RENDERS"],["web_Router","web_ReportsPage","RENDERS"],
+
+  ["mob_authService","mob_apiClient","USES"],["mob_clientService","mob_apiClient","USES"],["mob_appointmentService","mob_apiClient","USES"],["mob_barberShopService","mob_apiClient","USES"],["mob_apiClient","mob_useAuthStore","USES"],
+  ["mob_authService","be_AuthApi","CALLS_API"],["mob_clientService","be_ClientsApi","CALLS_API"],["mob_appointmentService","be_AppointmentsApi","CALLS_API"],["mob_barberShopService","be_BarberShopsApi","CALLS_API"],
+  ["mob_notificationService","mob_apptStore","USES"],["mob_RootNavigator","mob_authService","USES"],["mob_RootNavigator","mob_DrawerNavigator","RENDERS"],
+  ["mob_DrawerNavigator","mob_CalendarNavigator","RENDERS"],["mob_DrawerNavigator","mob_ClientsNavigator","RENDERS"],["mob_CalendarNavigator","mob_CalendarScreen","RENDERS"],
+  ["mob_CalendarScreen","mob_apptStore","USES"],["mob_SettingsScreen","mob_authService","USES"],["mob_RootNavigator","mob_LoginScreen","RENDERS"],
+  ["mob_NotificationContext","mob_notificationService","USES"],["mob_DialogContext","mob_ThemeContext","USES"]
+];
+
+const byId = Object.fromEntries(ENTITIES.map(e => [e.id, e]));
+const outgoing = {}, incoming = {};
+ENTITIES.forEach(e => { outgoing[e.id] = []; incoming[e.id] = []; });
+RELATIONS.forEach(([from, to, type]) => { outgoing[from].push([to, type]); incoming[to].push([from, type]); });
+
+function relChip(otherId, type, dir) {
+  const other = byId[otherId];
+  if (!other) return "";
+  const arrow = dir === "out" ? "→" : "←";
+  return `<a class="rel-chip" href="#card-${otherId}"><span class="tag">${type}</span>${arrow} ${other.label}</a>`;
+}
+
+const grid = document.getElementById("cardGrid");
+ENTITIES.forEach(e => {
+  const card = document.createElement("article");
+  card.className = "card";
+  card.id = `card-${e.id}`;
+  card.dataset.app = e.app;
+  card.dataset.search = (e.label + " " + e.full + " " + e.kind + " " + e.obs.join(" ")).toLowerCase();
+
+  const outs = outgoing[e.id].map(([to, type]) => relChip(to, type, "out")).join("");
+  const ins = incoming[e.id].map(([from, type]) => relChip(from, type, "in")).join("");
+
+  card.innerHTML = `
+    <div class="card-head">
+      <span class="card-name">${e.label}</span>
+      <span class="role-dot" style="background:${ROLE_COLORS[e.role]}" title="${e.role}"></span>
+    </div>
+    <div class="card-meta">${e.app} · ${e.kind}</div>
+    <ul class="card-obs">${e.obs.map(o => `<li>${o}</li>`).join("")}</ul>
+    ${outs ? `<div class="rel-group"><div class="rel-label">Sale hacia</div><div class="rel-chips">${outs}</div></div>` : ""}
+    ${ins ? `<div class="rel-group"><div class="rel-label">Llega desde</div><div class="rel-chips">${ins}</div></div>` : ""}
+  `;
+  grid.appendChild(card);
+});
+
+let currentAppFilter = "all";
+const searchInput = document.getElementById("searchInput");
+const resultCount = document.getElementById("resultCount");
+const chips = document.querySelectorAll(".chip-filter");
+
+function applyFilters() {
+  const q = searchInput.value.trim().toLowerCase();
+  let visible = 0;
+  document.querySelectorAll(".card").forEach(card => {
+    const appMatch = currentAppFilter === "all" || card.dataset.app === currentAppFilter;
+    const textMatch = !q || card.dataset.search.includes(q);
+    const show = appMatch && textMatch;
+    card.style.display = show ? "" : "none";
+    if (show) visible++;
+  });
+  resultCount.textContent = `${visible} / ${ENTITIES.length}`;
+}
+
+searchInput.addEventListener("input", applyFilters);
+chips.forEach(chip => {
+  chip.addEventListener("click", () => {
+    chips.forEach(c => c.setAttribute("aria-pressed", "false"));
+    chip.setAttribute("aria-pressed", "true");
+    currentAppFilter = chip.dataset.app;
+    applyFilters();
+  });
+});
+applyFilters();
+
+const rawMermaidSource = document.getElementById("mermaidDiagram").textContent.trim();
+document.getElementById("sourceCode").textContent = rawMermaidSource;
+
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(rawMermaidSource);
+    const btn = document.getElementById("copyBtn");
+    const original = btn.textContent;
+    btn.textContent = "✅ Copiado";
+    setTimeout(() => { btn.textContent = original; }, 1800);
+  } catch (err) {
+    alert("No se pudo copiar automáticamente. Selecciona el código manualmente.");
+  }
+});
+
+/* ---- Pan & zoom sobre el SVG que renderiza Mermaid ---- */
+(function initPanZoom() {
+  const viewport = document.getElementById("panViewport");
+  const canvas = document.getElementById("panCanvas");
+  const zoomLevelEl = document.getElementById("zoomLevel");
+  let scale = 1, tx = 0, ty = 0;
+  let dragging = false, lastX = 0, lastY = 0, moved = false;
+  const MIN_SCALE = 0.25, MAX_SCALE = 3;
+
+  function apply() {
+    canvas.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    zoomLevelEl.textContent = Math.round(scale * 100) + "%";
+  }
+
+  function zoomAt(clientX, clientY, factor) {
+    const rect = viewport.getBoundingClientRect();
+    const offsetX = clientX - rect.left;
+    const offsetY = clientY - rect.top;
+    const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * factor));
+    const ratio = newScale / scale;
+    tx = offsetX - (offsetX - tx) * ratio;
+    ty = offsetY - (offsetY - ty) * ratio;
+    scale = newScale;
+    apply();
+  }
+
+  function centerDiagram() {
+    const svg = canvas.querySelector("svg");
+    if (!svg) return false;
+    const vpRect = viewport.getBoundingClientRect();
+    const svgRect = svg.getBoundingClientRect();
+    scale = Math.min(1, (vpRect.width - 32) / (svgRect.width / scale || svgRect.width));
+    scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale || 1));
+    tx = 16; ty = 16;
+    apply();
+    return true;
+  }
+
+  viewport.addEventListener("mousedown", (e) => {
+    dragging = true; moved = false;
+    lastX = e.clientX; lastY = e.clientY;
+    viewport.classList.add("grabbing");
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
+    tx += dx; ty += dy;
+    lastX = e.clientX; lastY = e.clientY;
+    apply();
+  });
+  window.addEventListener("mouseup", () => {
+    dragging = false;
+    viewport.classList.remove("grabbing");
+  });
+  viewport.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    dragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+  }, { passive: true });
+  viewport.addEventListener("touchmove", (e) => {
+    if (!dragging || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - lastX, dy = e.touches[0].clientY - lastY;
+    tx += dx; ty += dy;
+    lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+    apply();
+  }, { passive: true });
+  viewport.addEventListener("touchend", () => { dragging = false; });
+
+  viewport.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 0.9;
+    zoomAt(e.clientX, e.clientY, factor);
+  }, { passive: false });
+
+  document.getElementById("zoomInBtn").addEventListener("click", () => {
+    const rect = viewport.getBoundingClientRect();
+    zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1.2);
+  });
+  document.getElementById("zoomOutBtn").addEventListener("click", () => {
+    const rect = viewport.getBoundingClientRect();
+    zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 0.8);
+  });
+  document.getElementById("zoomResetBtn").addEventListener("click", () => {
+    scale = 1; tx = 16; ty = 16; apply();
+  });
+
+  let attempts = 0;
+  const poll = setInterval(() => {
+    attempts++;
+    if (canvas.querySelector("svg") || attempts > 60) {
+      clearInterval(poll);
+      centerDiagram();
+      apply();
+    }
+  }, 250);
+})();
+</script>
