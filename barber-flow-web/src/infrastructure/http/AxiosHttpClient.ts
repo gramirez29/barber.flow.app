@@ -1,5 +1,5 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import { HttpClient } from './HttpClient';
+import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
+import { HttpClient, HttpRequestConfig } from './HttpClient';
 
 export class AxiosHttpClient implements HttpClient {
   private client: AxiosInstance;
@@ -29,24 +29,24 @@ export class AxiosHttpClient implements HttpClient {
     );
   }
 
-  async get<T = any>(url: string, config?: any): Promise<T> {
-    return this.client.get<any, T>(url, config);
+  async get<T = unknown>(url: string, config?: HttpRequestConfig): Promise<T> {
+    return this.client.get<T, T>(url, config as AxiosRequestConfig);
   }
 
-  async post<T = any>(url: string, data?: any, config?: any): Promise<T> {
-    return this.client.post<any, T>(url, data, config);
+  async post<T = unknown>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<T> {
+    return this.client.post<T, T>(url, data, config as AxiosRequestConfig);
   }
 
-  async put<T = any>(url: string, data?: any, config?: any): Promise<T> {
-    return this.client.put<any, T>(url, data, config);
+  async put<T = unknown>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<T> {
+    return this.client.put<T, T>(url, data, config as AxiosRequestConfig);
   }
 
-  async patch<T = any>(url: string, data?: any, config?: any): Promise<T> {
-    return this.client.patch<any, T>(url, data, config);
+  async patch<T = unknown>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<T> {
+    return this.client.patch<T, T>(url, data, config as AxiosRequestConfig);
   }
 
-  async delete<T = any>(url: string, config?: any): Promise<T> {
-    return this.client.delete<any, T>(url, config);
+  async delete<T = unknown>(url: string, config?: HttpRequestConfig): Promise<T> {
+    return this.client.delete<T, T>(url, config as AxiosRequestConfig);
   }
 
   setAuthToken(token: string): void {

@@ -65,13 +65,13 @@ export const ClientsPage: React.FC = () => {
   const handleFormSubmit = async (data: CreateClientFormData) => {
     try {
       if (editingClient) {
-        await updateClient(editingClient.id!, data as any);
+        await updateClient(editingClient.id!, { ...data, id: editingClient.id! });
         setEditingClient(null);
       } else {
         await createClient(data);
       }
       setFormOpen(false);
-    } catch (error) {
+    } catch {
       // Error ya manejado por el hook
     }
   };
@@ -98,7 +98,7 @@ export const ClientsPage: React.FC = () => {
     if (window.confirm(`¿Eliminar cliente ${client.firstName} ${client.lastName}?`)) {
       try {
         await deleteClient(client.id!);
-      } catch (error) {
+      } catch {
         // Error ya manejado
       }
     }

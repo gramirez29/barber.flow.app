@@ -67,7 +67,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       await onSubmit(form.values);
       form.reset();
       onClose();
-    } catch (error) {
+    } catch {
       // Error already handled by hook
     }
   };
@@ -187,7 +187,12 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               label="Método de Pago"
               select
               value={form.values.paymentMethod || APPOINTMENT_CONSTANTS.DEFAULT_PAYMENT_METHOD}
-              onChange={(e) => form.setFieldValue('paymentMethod', e.target.value as any)}
+              onChange={(e) =>
+                form.setFieldValue(
+                  'paymentMethod',
+                  e.target.value as CreateAppointmentFormData['paymentMethod']
+                )
+              }
               onBlur={() => form.setFieldTouched('paymentMethod', true)}
               disabled={isLoading}
               SelectProps={{

@@ -26,12 +26,12 @@ import {
 } from '@shared/validation/authSchemas';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-type Step = 'email' | 'otp' | 'success';
+type FormStep = 'email' | 'otp' | 'success';
 
 export const ForgotPasswordForm: React.FC = () => {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
-  const [currentStep, setCurrentStep] = useState<Step>('email');
+  const [currentStep, setCurrentStep] = useState<FormStep>('email');
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
 
@@ -66,8 +66,8 @@ export const ForgotPasswordForm: React.FC = () => {
       otpForm.setFieldValue('email', emailForm.values.email);
       setCurrentStep('otp');
       showNotification('Código OTP enviado a tu email', 'success');
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Error al enviar el código OTP';
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error al enviar el código OTP';
       setGeneralError(errorMessage);
       showNotification(errorMessage, 'error');
     } finally {
@@ -102,8 +102,8 @@ export const ForgotPasswordForm: React.FC = () => {
           },
         });
       }, 2000);
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Código OTP inválido o expirado';
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Código OTP inválido o expirado';
       setGeneralError(errorMessage);
       showNotification(errorMessage, 'error');
     } finally {

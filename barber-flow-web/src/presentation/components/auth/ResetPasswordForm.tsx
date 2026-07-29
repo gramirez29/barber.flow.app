@@ -99,8 +99,8 @@ export const ResetPasswordForm: React.FC = () => {
       setTimeout(() => {
         navigate('/login');
       }, 2000);
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Error al actualizar la contraseña';
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error al actualizar la contraseña';
       setGeneralError(errorMessage);
       showNotification(errorMessage, 'error');
     } finally {

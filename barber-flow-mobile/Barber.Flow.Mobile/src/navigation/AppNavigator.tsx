@@ -11,6 +11,8 @@ import { fonts } from "../theme/fonts";
 import { useAppTheme } from "../theme/ThemeContext";
 import { useNotification } from "../context/NotificationContext";
 import { useTranslation } from "../context/LanguageContext";
+import { useAuthStore } from "../store/auth.store";
+import { useAdminAccessStore } from "../store/adminAccess.store";
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import {
 	CalendarNavigator,
@@ -31,6 +33,9 @@ export const AppNavigator = () => {
 	const { theme } = useAppTheme();
 	const { unreadCount } = useNotification();
 	const { translateText } = useTranslation();
+	const isAdmin = useAuthStore((s) => s.user?.role === "Admin");
+	const isSafeModeEnabled = useAdminAccessStore((s) => s.isSafeModeEnabled);
+	const areOperationalScreensLocked = isAdmin && isSafeModeEnabled;
 	const tabMetadata: Record<
 		keyof AppTabParamList,
 		{
@@ -132,42 +137,50 @@ export const AppNavigator = () => {
 			},
 		})}
 		>
-		<Tab.Screen
-			name="Calendar"
-			component={CalendarNavigator}
-			options={{
-				title: tabMetadata.Calendar.label,
-			}}
-		/>
-		<Tab.Screen
-			name="Clients"
-			component={ClientsNavigator}
-			options={{ title: tabMetadata.Clients.label }}
-		/>
-		<Tab.Screen
-			name="DailyReport"
-			component={DailyReportScreen}
-			options={{ title: tabMetadata.DailyReport.label }}
-		/>
-		<Tab.Screen
-			name="NotificationScreen"
-			component={NotificationScreen}
-			options={{
-				title: tabMetadata.NotificationScreen.label,
-				tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-				tabBarBadgeStyle: {
-						backgroundColor: theme.colors.notificationBadge,
-						color: "#FFFFFF",
-					fontSize: 11,
-						fontWeight: "700",
-					minWidth: 18,
-					height: 18,
-					lineHeight: 18,
-						top: 4,
-						right: 8,
-				},
-			}}
-		/>
+		{!areOperationalScreensLocked && (
+			<Tab.Screen
+				name="Calendar"
+				component={CalendarNavigator}
+				options={{
+					title: tabMetadata.Calendar.label,
+				}}
+			/>
+		)}
+		{!areOperationalScreensLocked && (
+			<Tab.Screen
+				name="Clients"
+				component={ClientsNavigator}
+				options={{ title: tabMetadata.Clients.label }}
+			/>
+		)}
+		{!areOperationalScreensLocked && (
+			<Tab.Screen
+				name="DailyReport"
+				component={DailyReportScreen}
+				options={{ title: tabMetadata.DailyReport.label }}
+			/>
+		)}
+		{!areOperationalScreensLocked && (
+			<Tab.Screen
+				name="NotificationScreen"
+				component={NotificationScreen}
+				options={{
+					title: tabMetadata.NotificationScreen.label,
+					tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+					tabBarBadgeStyle: {
+							backgroundColor: theme.colors.notificationBadge,
+							color: "#FFFFFF",
+						fontSize: 11,
+							fontWeight: "700",
+						minWidth: 18,
+						height: 18,
+						lineHeight: 18,
+							top: 4,
+							right: 8,
+					},
+				}}
+			/>
+		)}
 		<Tab.Screen
 			name="SettingsScreen"
 			component={SettingsScreen}

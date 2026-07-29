@@ -62,6 +62,32 @@ const clearSessionOnUnauthorized = async () => {
     useAuthStore.getState().clearUser();
 };
 
+const extractErrorMessage = (body: unknown, status: number): string => {
+    if (body && typeof body === "object") {
+        const record = body as Record<string, unknown>;
+
+        if (typeof record.message === "string" && record.message.trim()) {
+            return record.message;
+        }
+
+        if (record.errors && typeof record.errors === "object") {
+            const messages = Object.values(record.errors as Record<string, unknown>)
+                .flatMap((value) => (Array.isArray(value) ? value : [value]))
+                .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+
+            if (messages.length > 0) {
+                return messages.join("\n");
+            }
+        }
+
+        if (typeof record.title === "string" && record.title.trim()) {
+            return record.title;
+        }
+    }
+
+    return `Request failed (${status})`;
+};
+
 export type ApiFetchOptions = Omit<RequestInit, "body" | "headers"> & { json?: unknown; headers?: Record<string, string> };
 
 export async function apiFetch(path: string, opts: ApiFetchOptions = {}) {
@@ -96,7 +122,7 @@ export async function apiFetch(path: string, opts: ApiFetchOptions = {}) {
     }
 
     if (!response.ok) {
-        throw new Error(response.body?.message ?? `Request failed (${response.status})`);
+        throw new Error(extractErrorMessage(response.body, response.status));
     }
 
     return response.body;

@@ -1,8 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Appointment } from '@domain/entities/Appointment';
+import { CreateAppointmentRequest, UpdateAppointmentRequest } from '@application/dtos/requests';
 import { useNotification } from '@presentation/context/NotificationContext';
 import { AppointmentApi } from '@infrastructure/api/AppointmentApi';
 import { AxiosHttpClient } from '@infrastructure/http/AxiosHttpClient';
+import { getErrorMessage } from '@shared/utils/errorUtils';
 
 /**
  * useAppointments: Hook para manejo de citas
@@ -38,8 +40,7 @@ export function useAppointments() {
   const { showNotification } = useNotification();
 
   // Inyectar AppointmentApi
-  const httpClient = new AxiosHttpClient();
-  const appointmentApi = new AppointmentApi(httpClient);
+  const appointmentApi = useMemo(() => new AppointmentApi(new AxiosHttpClient()), []);
 
   /**
    * Obtener citas por fecha
@@ -51,14 +52,14 @@ export function useAppointments() {
         const data = await appointmentApi.getByDate(date);
         setAppointments(data);
         showNotification('Citas cargadas correctamente', 'success');
-      } catch (error: any) {
-        const message = error?.message || 'Error al cargar citas';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al cargar citas');
         showNotification(message, 'error');
       } finally {
         setIsLoadingAppointments(false);
       }
     },
-    [showNotification]
+    [appointmentApi, showNotification]
   );
 
   /**
@@ -71,40 +72,40 @@ export function useAppointments() {
         const data = await appointmentApi.search(query);
         setAppointments(data);
         showNotification('Búsqueda completada', 'success');
-      } catch (error: any) {
-        const message = error?.message || 'Error en búsqueda';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error en búsqueda');
         showNotification(message, 'error');
       } finally {
         setIsLoadingAppointments(false);
       }
     },
-    [showNotification]
+    [appointmentApi, showNotification]
   );
 
   /**
    * Crear nueva cita
    */
   const createAppointment = useCallback(
-    async (appointmentData: any) => {
+    async (appointmentData: CreateAppointmentRequest) => {
       try {
         const newAppointment = await appointmentApi.create(appointmentData);
         setAppointments((prev) => [...prev, newAppointment]);
         showNotification('Cita creada correctamente', 'success');
         return newAppointment;
-      } catch (error: any) {
-        const message = error?.message || 'Error al crear cita';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al crear cita');
         showNotification(message, 'error');
         throw error;
       }
     },
-    [showNotification]
+    [appointmentApi, showNotification]
   );
 
   /**
    * Actualizar cita existente
    */
   const updateAppointment = useCallback(
-    async (appointmentId: string, updates: any) => {
+    async (appointmentId: string, updates: UpdateAppointmentRequest) => {
       try {
         const updated = await appointmentApi.update(appointmentId, updates);
         setAppointments((prev) =>
@@ -112,13 +113,13 @@ export function useAppointments() {
         );
         showNotification('Cita actualizada correctamente', 'success');
         return updated;
-      } catch (error: any) {
-        const message = error?.message || 'Error al actualizar cita';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al actualizar cita');
         showNotification(message, 'error');
         throw error;
       }
     },
-    [showNotification]
+    [appointmentApi, showNotification]
   );
 
   /**
@@ -130,13 +131,13 @@ export function useAppointments() {
         await appointmentApi.delete(appointmentId);
         setAppointments((prev) => prev.filter((apt) => apt.id !== appointmentId));
         showNotification('Cita eliminada correctamente', 'success');
-      } catch (error: any) {
-        const message = error?.message || 'Error al eliminar cita';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al eliminar cita');
         showNotification(message, 'error');
         throw error;
       }
     },
-    [showNotification]
+    [appointmentApi, showNotification]
   );
 
   /**
@@ -151,13 +152,13 @@ export function useAppointments() {
         );
         showNotification('Cita movida correctamente', 'success');
         return updated;
-      } catch (error: any) {
-        const message = error?.message || 'Error al mover cita';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al mover cita');
         showNotification(message, 'error');
         throw error;
       }
     },
-    [showNotification]
+    [appointmentApi, showNotification]
   );
 
   /**
@@ -187,13 +188,13 @@ export function useAppointments() {
           'success'
         );
         return updated;
-      } catch (error: any) {
-        const message = error?.message || 'Error al cambiar estado';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al cambiar estado');
         showNotification(message, 'error');
         throw error;
       }
     },
-    [appointments, showNotification]
+    [appointments, appointmentApi, showNotification]
   );
 
   return {

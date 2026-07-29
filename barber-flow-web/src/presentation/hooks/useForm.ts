@@ -11,7 +11,7 @@ export interface UseFormReturn<T> {
   isValidating: boolean;
   isDirty: boolean;
   setValues: (values: T | ((prev: T) => T)) => void;
-  setFieldValue: (field: keyof T, value: any) => void;
+  setFieldValue: (field: keyof T, value: T[keyof T]) => void;
   setFieldError: (field: keyof T, error: string) => void;
   clearFieldError: (field: keyof T) => void;
   clearErrors: () => void;
@@ -21,10 +21,9 @@ export interface UseFormReturn<T> {
   setFieldTouched: (field: keyof T, isTouched?: boolean) => void;
 }
 
-export function useForm<T extends Record<string, any>>(
+export function useForm<T extends Record<string, unknown>>(
   initialValues: T,
-  schema?: ZodSchema,
-  _onSubmit?: (values: T) => void | Promise<void>
+  schema?: ZodSchema
 ): UseFormReturn<T> {
   const [values, setValues] = useState<T>(initialValues);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -33,7 +32,7 @@ export function useForm<T extends Record<string, any>>(
   const [isDirty, setIsDirty] = useState(false);
 
   const setFieldValue = useCallback(
-    (field: keyof T, value: any) => {
+    (field: keyof T, value: T[keyof T]) => {
       setValues((prev) => ({ ...prev, [field]: value }));
       setIsDirty(true);
       // Clear error when user starts typing

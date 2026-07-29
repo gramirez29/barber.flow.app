@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using Barber.Flow.Application.Services.Clients;
 using Barber.Flow.Application.Services.Barbers;
+using Barber.Flow.Application.Services.BarberShops;
 using Barber.Flow.Infrastructure.Services.InMemory;
 using Barber.Flow.Infrastructure.Services.MongoDb;
 using Barber.Flow.Infrastructure.Settings;
@@ -52,6 +53,7 @@ public static class ApplicationExtensions
         var useRealEmail = configuration.GetValue<bool>("Features:UseRealEmail");
 
         services.AddScoped<IClientService, ClientService>();
+        services.AddScoped<IBarberShopService, BarberShopService>();
 
         if (useRealEmail)
         {

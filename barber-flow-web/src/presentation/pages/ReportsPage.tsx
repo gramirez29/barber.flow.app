@@ -20,7 +20,7 @@ export const ReportsPage: React.FC = () => {
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     fetchDailyReport(today);
-  }, []);
+  }, [fetchDailyReport]);
 
   const handleDateChange = (date: string) => {
     setSelectedDate(date);

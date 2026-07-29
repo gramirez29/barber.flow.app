@@ -70,11 +70,55 @@ public class MongoDbBarberRepositoryTests
     }
 
     [Fact]
+    public async Task UpdateAsync_SetsShopId()
+    {
+        var sut = CreateSut();
+        var barber = await sut.CreateAsync(BuildBarber());
+
+        var patch = new BarberEntity
+        {
+            UserName = barber.UserName,
+            UserPhone = barber.UserPhone,
+            UserEmail = barber.UserEmail,
+            BarberName = barber.BarberName,
+            BarberPhone = barber.BarberPhone,
+            ShopId = "SHOP-0001",
+        };
+
+        var updated = await sut.UpdateAsync(barber.Id, patch);
+
+        Assert.NotNull(updated);
+        Assert.Equal("SHOP-0001", updated!.ShopId);
+    }
+
+    [Fact]
     public async Task UpdateAsync_BarberNotFound_ReturnsNull()
     {
         var sut = CreateSut();
 
         var result = await sut.UpdateAsync("CRB-9999", BuildBarber());
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetByUserNameAsync_MatchingUserNameCaseInsensitive_ReturnsBarber()
+    {
+        var sut = CreateSut();
+        var barber = await sut.CreateAsync(BuildBarber(userName: "Barber1"));
+
+        var result = await sut.GetByUserNameAsync("barber1");
+
+        Assert.NotNull(result);
+        Assert.Equal(barber.Id, result!.Id);
+    }
+
+    [Fact]
+    public async Task GetByUserNameAsync_NoMatch_ReturnsNull()
+    {
+        var sut = CreateSut();
+
+        var result = await sut.GetByUserNameAsync("missing-user");
 
         Assert.Null(result);
     }

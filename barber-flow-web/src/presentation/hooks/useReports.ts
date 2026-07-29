@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { DailyReport, DailyReportStats } from '@domain/entities';
 import { useNotification } from '@presentation/context/NotificationContext';
 import { ReportApi } from '@infrastructure/api/ReportApi';
 import { AxiosHttpClient } from '@infrastructure/http/AxiosHttpClient';
+import { getErrorMessage } from '@shared/utils/errorUtils';
 
 /**
  * useReports: Hook para manejo de reportes
@@ -31,8 +32,7 @@ export function useReports() {
   const { showNotification } = useNotification();
 
   // Inyectar ReportApi
-  const httpClient = new AxiosHttpClient();
-  const reportApi = new ReportApi(httpClient);
+  const reportApi = useMemo(() => new ReportApi(new AxiosHttpClient()), []);
 
   /**
    * Obtener reporte diario completo
@@ -48,14 +48,14 @@ export function useReports() {
           setStats(data.stats);
         }
         showNotification('Reporte cargado correctamente', 'success');
-      } catch (error: any) {
-        const message = error?.message || 'Error al cargar reporte';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al cargar reporte');
         showNotification(message, 'error');
       } finally {
         setIsLoadingReports(false);
       }
     },
-    [showNotification]
+    [reportApi, showNotification]
   );
 
   /**
@@ -67,12 +67,12 @@ export function useReports() {
         const data = await reportApi.getStats(date);
         setStats(data);
         showNotification('Estadísticas cargadas', 'success');
-      } catch (error: any) {
-        const message = error?.message || 'Error al cargar estadísticas';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al cargar estadísticas');
         showNotification(message, 'error');
       }
     },
-    [showNotification]
+    [reportApi, showNotification]
   );
 
   /**

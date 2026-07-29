@@ -161,7 +161,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
         var update = Builders<BsonCounter>.Update.Inc(c => c.SequenceValue, 1);
         var options = new FindOneAndUpdateOptions<BsonCounter>
         {
-            ReturnDocument = ReturnDocument.After
+            ReturnDocument = ReturnDocument.After 
         };
 
         var counter = await _countersCollection.FindOneAndUpdateAsync(filter, update, options, cancellation);

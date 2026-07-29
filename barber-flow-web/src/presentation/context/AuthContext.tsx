@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { AuthenticatedUser } from '@domain/entities';
 import { LoginUseCase, LogoutUseCase, GetStoredUserUseCase } from '@application/use-cases/auth';
 import { AuthApi } from '@infrastructure/api/AuthApi';
@@ -19,8 +19,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const httpClient = new AxiosHttpClient();
-  const authApi = new AuthApi(httpClient);
+  const authApi = useMemo(() => new AuthApi(new AxiosHttpClient()), []);
 
   // Recuperar usuario guardado al montar el componente
   useEffect(() => {
@@ -39,7 +38,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     initializeAuth();
-  }, []);
+  }, [authApi]);
 
   const login = async (userName: string, password: string) => {
     const loginUC = new LoginUseCase(authApi);
@@ -65,6 +64,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

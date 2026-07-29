@@ -1,6 +1,6 @@
 import type { DrawerNavigationProp } from "@react-navigation/drawer";
 import type { DrawerParamList } from "../navigation/DrawerNavigator";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -11,6 +11,7 @@ import {
 import { format } from "date-fns";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { ScreenLayout } from "../components/ScreenLayout";
+import { useDialog } from "../context/DialogContext";
 import { getAppointmentPaymentMethodLabel } from "../features/appointments/appointments.types";
 import { useAppointmentStore } from "../features/appointments/appointment.store";
 import { calculateDailyReportSummary } from "../features/reports/dailyReport";
@@ -45,10 +46,19 @@ export const DailyReportScreen = () => {
 	const navigation = useNavigation<DrawerNavigationProp<DrawerParamList>>();
 	const { language, translateText } = useTranslation();
 	const { theme } = useAppTheme();
+	const { showAlert } = useDialog();
 	const styles = useMemo(() => createStyles(theme), [theme]);
 	const appointments = useAppointmentStore((state) => state.appointments);
 	const isLoading = useAppointmentStore((state) => state.isLoading);
+	const fetchError = useAppointmentStore((state) => state.error);
+	const clearFetchError = useAppointmentStore((state) => state.clearError);
 	const fetchAppointmentsByDateRange = useAppointmentStore((state) => state.fetchAppointmentsByDateRange);
+
+	useEffect(() => {
+		if (!fetchError) return;
+		showAlert(translateText("common.somethingWentWrong"), fetchError);
+		clearFetchError();
+	}, [fetchError, showAlert, clearFetchError, translateText]);
 	const [selectedDate, setSelectedDate] = useState(
 		format(new Date(), "yyyy-MM-dd"),
 	);

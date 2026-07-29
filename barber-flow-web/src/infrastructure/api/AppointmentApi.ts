@@ -3,14 +3,20 @@ import { Appointment } from '@domain/entities';
 import { HttpClient } from '../http';
 import { CreateAppointmentRequest, UpdateAppointmentRequest } from '@application/dtos/requests';
 
+type ListResponse<T> = T[] | { items: T[] };
+
+function unwrapItems<T>(response: ListResponse<T>): T[] {
+  return Array.isArray(response) ? response : response.items;
+}
+
 export class AppointmentApi implements IAppointmentRepository {
   constructor(private httpClient: HttpClient) {}
 
   async getByDate(date: string): Promise<Appointment[]> {
-    const response = await this.httpClient.get<any>('/api/appointments/search', {
+    const response = await this.httpClient.get<ListResponse<Appointment>>('/api/appointments/search', {
       params: { date },
     });
-    return response.items || response;
+    return unwrapItems(response);
   }
 
   async getById(id: string): Promise<Appointment> {
@@ -37,9 +43,9 @@ export class AppointmentApi implements IAppointmentRepository {
   }
 
   async search(query: string): Promise<Appointment[]> {
-    const response = await this.httpClient.get<any>('/api/appointments/search', {
+    const response = await this.httpClient.get<ListResponse<Appointment>>('/api/appointments/search', {
       params: { query },
     });
-    return response.items || response;
+    return unwrapItems(response);
   }
 }

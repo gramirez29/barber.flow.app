@@ -63,6 +63,26 @@ public class MongoDbClientRepositoryTests
     }
 
     [Fact]
+    public async Task UpdateAsync_SetsShopId()
+    {
+        var sut = CreateSut();
+        var client = await sut.CreateAsync(BuildClient());
+
+        var patch = new Client
+        {
+            FirstName = client.FirstName,
+            LastName = client.LastName,
+            Phone = client.Phone,
+            ShopId = "SHOP-0001",
+        };
+
+        var updated = await sut.UpdateAsync(client.Id, patch);
+
+        Assert.NotNull(updated);
+        Assert.Equal("SHOP-0001", updated!.ShopId);
+    }
+
+    [Fact]
     public async Task UpdateAsync_ClientNotFound_ReturnsNull()
     {
         var sut = CreateSut();

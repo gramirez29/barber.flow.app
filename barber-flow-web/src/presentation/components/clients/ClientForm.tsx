@@ -64,7 +64,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
       await onSubmit(form.values);
       form.reset();
       onClose();
-    } catch (error) {
+    } catch {
       // Error already handled by hook
     }
   };
@@ -179,7 +179,12 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               label="Método de Pago Preferido"
               select
               value={form.values.paymentMethod}
-              onChange={(e) => form.setFieldValue('paymentMethod', e.target.value as any)}
+              onChange={(e) =>
+                form.setFieldValue(
+                  'paymentMethod',
+                  e.target.value as CreateClientFormData['paymentMethod']
+                )
+              }
               onBlur={() => form.setFieldTouched('paymentMethod', true)}
               disabled={isLoading}
               fullWidth

@@ -104,6 +104,14 @@
 		"Configura las preferencias de la aplicación, administra usuarios de aplicación solo para administradores y mantén la experiencia alineada con tu flujo de trabajo.",
 		manageApplicationUsers: "Administrar usuarios de la aplicación",
 		addApplicationUser: "Agregar Usuario de Aplicación",
+		adminAccess: {
+			toggleLabel: "Habilitar pantallas de operación",
+			toggleBody: "Activa para mostrar Calendario, Clientes y Reportes con esta cuenta de Administrador.",
+			lockedWarning:
+				"🔒 Estás usando la aplicación como Administrador. Calendario, Clientes y Reportes están ocultos: esta cuenta es solo para dar acceso a otras personas, no debe usarse para crear, editar, eliminar ni consultar citas o clientes.",
+			unlockedWarning:
+				"⚠️ Modo de prueba activo: las pantallas de operación están visibles con la cuenta de Administrador. Úsalo solo para pruebas y vuelve a activar el bloqueo cuando termines.",
+		},
 		preferences: "Preferencias",
 		quickToggle: "Cambio rápido",
 		settingsAndPreferences: "Ajustes y preferencias",

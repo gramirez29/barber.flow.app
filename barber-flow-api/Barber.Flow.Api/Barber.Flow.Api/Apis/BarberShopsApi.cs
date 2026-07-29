@@ -1,7 +1,7 @@
 using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.DTOs.Responses;
+using Barber.Flow.Application.Services.BarberShops;
 using Barber.Flow.Domain.Entities;
-using Barber.Flow.Domain.Interfaces;
 using System.Security.Claims;
 
 namespace Barber.Flow.Api.Apis;
@@ -40,12 +40,12 @@ public static class BarberShopsApi
 
     private static async Task<IResult> CreateAsync(
         BarberShopRequest request,
-        IBarberShopRepository repository,
+        IBarberShopService service,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                     ?? httpContext.User.Identity?.Name 
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? httpContext.User.Identity?.Name
                      ?? throw new UnauthorizedAccessException("User not authenticated");
 
         var barberShop = new BarberShop
@@ -57,19 +57,19 @@ public static class BarberShopsApi
             UpdatedBy = userId
         };
 
-        var created = await repository.CreateAsync(barberShop);
+        var created = await service.CreateAsync(barberShop, cancellationToken);
         return TypedResults.Ok(MapToResponse(created));
     }
 
     private static async Task<IResult> UpdateAsync(
         string id,
         BarberShopRequest request,
-        IBarberShopRepository repository,
+        IBarberShopService service,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                     ?? httpContext.User.Identity?.Name 
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? httpContext.User.Identity?.Name
                      ?? throw new UnauthorizedAccessException("User not authenticated");
 
         var barberShop = new BarberShop
@@ -83,7 +83,7 @@ public static class BarberShopsApi
 
         try
         {
-            var updated = await repository.UpdateAsync(barberShop);
+            var updated = await service.UpdateAsync(barberShop, cancellationToken);
             return TypedResults.Ok(MapToResponse(updated));
         }
         catch (InvalidOperationException ex)
@@ -93,32 +93,32 @@ public static class BarberShopsApi
     }
 
     private static async Task<IResult> GetAllAsync(
-        IBarberShopRepository repository,
+        IBarberShopService service,
         HttpContext httpContext,
         int page = 1,
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                     ?? httpContext.User.Identity?.Name 
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? httpContext.User.Identity?.Name
                      ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        var shops = await repository.GetAllAsync(userId, page, pageSize);
+        var shops = await service.GetAllAsync(userId, page, pageSize, cancellationToken);
         var response = shops.Select(MapToResponse);
         return TypedResults.Ok(response);
     }
 
     private static async Task<IResult> GetByIdAsync(
         string id,
-        IBarberShopRepository repository,
+        IBarberShopService service,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                     ?? httpContext.User.Identity?.Name 
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? httpContext.User.Identity?.Name
                      ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        var shop = await repository.GetByIdAsync(id, userId);
+        var shop = await service.GetByIdAsync(id, userId, cancellationToken);
         if (shop == null)
             return TypedResults.NotFound(new { error = "BarberShop not found" });
 
@@ -127,15 +127,15 @@ public static class BarberShopsApi
 
     private static async Task<IResult> DeleteAsync(
         string id,
-        IBarberShopRepository repository,
+        IBarberShopService service,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                     ?? httpContext.User.Identity?.Name 
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? httpContext.User.Identity?.Name
                      ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        var deleted = await repository.DeleteAsync(id, userId);
+        var deleted = await service.DeleteAsync(id, userId, cancellationToken);
         if (!deleted)
             return TypedResults.NotFound(new { error = "BarberShop not found or unauthorized" });
 

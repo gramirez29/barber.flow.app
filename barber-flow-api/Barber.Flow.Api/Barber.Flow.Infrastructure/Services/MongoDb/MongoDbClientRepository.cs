@@ -34,6 +34,7 @@ public sealed class MongoDbClientRepository : IClientRepository
             .Set(c => c.PaymentMethod, client.PaymentMethod)
             .Set(c => c.Active, client.Active)
             .Set(c => c.PhotoUrl, client.PhotoUrl)
+            .Set(c => c.ShopId, client.ShopId)
             .Set(c => c.UpdatedAt, DateTime.UtcNow);
 
         return await _collection.FindOneAndUpdateAsync(
