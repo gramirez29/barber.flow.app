@@ -97,6 +97,7 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
         existing.ServiceName = appointment.ServiceName;
         existing.ServicePrice = appointment.ServicePrice;
         existing.Notes = appointment.Notes;
+        existing.ShopId = appointment.ShopId;
         existing.UpdatedAt = DateTime.UtcNow;
         existing.UpdatedBy = appointment.UpdatedBy;
         _store[id] = existing;

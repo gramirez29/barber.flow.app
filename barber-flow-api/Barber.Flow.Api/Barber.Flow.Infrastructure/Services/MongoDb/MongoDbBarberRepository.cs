@@ -42,6 +42,7 @@ public sealed class MongoDbBarberRepository : IBarberRepository
             .Set(b => b.BarberShopPhone, barber.BarberShopPhone)
             .Set(b => b.PhotoUrl, barber.PhotoUrl)
             .Set(b => b.Settings, barber.Settings)
+            .Set(b => b.ShopId, barber.ShopId)
             .Set(b => b.UpdatedAt, DateTime.UtcNow)
             .Set(b => b.UpdatedBy, barber.UpdatedBy);
 
@@ -64,6 +65,14 @@ public sealed class MongoDbBarberRepository : IBarberRepository
     {
         return await _collection
             .Find(Builders<BarberEntity>.Filter.Eq(b => b.Id, id))
+            .FirstOrDefaultAsync(cancellation);
+    }
+
+    public async Task<BarberEntity?> GetByUserNameAsync(string userName, CancellationToken cancellation = default)
+    {
+        var regex = new BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(userName.Trim())}$", "i");
+        return await _collection
+            .Find(Builders<BarberEntity>.Filter.Regex(b => b.UserName, regex))
             .FirstOrDefaultAsync(cancellation);
     }
 

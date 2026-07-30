@@ -19,15 +19,24 @@ export function useApiError() {
   const { showNotification } = useNotification();
 
   const handleError = useCallback(
-    (error: any, showToast: boolean = true): ApiErrorInfo => {
+    (error: unknown, showToast: boolean = true): ApiErrorInfo => {
       let message = 'Ocurrió un error inesperado';
       let statusCode: number | undefined;
       let fieldErrors: Record<string, string> | undefined;
 
+      const err = error as {
+        response?: {
+          status?: number;
+          statusText?: string;
+          data?: { message?: string; error?: string; errors?: Record<string, string> };
+        };
+        message?: string;
+      } | null | undefined;
+
       // Manejar respuesta HTTP con error
-      if (error?.response) {
-        statusCode = error.response.status;
-        const data = error.response.data;
+      if (err?.response) {
+        statusCode = err.response.status;
+        const data = err.response.data;
 
         // Formato: { message: string }
         if (data?.message) {
@@ -46,7 +55,7 @@ export function useApiError() {
         }
         // Formato genérico
         else {
-          message = `Error ${statusCode}: ${error.response.statusText || 'Unknown'}`;
+          message = `Error ${statusCode}: ${err.response.statusText || 'Unknown'}`;
         }
 
         // Errores específicos por código
@@ -61,12 +70,12 @@ export function useApiError() {
         }
       }
       // Manejar error de red
-      else if (error?.message === 'Network Error') {
+      else if (err?.message === 'Network Error') {
         message = 'Error de conexión. Verifica tu internet';
       }
       // Manejar mensaje de error simple
-      else if (error?.message) {
-        message = error.message;
+      else if (err?.message) {
+        message = err.message;
       }
 
       // Mostrar notificación si es requerido

@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Client } from '@domain/entities/Client';
 import { CreateClientRequest, UpdateClientRequest } from '@application/dtos/requests';
 import { useNotification } from '@presentation/context/NotificationContext';
 import { ClientApi } from '@infrastructure/api/ClientApi';
 import { AxiosHttpClient } from '@infrastructure/http/AxiosHttpClient';
+import { getErrorMessage } from '@shared/utils/errorUtils';
 
 /**
  * useClients: Hook para manejo de clientes
@@ -37,8 +38,7 @@ export function useClients() {
   const { showNotification } = useNotification();
 
   // Inyectar ClientApi
-  const httpClient = new AxiosHttpClient();
-  const clientApi = new ClientApi(httpClient);
+  const clientApi = useMemo(() => new ClientApi(new AxiosHttpClient()), []);
 
   /**
    * Buscar clientes
@@ -50,14 +50,14 @@ export function useClients() {
         const data = await clientApi.search(query);
         setClients(data);
         showNotification('Búsqueda de clientes completada', 'success');
-      } catch (error: any) {
-        const message = error?.message || 'Error en búsqueda de clientes';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error en búsqueda de clientes');
         showNotification(message, 'error');
       } finally {
         setIsLoadingClients(false);
       }
     },
-    [showNotification]
+    [clientApi, showNotification]
   );
 
   /**
@@ -69,13 +69,13 @@ export function useClients() {
         const data = await clientApi.getById(id);
         setSelectedClient(data);
         return data;
-      } catch (error: any) {
-        const message = error?.message || 'Error al obtener cliente';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al obtener cliente');
         showNotification(message, 'error');
         throw error;
       }
     },
-    [showNotification]
+    [clientApi, showNotification]
   );
 
   /**
@@ -88,13 +88,13 @@ export function useClients() {
         setClients((prev) => [...prev, newClient]);
         showNotification('Cliente creado correctamente', 'success');
         return newClient;
-      } catch (error: any) {
-        const message = error?.message || 'Error al crear cliente';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al crear cliente');
         showNotification(message, 'error');
         throw error;
       }
     },
-    [showNotification]
+    [clientApi, showNotification]
   );
 
   /**
@@ -109,13 +109,13 @@ export function useClients() {
         );
         showNotification('Cliente actualizado correctamente', 'success');
         return updatedClient;
-      } catch (error: any) {
-        const message = error?.message || 'Error al actualizar cliente';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al actualizar cliente');
         showNotification(message, 'error');
         throw error;
       }
     },
-    [showNotification]
+    [clientApi, showNotification]
   );
 
   /**
@@ -127,13 +127,13 @@ export function useClients() {
         await clientApi.delete(clientId);
         setClients((prev) => prev.filter((c) => c.id !== clientId));
         showNotification('Cliente eliminado correctamente', 'success');
-      } catch (error: any) {
-        const message = error?.message || 'Error al eliminar cliente';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al eliminar cliente');
         showNotification(message, 'error');
         throw error;
       }
     },
-    [showNotification]
+    [clientApi, showNotification]
   );
 
   /**
@@ -144,13 +144,13 @@ export function useClients() {
       try {
         const stats = await clientApi.getStats(clientId);
         return stats;
-      } catch (error: any) {
-        const message = error?.message || 'Error al obtener estadísticas';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al obtener estadísticas');
         showNotification(message, 'error');
         throw error;
       }
     },
-    [showNotification]
+    [clientApi, showNotification]
   );
 
   /**
@@ -161,13 +161,13 @@ export function useClients() {
       try {
         const history = await clientApi.getAppointmentHistory(clientId);
         return history;
-      } catch (error: any) {
-        const message = error?.message || 'Error al obtener historial';
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al obtener historial');
         showNotification(message, 'error');
         throw error;
       }
     },
-    [showNotification]
+    [clientApi, showNotification]
   );
 
   return {

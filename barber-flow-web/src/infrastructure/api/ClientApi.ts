@@ -1,16 +1,22 @@
 import { IClientRepository } from '@domain/interfaces';
-import { Client, ClientWithStats } from '@domain/entities';
+import { Appointment, Client, ClientWithStats } from '@domain/entities';
 import { HttpClient } from '../http';
 import { CreateClientRequest, UpdateClientRequest } from '@application/dtos/requests';
+
+type ListResponse<T> = T[] | { items: T[] };
+
+function unwrapItems<T>(response: ListResponse<T>): T[] {
+  return Array.isArray(response) ? response : response.items;
+}
 
 export class ClientApi implements IClientRepository {
   constructor(private httpClient: HttpClient) {}
 
   async search(query: string): Promise<Client[]> {
-    const response = await this.httpClient.get<any>('/api/clients/search', {
+    const response = await this.httpClient.get<ListResponse<Client>>('/api/clients/search', {
       params: { query },
     });
-    return response.items || response;
+    return unwrapItems(response);
   }
 
   async getById(id: string): Promise<Client> {
@@ -29,9 +35,11 @@ export class ClientApi implements IClientRepository {
     await this.httpClient.delete(`/api/clients/delete/${id}`);
   }
 
-  async getAppointmentHistory(id: string): Promise<any[]> {
-    const response = await this.httpClient.get<any>(`/api/clients/${id}/appointments/history`);
-    return response.items || response;
+  async getAppointmentHistory(id: string): Promise<Appointment[]> {
+    const response = await this.httpClient.get<ListResponse<Appointment>>(
+      `/api/clients/${id}/appointments/history`
+    );
+    return unwrapItems(response);
   }
 
   async getStats(id: string): Promise<ClientWithStats> {

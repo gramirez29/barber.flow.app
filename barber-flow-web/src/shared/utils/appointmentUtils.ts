@@ -2,6 +2,7 @@
  * Appointment Utilities
  * Funciones utilitarias para manejo de citas
  */
+import { Appointment } from '@domain/entities';
 
 /**
  * Convierte un string de tiempo HH:mm a minutos desde medianoche
@@ -99,8 +100,8 @@ export function getAvailableTimeSlots(
  * Ordena citas por fecha y hora
  */
 export function sortAppointmentsByDateTime(
-  appointments: any[]
-): any[] {
+  appointments: Appointment[]
+): Appointment[] {
   return [...appointments].sort((a, b) => {
     const dateA = new Date(`${a.date}T${a.time}`);
     const dateB = new Date(`${b.date}T${b.time}`);
@@ -112,21 +113,21 @@ export function sortAppointmentsByDateTime(
  * Agrupa citas por fecha
  */
 export function groupAppointmentsByDate(
-  appointments: any[]
-): Record<string, any[]> {
+  appointments: Appointment[]
+): Record<string, Appointment[]> {
   return appointments.reduce((acc, apt) => {
     if (!acc[apt.date]) {
       acc[apt.date] = [];
     }
     acc[apt.date].push(apt);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, Appointment[]>);
 }
 
 /**
  * Obtiene las citas del día actual
  */
-export function getTodayAppointments(appointments: any[]): any[] {
+export function getTodayAppointments(appointments: Appointment[]): Appointment[] {
   const today = new Date().toISOString().split('T')[0];
   return appointments.filter((apt) => apt.date === today);
 }
@@ -135,9 +136,9 @@ export function getTodayAppointments(appointments: any[]): any[] {
  * Obtiene las citas de los próximos N días
  */
 export function getUpcomingAppointments(
-  appointments: any[],
+  appointments: Appointment[],
   days: number = 7
-): any[] {
+): Appointment[] {
   const today = new Date();
   const futureDate = new Date(today.getTime() + days * 24 * 60 * 60 * 1000);
 

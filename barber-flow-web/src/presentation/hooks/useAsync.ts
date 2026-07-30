@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import { useApiError } from './useApiError';
 
-export interface UseAsyncReturn<T, E = any> {
+export interface UseAsyncReturn<T, E = unknown, A extends unknown[] = unknown[]> {
   data: T | null;
   isLoading: boolean;
   error: E | null;
   isSuccess: boolean;
-  execute: (...args: any[]) => Promise<T>;
+  execute: (...args: A) => Promise<T>;
   reset: () => void;
   setData: (data: T) => void;
 }
@@ -35,12 +35,12 @@ export interface UseAsyncReturn<T, E = any> {
  * };
  * ```
  */
-export function useAsync<T, E = any>(
-  asyncFunction: (...args: any[]) => Promise<T>,
+export function useAsync<T, E = unknown, A extends unknown[] = unknown[]>(
+  asyncFunction: (...args: A) => Promise<T>,
   immediate = false,
   onSuccess?: (data: T) => void,
   onError?: (error: E) => void
-): UseAsyncReturn<T, E> {
+): UseAsyncReturn<T, E, A> {
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<E | null>(null);
@@ -48,7 +48,7 @@ export function useAsync<T, E = any>(
   const { handleError } = useApiError();
 
   const execute = useCallback(
-    async (...args: any[]): Promise<T> => {
+    async (...args: A): Promise<T> => {
       setIsLoading(true);
       setError(null);
       setIsSuccess(false);
@@ -59,7 +59,7 @@ export function useAsync<T, E = any>(
         setIsSuccess(true);
         onSuccess?.(response);
         return response;
-      } catch (err: any) {
+      } catch (err) {
         const apiError = handleError(err, false) as E;
         setError(apiError);
         onError?.(apiError);

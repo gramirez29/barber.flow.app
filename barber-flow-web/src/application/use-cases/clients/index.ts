@@ -1,5 +1,5 @@
 import { IClientRepository } from '@domain/interfaces';
-import { Client, ClientWithStats } from '@domain/entities';
+import { Appointment, Client, ClientWithStats } from '@domain/entities';
 import { CreateClientRequest, UpdateClientRequest, SearchClientRequest } from '@application/dtos/requests';
 
 export class SearchClientsUseCase {
@@ -45,7 +45,7 @@ export class GetClientStatsUseCase {
 export class GetClientAppointmentHistoryUseCase {
   constructor(private clientRepository: IClientRepository) {}
 
-  async execute(id: string): Promise<any[]> {
+  async execute(id: string): Promise<Appointment[]> {
     return this.clientRepository.getAppointmentHistory(id);
   }
 }

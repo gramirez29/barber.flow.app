@@ -65,6 +65,7 @@ public class InMemoryBarberRepository : IBarberRepository
         existing.BarberShopPhone = barber.BarberShopPhone;
         existing.PhotoUrl = barber.PhotoUrl;
         existing.Settings = barber.Settings;
+        existing.ShopId = barber.ShopId;
         existing.UpdatedAt = DateTime.UtcNow;
         _store[id] = existing;
         return Task.FromResult<Domain.Entities.Barber?>(existing);
@@ -79,6 +80,12 @@ public class InMemoryBarberRepository : IBarberRepository
     {
         _store.TryGetValue(id, out var b);
         return Task.FromResult(b);
+    }
+
+    public Task<Domain.Entities.Barber?> GetByUserNameAsync(string userName, CancellationToken cancellation = default)
+    {
+        var barber = _store.Values.FirstOrDefault(b => string.Equals(b.UserName, userName, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(barber);
     }
 
     public Task<IEnumerable<Domain.Entities.Barber>> FindAsync(string? query = null, int? page = null, int? pageSize = null, CancellationToken ct = default)

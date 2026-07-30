@@ -102,6 +102,14 @@
 		followSystem: "Follow system",
 		manageApplicationUsers: "Manage Application Users",
 		addApplicationUser: "Add Application User",
+		adminAccess: {
+			toggleLabel: "Enable operational screens",
+			toggleBody: "Turn on to show Calendar, Clients and Reports with this Administrator account.",
+			lockedWarning:
+				"🔒 You're using the app as Administrator. Calendar, Clients and Reports are hidden: this account is only meant to grant access to other people — it should not be used to create, edit, delete, or view appointments or clients.",
+			unlockedWarning:
+				"⚠️ Test mode active: operational screens are visible with the Administrator account. Use this only for testing, and re-enable the lock when you're done.",
+		},
 		preferences: "Preferences",
 		quickToggle: "Quick toggle",
 		title: "Settings",

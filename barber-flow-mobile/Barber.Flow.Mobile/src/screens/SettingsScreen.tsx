@@ -23,6 +23,7 @@ import {
 } from "../features/settings/settingsForm";
 import { settingsService } from "../services/settingsService";
 import { useAuthStore } from "../store/auth.store";
+import { useAdminAccessStore } from "../store/adminAccess.store";
 import { useLanguage, useTranslation } from "../context/LanguageContext";
 import { getErrorMessage } from "../utils/errors";
 import { useDialog } from "../context/DialogContext";
@@ -51,6 +52,8 @@ export const SettingsScreen = () => {
 	const isUltraCompact = width <= 360;
 	const user = useAuthStore((state) => state.user);
 	const isAdmin = user?.role === "Admin";
+	const isSafeModeEnabled = useAdminAccessStore((state) => state.isSafeModeEnabled);
+	const setSafeModeEnabled = useAdminAccessStore((state) => state.setSafeModeEnabled);
 	const { notificationsEnabled, setNotificationsEnabled, unreadCount } = useNotification();
 	const { isUsingSystemLanguage, language, resetToSystemLanguage, setLanguage, systemLanguage } = useLanguage();
 	const { translateText } = useTranslation();
@@ -375,6 +378,52 @@ export const SettingsScreen = () => {
 						</View>
 					</View>
 
+					{isAdmin ? (
+						<View style={styles.sectionWrap}>
+							<View style={[styles.card, styles.adminAccessCard]}>
+								<View style={styles.settingRow}>
+									<View style={styles.settingCopy}>
+										<Text style={styles.settingLabel}>
+											{translateText("settings.adminAccess.toggleLabel")}
+										</Text>
+										<Text style={styles.settingBody}>
+											{translateText("settings.adminAccess.toggleBody")}
+										</Text>
+									</View>
+									<Switch
+										trackColor={{ false: theme.colors.border, true: theme.colors.error }}
+										thumbColor={theme.colors.textPrimary}
+										onValueChange={(value) => setSafeModeEnabled(value)}
+										value={isSafeModeEnabled}
+									/>
+								</View>
+
+								<View
+									style={[
+										styles.adminAccessBanner,
+										{
+											backgroundColor: isSafeModeEnabled ? theme.colors.errorBg : theme.colors.accent + "22",
+											borderColor: isSafeModeEnabled ? theme.colors.error : theme.colors.accent,
+										},
+									]}
+								>
+									<Text
+										style={[
+											styles.adminAccessBannerText,
+											{ color: isSafeModeEnabled ? theme.colors.error : theme.colors.accentLight },
+										]}
+									>
+										{translateText(
+											isSafeModeEnabled
+												? "settings.adminAccess.lockedWarning"
+												: "settings.adminAccess.unlockedWarning",
+										)}
+									</Text>
+								</View>
+							</View>
+						</View>
+					) : null}
+
 					<View style={styles.sectionWrap}>
 						<Text style={styles.sectionTitle}>{translateText("settings.preferences")}</Text>
 						<View style={styles.card}>
@@ -686,6 +735,22 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
 		fontSize: 13,
 		lineHeight: 19,
 		marginTop: 4,
+	},
+	adminAccessCard: {
+		borderColor: theme.colors.error,
+		borderWidth: 1.5,
+	},
+	adminAccessBanner: {
+		borderRadius: 12,
+		borderWidth: 1,
+		marginTop: 14,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+	},
+	adminAccessBannerText: {
+		fontSize: 13,
+		fontWeight: "700",
+		lineHeight: 19,
 	},
 	languageOptions: {
 		backgroundColor: theme.colors.background,

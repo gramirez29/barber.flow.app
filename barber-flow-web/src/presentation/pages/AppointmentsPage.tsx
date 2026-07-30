@@ -62,7 +62,7 @@ export const AppointmentsPage: React.FC = () => {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
-  const [_filterDate, setFilterDate] = useState('');
+  const [, setFilterDate] = useState('');
   const { showNotification } = useNotification();
 
   const {
@@ -103,7 +103,7 @@ export const AppointmentsPage: React.FC = () => {
         await createAppointment(data);
       }
       setFormOpen(false);
-    } catch (error) {
+    } catch {
       // Error ya manejado por el hook
     }
   };
@@ -130,7 +130,7 @@ export const AppointmentsPage: React.FC = () => {
     if (window.confirm(`¿Eliminar cita de ${appointment.clientName}?`)) {
       try {
         await deleteAppointment(appointment.id!);
-      } catch (error) {
+      } catch {
         // Error ya manejado
       }
     }
@@ -139,7 +139,7 @@ export const AppointmentsPage: React.FC = () => {
   const handleComplete = async (appointment: Appointment) => {
     try {
       await updateAppointmentStatus(appointment.id!, 'completed');
-    } catch (error) {
+    } catch {
       // Error ya manejado
     }
   };
@@ -148,13 +148,13 @@ export const AppointmentsPage: React.FC = () => {
     if (window.confirm(`¿Cancelar cita de ${appointment.clientName}?`)) {
       try {
         await updateAppointmentStatus(appointment.id!, 'cancelled');
-      } catch (error) {
+      } catch {
         // Error ya manejado
       }
     }
   };
 
-  const handleMove = async (_appointment: Appointment) => {
+  const handleMove = async (): Promise<void> => {
     // TODO: Implementar diálogo para seleccionar nueva fecha/hora
     showNotification('Funcionalidad en desarrollo', 'info');
   };

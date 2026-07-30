@@ -65,6 +65,7 @@ public class InMemoryClientRepository : IClientRepository
         existing.PaymentMethod = client.PaymentMethod;
         existing.Active = client.Active;
         existing.PhotoUrl = client.PhotoUrl;
+        existing.ShopId = client.ShopId;
         existing.UpdatedAt = DateTime.UtcNow;
         _store[id] = existing;
         

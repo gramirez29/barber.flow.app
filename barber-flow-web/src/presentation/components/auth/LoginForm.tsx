@@ -48,8 +48,9 @@ export const LoginForm: React.FC = () => {
       showNotification('¡Bienvenido!', 'success');
       form.reset();
       navigate('/dashboard');
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Error al iniciar sesión. Por favor intenta de nuevo.';
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Error al iniciar sesión. Por favor intenta de nuevo.';
       setGeneralError(errorMessage);
       showNotification(errorMessage, 'error');
     } finally {

@@ -62,6 +62,7 @@ npm test
 npm run build:preview   # EAS preview build
 npm run build:prod      # EAS production build (Android)
 ```
+`npm test` is currently broken: `jest` isn't listed in `package.json` `devDependencies` (despite the `test` script invoking it) and there are no `*.test.*` files anywhere in the project — running it fails with `'jest' is not recognized`. This is pre-existing, not a regression; `npx tsc --noEmit` + `npm run lint` are the only working verification commands for this app today. Pending: install `jest`/`jest-expo` and add real coverage if mobile tests become a priority.
 
 ### Architecture
 Feature-organized React Native app:

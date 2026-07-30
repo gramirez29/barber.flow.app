@@ -4,6 +4,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import { DateSelectArg, EventClickArg } from '@fullcalendar/core';
 import { Appointment } from '@domain/entities/Appointment';
 
 interface AppointmentCalendarProps {
@@ -55,14 +56,14 @@ export const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
           : '#1976D2',
   }));
 
-  const handleSelect = (selectInfo: any) => {
+  const handleSelect = (selectInfo: DateSelectArg) => {
     if (onDateSelect) {
-      const dateStr = selectInfo.dateStr;
+      const dateStr = selectInfo.startStr;
       onDateSelect(dateStr);
     }
   };
 
-  const handleEventClick = (clickInfo: any) => {
+  const handleEventClick = (clickInfo: EventClickArg) => {
     if (onEventClick) {
       const appointment = appointments.find((apt) => apt.id === clickInfo.event.id);
       if (appointment) {

@@ -2,17 +2,19 @@ using Barber.Flow.Application.Services.Appointments;
 using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
 using Moq;
+using BarberEntity = Barber.Flow.Domain.Entities.Barber;
 
 namespace Barber.Flow.Application.Tests.Services.AppointmentsFeature;
 
 public class AppointmentServiceTests
 {
     private readonly Mock<IAppointmentRepository> _repo = new();
+    private readonly Mock<IBarberRepository> _barberRepo = new();
 
-    private AppointmentService CreateSut() => new(_repo.Object);
+    private AppointmentService CreateSut() => new(_repo.Object, _barberRepo.Object);
 
     [Fact]
-    public async Task CreateAsync_DelegatesToRepositoryAndReturnsItsResult()
+    public async Task CreateAsync_WithoutCreatedBy_DelegatesToRepositoryWithoutResolvingShop()
     {
         var appointment = new Appointments { ClientName = "Juan" };
         var created = new Appointments { Id = "APT-0001", ClientName = "Juan" };
@@ -21,18 +23,74 @@ public class AppointmentServiceTests
         var result = await CreateSut().CreateAsync(appointment);
 
         Assert.Same(created, result);
+        _barberRepo.Verify(b => b.GetByUserNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithCreatedBy_ResolvesShopIdFromCreatingBarber()
+    {
+        var appointment = new Appointments { ClientName = "Juan", CreatedBy = "barber1" };
+        var barber = new BarberEntity { UserName = "barber1", ShopId = "SHOP-0001" };
+        _barberRepo.Setup(b => b.GetByUserNameAsync("barber1", It.IsAny<CancellationToken>())).ReturnsAsync(barber);
+        _repo.Setup(r => r.CreateAsync(It.IsAny<Appointments>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Appointments a, CancellationToken _) => a);
+
+        var result = await CreateSut().CreateAsync(appointment);
+
+        Assert.Equal("SHOP-0001", result.ShopId);
+    }
+
+    [Fact]
+    public async Task CreateAsync_CreatingBarberHasNoShop_LeavesShopIdNull()
+    {
+        var appointment = new Appointments { ClientName = "Juan", CreatedBy = "barber1" };
+        _barberRepo.Setup(b => b.GetByUserNameAsync("barber1", It.IsAny<CancellationToken>())).ReturnsAsync((BarberEntity?)null);
+        _repo.Setup(r => r.CreateAsync(It.IsAny<Appointments>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Appointments a, CancellationToken _) => a);
+
+        var result = await CreateSut().CreateAsync(appointment);
+
+        Assert.Null(result.ShopId);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ExplicitShopIdAlreadySet_DoesNotOverrideIt()
+    {
+        var appointment = new Appointments { ClientName = "Juan", CreatedBy = "barber1", ShopId = "SHOP-0002" };
+        _repo.Setup(r => r.CreateAsync(It.IsAny<Appointments>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Appointments a, CancellationToken _) => a);
+
+        var result = await CreateSut().CreateAsync(appointment);
+
+        Assert.Equal("SHOP-0002", result.ShopId);
+        _barberRepo.Verify(b => b.GetByUserNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task UpdateAsync_AppointmentNotFound_ReturnsNull()
     {
         var appointment = new Appointments { ClientName = "Juan" };
-        _repo.Setup(r => r.UpdateAsync("missing-id", appointment, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Appointments?)null);
+        _repo.Setup(r => r.GetByIdAsync("missing-id", It.IsAny<CancellationToken>())).ReturnsAsync((Appointments?)null);
 
         var result = await CreateSut().UpdateAsync("missing-id", appointment);
 
         Assert.Null(result);
+        _repo.Verify(r => r.UpdateAsync(It.IsAny<string>(), It.IsAny<Appointments>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PreservesShopIdFromExistingAppointment()
+    {
+        var appointment = new Appointments { ClientName = "Juan Updated", UpdatedBy = "admin" };
+        var existing = new Appointments { Id = "APT-0001", ShopId = "SHOP-0001" };
+        var updated = new Appointments { Id = "APT-0001", ClientName = "Juan Updated", ShopId = "SHOP-0001" };
+        _repo.Setup(r => r.GetByIdAsync("APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _repo.Setup(r => r.UpdateAsync("APT-0001", It.Is<Appointments>(a => a.ShopId == "SHOP-0001"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updated);
+
+        var result = await CreateSut().UpdateAsync("APT-0001", appointment);
+
+        Assert.Same(updated, result);
     }
 
     [Fact]

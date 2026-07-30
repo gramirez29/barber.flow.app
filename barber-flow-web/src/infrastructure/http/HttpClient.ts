@@ -1,15 +1,17 @@
-export interface HttpResponse<T = any> {
+export interface HttpResponse<T = unknown> {
   data: T;
   status: number;
   headers: Record<string, string>;
 }
 
+export type HttpRequestConfig = Record<string, unknown>;
+
 export interface HttpClient {
-  get<T = any>(url: string, config?: any): Promise<T>;
-  post<T = any>(url: string, data?: any, config?: any): Promise<T>;
-  put<T = any>(url: string, data?: any, config?: any): Promise<T>;
-  patch<T = any>(url: string, data?: any, config?: any): Promise<T>;
-  delete<T = any>(url: string, config?: any): Promise<T>;
+  get<T = unknown>(url: string, config?: HttpRequestConfig): Promise<T>;
+  post<T = unknown>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<T>;
+  put<T = unknown>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<T>;
+  patch<T = unknown>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<T>;
+  delete<T = unknown>(url: string, config?: HttpRequestConfig): Promise<T>;
   setAuthToken(token: string): void;
   clearAuthToken(): void;
 }

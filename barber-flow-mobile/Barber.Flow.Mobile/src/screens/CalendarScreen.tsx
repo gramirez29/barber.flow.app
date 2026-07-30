@@ -9,6 +9,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AppointmentCard } from "../components/calendar/AppointmentCard";
 import { ScreenLayout } from "../components/ScreenLayout";
+import { useDialog } from "../context/DialogContext";
 import { useTranslation } from "../context/LanguageContext";
 import { useAppTheme } from "../theme/ThemeContext";
 import { useAppointmentStore } from "../features/appointments/appointment.store";
@@ -386,13 +387,22 @@ export const CalendarScreen: React.FC = () => {
 	const route = useRoute<RouteProp<CalendarStackParamList, "CalendarHome">>();
 	const { language, translateText } = useTranslation();
 	const { theme } = useAppTheme();
+	const { showAlert } = useDialog();
 	const styles = useMemo(() => createStyles(theme), [theme]);
 	const {
 		appointments,
 		isLoading,
+		error,
+		clearError,
 		getAppointmentsByDate,
 		fetchAppointmentsByDateRange,
 	} = useAppointmentStore();
+
+	useEffect(() => {
+		if (!error) return;
+		showAlert(translateText("common.somethingWentWrong"), error);
+		clearError();
+	}, [error, showAlert, clearError, translateText]);
 
 	const today = format(new Date(), DATE_FORMAT);
 	const [viewMode, setViewMode] = useState<ViewMode>("month");

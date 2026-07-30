@@ -10,8 +10,10 @@ import {
 interface AppointmentState {
 	appointments: Appointment[];
 	isLoading: boolean;
+	error: string | null;
 	fetchAppointments: (params?: AppointmentSearchParams) => Promise<void>;
 	fetchAppointmentsByDateRange: (startDate: string, endDate: string, status?: string) => Promise<void>;
+	clearError: () => void;
 	addAppointment: (appointment: AppointmentDraft) => Promise<Appointment>;
 	getCompletedAppointmentsByDate: (date: string) => Appointment[];
 	moveAppointment: (id: string, newDate: string) => Promise<void>;
@@ -34,6 +36,9 @@ export const useAppointmentStore = create<AppointmentState>()(
 		(set, get) => ({
 			appointments: [],
 			isLoading: false,
+			error: null,
+
+			clearError: () => set({ error: null }),
 
 			fetchAppointments: async (params) => {
 				set({ isLoading: true });
@@ -63,6 +68,7 @@ export const useAppointmentStore = create<AppointmentState>()(
 					}
 				} catch (error) {
 					console.error("[AppointmentStore] fetchAppointmentsByDateRange failed:", error);
+					set({ error: error instanceof Error ? error.message : "Failed to load appointments" });
 				} finally {
 					set({ isLoading: false });
 				}
