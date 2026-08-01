@@ -14,6 +14,21 @@ export const APPOINTMENT_PAYMENT_METHOD_OPTIONS: AppointmentPaymentMethod[] = [
     "transfer",
 ];
 
+export const mapClientPaymentMethodToAppointment = (
+    clientPaymentMethod: string | undefined,
+): AppointmentPaymentMethod | undefined => {
+    switch (clientPaymentMethod) {
+        case "Cash":
+            return "cash";
+        case "Sinpe Movil":
+            return "sinpeMovil";
+        case "Transfer":
+            return "transfer";
+        default:
+            return undefined;
+    }
+};
+
 export interface AppointmentDraft {
     clientName: string;
     phone: string;

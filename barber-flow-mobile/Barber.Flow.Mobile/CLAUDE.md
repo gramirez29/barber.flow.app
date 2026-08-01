@@ -14,8 +14,7 @@ npm run web              # Expo web (react-native-web)
 npm run lint             # eslint .
 npm test                 # jest
 npm run dev              # APP_ENV=development expo start
-npm run preview          # APP_ENV=preview expo start
-npm run build:preview    # EAS build, Android, preview profile
+npm run build:testing    # EAS build, Android, testing profile (apk, hits Railway/Atlas)
 npm run build:prod       # EAS build, Android, production profile
 ```
 
@@ -24,6 +23,8 @@ There's no `test -- <pattern>` script wired up; run Jest directly for a single f
 ## Environment / API base URL
 
 `src/config.ts` resolves `BASE_URL` in this order: `process.env.BARBERFLOW_API_URL` → `Constants.expoConfig.extra.BASE_URL` (set in `app.config.js`) → a hardcoded per-`APP_ENV` fallback. The `development` fallback is a developer's local LAN IP (currently `http://192.168.68.56:7016` in `app.config.js`) — **update this to your own machine's IP** when running the API locally, or set `BARBERFLOW_API_URL`/`.env` instead of editing the fallback.
+
+`app.config.js`'s `URL_BY_ENV` maps the three `APP_ENV` values used across `eas.json`'s build profiles and the `dev` npm script: `development` → local LAN IP (local API + local Docker Mongo), `testing` → the Railway `develop` deployment (MongoDB Atlas) via the `testing` EAS profile (`buildType: apk`, for installing on a physical phone), `production` → the same Railway `develop` URL for now (`buildType: app-bundle`; update this once a dedicated production Railway environment exists).
 
 `ADMIN_USERNAME` in `config.ts` is a hardcoded username used to gate the admin-only "manage users" section in Settings — prefer checking `user.role === "Admin"` (already present on `ApplicationUser`) over adding new username-based checks if you touch this area.
 
