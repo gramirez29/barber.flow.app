@@ -23,6 +23,7 @@ interface AppointmentFormProps {
 	errors: AppointmentFormErrors;
 	touched: Record<string, boolean>;
 	isEditMode: boolean;
+	readOnly?: boolean;
 	onFieldChange: <K extends keyof AppointmentDraft>(
 		key: K,
 		value: AppointmentDraft[K],
@@ -41,6 +42,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 	errors,
 	touched,
 	isEditMode,
+	readOnly = false,
 	onFieldChange,
 	onFieldBlur,
 	onSubmit,
@@ -88,7 +90,12 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 			{(["scheduled", "confirmed", "completed", "cancelled"] as AppointmentStatus[]).map((s) => (
 						<Pressable
 							key={s}
-							style={[styles.pill, (draft.status ?? "scheduled") === s && styles.pillActive]}
+							style={[
+								styles.pill,
+								(draft.status ?? "scheduled") === s && styles.pillActive,
+								readOnly && styles.pillDisabled,
+							]}
+							disabled={readOnly}
 							onPress={() => onStatusChange ? onStatusChange(s) : onFieldChange("status", s)}
 						>
 							<Text style={[(draft.status ?? "scheduled") === s ? styles.pillTextActive : styles.pillText]}>
@@ -102,6 +109,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 						{translateText("calendar.appointmentModal.completedInfo")}
 					</Text>
 				)}
+				{readOnly && (
+					<Text style={styles.helperInfo}>
+						{translateText("calendar.appointmentModal.readOnlyInfo")}
+					</Text>
+				)}
 			</View>
 
 			<View style={styles.formGroup}>
@@ -112,8 +124,9 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					onBlur={() => onFieldBlur("clientName")}
 					error={Boolean(touched.clientName && errors.clientName)}
 					mode="outlined"
+					editable={!readOnly}
 					right={
-						onOpenClientSearch ? (
+						onOpenClientSearch && !readOnly ? (
 							<TextInput.Icon
 								icon="account-search-outline"
 								onPress={onOpenClientSearch}
@@ -142,6 +155,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					keyboardType="phone-pad"
 					placeholder="0000-0000"
 					maxLength={9}
+					editable={!readOnly}
 					theme={paperTheme as any}
 				/>
 				{Boolean(touched.phone && errors.phone) && (
@@ -160,6 +174,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					placeholder={translateText(
 						"calendar.appointmentModal.servicePlaceholder",
 					)}
+					editable={!readOnly}
 					theme={paperTheme as any}
 				/>
 			</View>
@@ -183,6 +198,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					keyboardType="decimal-pad"
 					placeholder="0.00"
 					left={<TextInput.Affix text="CRC" />}
+					editable={!readOnly}
 					theme={paperTheme as any}
 				/>
 				{Boolean(touched.servicePrice && errors.servicePrice) && (
@@ -200,7 +216,12 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					{APPOINTMENT_PAYMENT_METHOD_OPTIONS.map((option) => (
 						<Pressable
 							key={option}
-							style={[styles.pill, draft.paymentMethodUsed === option && styles.pillActive]}
+							style={[
+								styles.pill,
+								draft.paymentMethodUsed === option && styles.pillActive,
+								readOnly && styles.pillDisabled,
+							]}
+							disabled={readOnly}
 							onPress={() => {
 								onFieldChange("paymentMethodUsed", option);
 								onPaymentMethodTouched?.();
@@ -223,17 +244,19 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 				<TextInput
 					label={translateText("calendar.appointmentModal.time")}
 					value={draft.time}
-					onPressIn={() => setTimePickerVisible(true)}
+					onPressIn={() => !readOnly && setTimePickerVisible(true)}
 					onBlur={() => onFieldBlur("time")}
 					error={Boolean(touched.time && errors.time)}
 					mode="outlined"
 					placeholder="HH:mm"
 					editable={false}
 					right={
-						<TextInput.Icon
-						icon="clock-outline"
-						onPress={() => setTimePickerVisible(true)}
-						/>
+						readOnly ? undefined : (
+							<TextInput.Icon
+							icon="clock-outline"
+							onPress={() => setTimePickerVisible(true)}
+							/>
+						)
 					}
 					theme={paperTheme as any}
 				/>
@@ -255,26 +278,29 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 					placeholder={translateText(
 						"calendar.appointmentModal.notesPlaceholder",
 					)}
+					editable={!readOnly}
 					theme={paperTheme as any}
 				/>
 			</View>
 
 			<View style={styles.actions}>
-				<Pressable
-					style={({ pressed }) => [styles.goldBtn, pressed && !isSaving && styles.goldBtnPressed, isSaving && styles.goldBtnDisabled]}
-					onPress={isSaving ? undefined : onSubmit}
-					disabled={isSaving}
-				>
-					{isSaving ? (
-						<ActivityIndicator size="small" color={theme.colors.background} />
-					) : (
-						<Text style={styles.goldBtnText}>
-							{isEditMode
-								? translateText("calendar.appointmentModal.saveChanges")
-								: translateText("calendar.appointmentModal.saveAppointment")}
-						</Text>
-					)}
-				</Pressable>
+				{!readOnly && (
+					<Pressable
+						style={({ pressed }) => [styles.goldBtn, pressed && !isSaving && styles.goldBtnPressed, isSaving && styles.goldBtnDisabled]}
+						onPress={isSaving ? undefined : onSubmit}
+						disabled={isSaving}
+					>
+						{isSaving ? (
+							<ActivityIndicator size="small" color={theme.colors.background} />
+						) : (
+							<Text style={styles.goldBtnText}>
+								{isEditMode
+									? translateText("calendar.appointmentModal.saveChanges")
+									: translateText("calendar.appointmentModal.saveAppointment")}
+							</Text>
+						)}
+					</Pressable>
+				)}
 				<Pressable
 					style={({ pressed }) => [
 						styles.cancelBtn,
@@ -329,6 +355,9 @@ const createStyles = (theme: AppTheme) =>
 		pillActive: {
 			backgroundColor: theme.colors.accent,
 			borderColor: theme.colors.accent,
+		},
+		pillDisabled: {
+			opacity: 0.5,
 		},
 		pillText: {
 			color: theme.colors.textSecondary,

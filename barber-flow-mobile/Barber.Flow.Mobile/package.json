@@ -12,8 +12,7 @@
     "lint": "eslint .",
     "test": "jest",
     "dev": "APP_ENV=development expo start",
-    "preview": "APP_ENV=preview expo start",
-    "build:preview": "eas build -p android --profile preview",
+    "build:testing": "eas build -p android --profile testing",
     "build:prod": "eas build -p android --profile production"
   },
   "dependencies": {

@@ -25,6 +25,7 @@ import type {
   AppointmentDraft,
   AppointmentStatus,
 } from "../features/appointments/appointments.types";
+import { mapClientPaymentMethodToAppointment } from "../features/appointments/appointments.types";
 import { useAppointmentForm } from "../features/appointments/useAppointmentForm";
 import { useDialog } from "../context/DialogContext";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
@@ -134,6 +135,10 @@ export const AppointmentFormScreen = () => {
 		const fullName = `${client.firstName} ${client.lastName}`.trim();
 		setField("clientName", fullName);
 		setField("phone", client.phone);
+		const mappedPaymentMethod = mapClientPaymentMethodToAppointment(client.paymentMethod);
+		if (mappedPaymentMethod) {
+			setField("paymentMethodUsed", mappedPaymentMethod);
+		}
 		setClientSearchVisible(false);
 	}, [setField]);
 
@@ -142,6 +147,10 @@ export const AppointmentFormScreen = () => {
 			const fullName = `${client.firstName} ${client.lastName}`.trim();
 			setField("clientName", fullName);
 			setField("phone", client.phone);
+			const mappedPaymentMethod = mapClientPaymentMethodToAppointment(client.paymentMethod);
+			if (mappedPaymentMethod) {
+				setField("paymentMethodUsed", mappedPaymentMethod);
+			}
 		}
 		// Store clientId in draft if needed for backend
 		setClientSelectorVisible(false);
@@ -154,6 +163,10 @@ export const AppointmentFormScreen = () => {
 			: translateText("calendar.appointmentModal.title"),
 		[params.mode, translateText],
 	);
+
+	const isReadOnly =
+		params.mode === "edit" &&
+		(draft.status === "completed" || draft.status === "cancelled");
 
 	const handleStatusChange = useCallback((next: AppointmentStatus) => {
 		const current = draft.status ?? "scheduled";
@@ -169,21 +182,24 @@ export const AppointmentFormScreen = () => {
 			}
 
 			if (current === "completed") {
-				showAlert(title, translateText("appointments.alerts.noCompletedIfNotConfirmed"));
+				showAlert(title, translateText("appointments.alerts.noConfirmedIfCompleted"));
+				return;
+			}
+
+			if (current === "cancelled") {
+				showAlert(title, translateText("appointments.alerts.noConfirmedIfCancelled"));
 				return;
 			}
 		}
 
 		if (next === "scheduled") {
-				if (current === "completed") {
+			if (current === "completed") {
 				showAlert(title, translateText("appointments.alerts.noScheduledIfCompleted"));
 				return;
 			}
-		}
 
-		if (next === "completed" || next === "confirmed") {
 			if (current === "cancelled") {
-				showAlert(title, translateText("appointments.alerts.noCancelledIfCompleted"));
+				showAlert(title, translateText("appointments.alerts.noScheduledIfCancelled"));
 				return;
 			}
 		}
@@ -194,7 +210,6 @@ export const AppointmentFormScreen = () => {
 		}
 
 		if (next === "cancelled") {
-			//if (current === "confirmed" || current === "completed") { 
 			if (current === "completed") {
 				showAlert(title, translateText("appointments.alerts.noCancelledIfCompleted"));
 				return;
@@ -342,6 +357,7 @@ const handleSubmit = async () => {
 						errors={errors}
 						touched={touched}
 						isEditMode={params.mode === "edit"}
+						readOnly={isReadOnly}
 						onFieldChange={setField}
 						onFieldBlur={onBlurField}
 						onSubmit={handleSubmit}
