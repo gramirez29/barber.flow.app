@@ -6,5 +6,6 @@ public record UserResponse(
     string? Email,
     string UserName,
     string? Role,
-    string? Token
+    string? Token,
+    string? RefreshToken
 );

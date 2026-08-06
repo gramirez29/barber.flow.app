@@ -6,6 +6,7 @@ import {
 	appointmentService,
 	type AppointmentSearchParams,
 } from "../../services/appointmentService";
+import { SessionExpiredError } from "../../services/apis/apiClient";
 
 interface AppointmentState {
 	appointments: Appointment[];
@@ -21,6 +22,17 @@ interface AppointmentState {
 	removeAppointment: (id: string) => Promise<void>;
 	getAppointmentsByDate: (date: string) => Appointment[];
 }
+
+interface PersistedAppointmentState {
+	appointments: Appointment[];
+}
+
+const isValidAppointment = (value: unknown): value is Appointment =>
+	typeof value === "object" &&
+	value !== null &&
+	typeof (value as Appointment).id === "string" &&
+	typeof (value as Appointment).date === "string" &&
+	typeof (value as Appointment).time === "string";
 
 const sortAppointments = (appointments: Appointment[]) =>
 	[...appointments].sort((left, right) => {
@@ -67,6 +79,12 @@ export const useAppointmentStore = create<AppointmentState>()(
 						set({ appointments: sortAppointments([...outside, ...fetched]) });
 					}
 				} catch (error) {
+					// Session-expired is already surfaced via the global dialog in apiClient;
+					// re-showing it as a generic fetch error here would be a duplicate/noisy popup.
+					if (error instanceof SessionExpiredError) {
+						return;
+					}
+
 					console.error("[AppointmentStore] fetchAppointmentsByDateRange failed:", error);
 					set({ error: error instanceof Error ? error.message : "Failed to load appointments" });
 				} finally {
@@ -125,6 +143,15 @@ export const useAppointmentStore = create<AppointmentState>()(
 		{
 			name: "barber-flow-appointments",
 			storage: createJSONStorage(() => AsyncStorage),
+			version: 1,
+			migrate: (persistedState) => {
+				const state = persistedState as Partial<PersistedAppointmentState> | undefined;
+				const appointments = Array.isArray(state?.appointments)
+					? state.appointments.filter(isValidAppointment)
+					: [];
+
+				return { appointments } as AppointmentState;
+			},
 			partialize: (state) => ({
 				appointments: state.appointments,
 			}),

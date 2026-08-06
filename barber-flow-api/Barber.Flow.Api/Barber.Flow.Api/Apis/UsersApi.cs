@@ -19,6 +19,10 @@ public static class UsersApi
             .WithName(nameof(GetAuthenticationUserAsync))
             .WithTags(UsersTag);
 
+        api.MapPost("/refresh", RefreshTokenAsync)
+            .WithName(nameof(RefreshTokenAsync))
+            .WithTags(UsersTag);
+
         api.MapDelete("/me", DeleteSelfAsync)
             .WithName(nameof(DeleteSelfAsync))
             .WithTags(UsersTag)
@@ -33,7 +37,17 @@ public static class UsersApi
         if (user == null)
             return TypedResults.BadRequest(new { message = "Invalid credentials" });
 
-        var response = new UserResponse(user.Id, user.Name, user.Email, user.UserName, user.Role, user.Token);
+        var response = new UserResponse(user.Id, user.Name, user.Email, user.UserName, user.Role, user.Token, user.RefreshToken);
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<IResult> RefreshTokenAsync(RefreshTokenRequest req, IUserService userService)
+    {
+        var user = await userService.RefreshAsync(req.RefreshToken);
+        if (user == null)
+            return TypedResults.Unauthorized();
+
+        var response = new UserResponse(user.Id, user.Name, user.Email, user.UserName, user.Role, user.Token, user.RefreshToken);
         return TypedResults.Ok(response);
     }
 

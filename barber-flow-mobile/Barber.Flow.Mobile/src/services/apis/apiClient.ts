@@ -2,8 +2,20 @@ import * as SecureStore from "expo-secure-store";
 import { useAuthStore } from "../../store/auth.store";
 import { BASE_URL } from "../../config";
 import type { ApplicationUser } from "../../types/applicationUser";
+import { showGlobalAlert } from "../../context/DialogContext";
+import { translate } from "../../localization/i18n";
 
 const APPLICATION_USER_STORAGE_KEY = "applicationUser";
+
+// Thrown when a 401 survives a refresh attempt. The global "session expired"
+// dialog is already shown at the point this is thrown (clearSessionOnUnauthorized),
+// so callers should treat it as already-handled rather than a generic fetch failure.
+export class SessionExpiredError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "SessionExpiredError";
+    }
+}
 
 const getStoredUser = async (): Promise<ApplicationUser | null> => {
     const storedUser = await SecureStore.getItemAsync(APPLICATION_USER_STORAGE_KEY);
@@ -60,6 +72,47 @@ const parseResponse = async (res: Response) => {
 const clearSessionOnUnauthorized = async () => {
     await SecureStore.deleteItemAsync(APPLICATION_USER_STORAGE_KEY);
     useAuthStore.getState().clearUser();
+    showGlobalAlert(translate("session.expiredTitle"), translate("session.expiredMessage"));
+};
+
+// Duplicates a few lines of authService.login's raw-fetch shape deliberately:
+// authService.ts imports apiFetch from this module, so importing authService
+// here would create a circular dependency.
+let refreshPromise: Promise<ApplicationUser | null> | null = null;
+
+const doRefresh = async (): Promise<ApplicationUser | null> => {
+    const storedUser = await getStoredUser();
+    if (!storedUser?.refreshToken) {
+        return null;
+    }
+
+    try {
+        const res = await fetch(`${BASE_URL}/api/users/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken: storedUser.refreshToken }),
+        });
+
+        if (!res.ok) {
+            return null;
+        }
+
+        const data: ApplicationUser = await res.json();
+        await SecureStore.setItemAsync(APPLICATION_USER_STORAGE_KEY, JSON.stringify(data));
+        useAuthStore.getState().updateTokens(data.token, data.refreshToken);
+        return data;
+    } catch {
+        return null;
+    }
+};
+
+const refreshSession = (): Promise<ApplicationUser | null> => {
+    if (!refreshPromise) {
+        refreshPromise = doRefresh().finally(() => {
+            refreshPromise = null;
+        });
+    }
+    return refreshPromise;
 };
 
 const extractErrorMessage = (body: unknown, status: number): string => {
@@ -90,7 +143,7 @@ const extractErrorMessage = (body: unknown, status: number): string => {
 
 export type ApiFetchOptions = Omit<RequestInit, "body" | "headers"> & { json?: unknown; headers?: Record<string, string> };
 
-export async function apiFetch(path: string, opts: ApiFetchOptions = {}) {
+export async function apiFetch(path: string, opts: ApiFetchOptions = {}, _isRetry = false): Promise<any> {
     const storedUser = await getStoredUser();
     const currentUser = useAuthStore.getState().user;
     const initialToken = currentUser?.token ?? storedUser?.token;
@@ -116,9 +169,19 @@ export async function apiFetch(path: string, opts: ApiFetchOptions = {}) {
 
     let response = await runRequest(initialToken);
 
+    if (!response.ok && response.status === 401 && !_isRetry) {
+        const refreshed = await refreshSession();
+        if (refreshed?.token) {
+            return apiFetch(path, opts, true);
+        }
+
+        await clearSessionOnUnauthorized();
+        throw new SessionExpiredError(translate("session.expiredMessage"));
+    }
+
     if (!response.ok && response.status === 401) {
         await clearSessionOnUnauthorized();
-        throw new Error("Sesión expirada. Por favor vuelve a iniciar sesión.");
+        throw new SessionExpiredError(translate("session.expiredMessage"));
     }
 
     if (!response.ok) {

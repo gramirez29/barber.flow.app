@@ -68,7 +68,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 						</View>
 
 						<PaperTextInput
-							label={translateText('manageUsersForm.email')}
+							label={translateText('forgotPassword.emailFieldText')}
 							value={email}
 							onChangeText={setEmail}
 							mode="outlined"

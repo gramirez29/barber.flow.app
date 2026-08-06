@@ -196,6 +196,10 @@
 			title: "Daily closeout formula",
 		},
 	},
+	session: {
+		expiredMessage: "Your session has expired. Please sign in again to continue.",
+		expiredTitle: "Session expired",
+	},
 	validation: {
 		appointmentClientNameRequired: "Client name is required.",
 		appointmentPaymentMethodRequired: "Select a payment method.",
@@ -264,6 +268,7 @@
 		subtitle: "Enter your email address and we'll send you a code to reset it.",
 		sendCode: "Send code",
 		backToLogin: "Back to login",
+		emailFieldText: "Type your email"
 	},
 	resetPassword: {
 		title: "New password",

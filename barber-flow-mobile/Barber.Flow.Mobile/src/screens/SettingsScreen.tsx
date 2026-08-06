@@ -86,18 +86,23 @@ export const SettingsScreen = () => {
 		values: reportSettingValues,
 	} = useReportCalculationSettingsForm();
 	const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
+	const [currentBarberId, setCurrentBarberId] = useState<string | null>(null);
 
 	useEffect(() => {
 		let mounted = true;
 
 		const loadReportSettings = async () => {
-		const settings = await settingsService.getReportCalculationSettings();
+		const [settings, barberId] = await Promise.all([
+			settingsService.getReportCalculationSettings(),
+			user?.userName ? settingsService.getBarberIdByUserName(user.userName) : Promise.resolve(null),
+		]);
 
 		if (!mounted) {
 			return;
 		}
 
 			loadReportSettingValues(settings);
+			setCurrentBarberId(barberId);
 			setReportSettingsLoading(false);
 		};
 
@@ -106,7 +111,7 @@ export const SettingsScreen = () => {
 		return () => {
 			mounted = false;
 		};
-	}, [loadReportSettingValues]);
+	}, [loadReportSettingValues, user?.userName]);
 
 	const primeNextBarberId = async () => {
 		setApplicationUserLoading(true);
@@ -323,7 +328,7 @@ export const SettingsScreen = () => {
 			return;
 		}
 
-		await settingsService.setReportCalculationSettings(reportSettingValues);
+		await settingsService.setReportCalculationSettings(reportSettingValues, currentBarberId ?? undefined);
 		showAlert(
 			translateText("common.save"),
 			translateText("settings.alerts.dailyReportSaved"),
@@ -332,7 +337,7 @@ export const SettingsScreen = () => {
 
 	const handleResetReportSettings = async () => {
 		resetReportSettingValues(DEFAULT_REPORT_CALCULATION_SETTINGS);
-		await settingsService.setReportCalculationSettings(DEFAULT_REPORT_CALCULATION_SETTINGS);
+		await settingsService.setReportCalculationSettings(DEFAULT_REPORT_CALCULATION_SETTINGS, currentBarberId ?? undefined);
 		showAlert(
 			translateText("common.reset"),
 			translateText("settings.alerts.dailyReportReset"),

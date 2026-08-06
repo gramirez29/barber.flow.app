@@ -6,4 +6,5 @@ export interface ApplicationUser {
 	password?: string;
 	role: string;
 	token: string;
+	refreshToken?: string;
 }

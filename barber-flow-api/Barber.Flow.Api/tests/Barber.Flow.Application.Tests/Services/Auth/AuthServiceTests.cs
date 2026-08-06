@@ -2,6 +2,7 @@ using Barber.Flow.Application.Services.Auth;
 using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
 using Barber.Flow.Domain.ValueObjects;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Barber.Flow.Application.Tests.Services.Auth;
@@ -12,12 +13,14 @@ public class AuthServiceTests
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IPasswordResetRepository> _passwordResetRepository = new();
     private readonly Mock<IEmailService> _emailService = new();
+    private readonly Mock<ILogger<AuthService>> _logger = new();
 
     private AuthService CreateSut() => new(
         _jwtAuthService.Object,
         _userRepository.Object,
         _passwordResetRepository.Object,
-        _emailService.Object);
+        _emailService.Object,
+        _logger.Object);
 
     private static User BuildUser(string email = "barber@example.com") => new()
     {
@@ -93,6 +96,23 @@ public class AuthServiceTests
         Assert.Equal(6, savedToken.OtpCode.Length);
         Assert.True(int.TryParse(savedToken.OtpCode, out _));
         _emailService.Verify(e => e.SendEmailAsync(user.Email!, It.IsAny<string>(), It.IsAny<string>(), true), Times.Once);
+    }
+
+    [Fact]
+    public async Task RequestPasswordResetAsync_EmailSendFails_InvalidatesTokenAndReturnsFalse()
+    {
+        var user = BuildUser();
+        _userRepository
+            .Setup(r => r.GetByEmailAsync(user.Email!, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _emailService
+            .Setup(e => e.SendEmailAsync(user.Email!, It.IsAny<string>(), It.IsAny<string>(), true))
+            .ThrowsAsync(new InvalidOperationException("SMTP unavailable"));
+
+        var result = await CreateSut().RequestPasswordResetAsync(user.Email!);
+
+        Assert.False(result);
+        _passwordResetRepository.Verify(r => r.InvalidateAllForUserAsync(user.Id.ToString()), Times.Exactly(2));
     }
 
     [Fact]

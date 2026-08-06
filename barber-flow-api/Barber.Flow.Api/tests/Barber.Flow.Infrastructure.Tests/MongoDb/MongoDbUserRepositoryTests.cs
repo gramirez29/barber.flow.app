@@ -79,6 +79,29 @@ public class MongoDbUserRepositoryTests
     }
 
     [Fact]
+    public async Task GetByIdAsync_ExistingUser_ReturnsIt()
+    {
+        var sut = CreateSut();
+        var user = BuildUser();
+        await sut.CreateAsync(user);
+
+        var result = await sut.GetByIdAsync(user.Id);
+
+        Assert.NotNull(result);
+        Assert.Equal(user.UserName, result!.UserName);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_UnknownUser_ReturnsNull()
+    {
+        var sut = CreateSut();
+
+        var result = await sut.GetByIdAsync(Guid.NewGuid());
+
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task UpdatePasswordAsync_ExistingUser_UpdatesPasswordAndReturnsTrue()
     {
         var sut = CreateSut();
