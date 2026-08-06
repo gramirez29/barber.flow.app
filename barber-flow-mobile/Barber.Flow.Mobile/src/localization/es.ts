@@ -196,6 +196,10 @@
 			title: "Fórmula del cierre diario",
 		},
 	},
+	session: {
+		expiredMessage: "Tu sesión ha expirado. Por favor inicia sesión de nuevo para continuar.",
+		expiredTitle: "Sesión expirada",
+	},
 	validation: {
 		appointmentClientNameRequired: "El nombre del cliente es obligatorio.",
 		appointmentPaymentMethodRequired: "Selecciona un método de pago.",
@@ -264,6 +268,7 @@
 		subtitle: "Introduce tu correo electrónico y te enviaremos un código para restablecerla.",
 		sendCode: "Enviar código",
 		backToLogin: "Volver al inicio",
+		emailFieldText: "Ingresa el correo"
 	},
 	resetPassword: {
 		title: "Nueva contraseña",

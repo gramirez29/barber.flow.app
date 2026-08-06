@@ -1,12 +1,8 @@
 ﻿using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using System.Collections;
 using System.Collections.Concurrent;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace Barber.Flow.Infrastructure.Services.Auth;
 
@@ -57,10 +53,15 @@ public class InMemoryUserRepository() : IUserRepository
         var user = users.FirstOrDefault();
         if (user != null && string.Equals(user.Password, password, StringComparison.Ordinal))
         {
-            user.Token = BuildJwtToken(user);
+            user.Token = JwtTokenBuilder.Build(user, _config ?? throw new InvalidOperationException("Jwt configuration not available"));
         }
 
         return Task.FromResult(user);
+    }
+
+    public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellation = default)
+    {
+        return Task.FromResult(_store.Values.FirstOrDefault(u => u.Id == id));
     }
 
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellation = default)
@@ -82,35 +83,5 @@ public class InMemoryUserRepository() : IUserRepository
         if (existing == null) return Task.FromResult(false);
         existing.Password = newPassword;
         return Task.FromResult(true);
-    }
-
-    private string BuildJwtToken(User user)
-    {
-        var jwt = _config?.GetSection("Jwt") ?? throw new InvalidOperationException("Jwt configuration not available");
-        var key = jwt["Key"] ?? throw new InvalidOperationException("Jwt:Key not configured");
-        var issuer = jwt["Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer not configured");
-        var audience = jwt["Audience"] ?? throw new InvalidOperationException("Jwt:Audience not configured");
-        var expiryMinutes = int.Parse(jwt["ExpiryMinutes"] ?? "60");
-
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
-        {
-            new Claim(JwtRegisteredClaimNames.Sub,    user.UserName),
-            new Claim("username",                     user.UserName),
-            new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
-            new Claim(ClaimTypes.Role,                user.Role ?? string.Empty),
-        };
-
-        var token = new JwtSecurityToken(
-            issuer,
-            audience,
-            claims,
-            expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
-            signingCredentials: credentials
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

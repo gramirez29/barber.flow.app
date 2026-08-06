@@ -1,11 +1,8 @@
 using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
+using Barber.Flow.Infrastructure.Services.Auth;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace Barber.Flow.Infrastructure.Services.MongoDb;
 
@@ -51,8 +48,13 @@ public sealed class MongoDbUserRepository : IUserRepository
         if (user == null || !string.Equals(user.Password, password.Trim(), StringComparison.Ordinal))
             return null;
 
-        user.Token = BuildJwtToken(user);
+        user.Token = JwtTokenBuilder.Build(user, _config);
         return user;
+    }
+
+    public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellation = default)
+    {
+        return await _collection.Find(Builders<User>.Filter.Eq(u => u.Id, id)).FirstOrDefaultAsync(cancellation);
     }
 
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellation = default)
@@ -71,35 +73,5 @@ public sealed class MongoDbUserRepository : IUserRepository
 
         var result = await _collection.UpdateOneAsync(filter, update, cancellationToken: cancellation);
         return result.ModifiedCount > 0;
-    }
-
-    private string BuildJwtToken(User user)
-    {
-        var jwt = _config.GetSection("Jwt");
-        var key = jwt["Key"] ?? throw new InvalidOperationException("Jwt:Key not configured");
-        var issuer = jwt["Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer not configured");
-        var audience = jwt["Audience"] ?? throw new InvalidOperationException("Jwt:Audience not configured");
-        var expiryMinutes = int.Parse(jwt["ExpiryMinutes"] ?? "60");
-
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-            new Claim("username", user.UserName),
-            new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
-            new Claim(ClaimTypes.Role, user.Role ?? string.Empty),
-        };
-
-        var token = new JwtSecurityToken(
-            issuer,
-            audience,
-            claims,
-            expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
-            signingCredentials: credentials
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

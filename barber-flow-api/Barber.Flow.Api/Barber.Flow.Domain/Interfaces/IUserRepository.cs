@@ -10,6 +10,8 @@ public interface IUserRepository
     
         Task<Entities.User?> GetAuthenticationUserAsync(string userName, string password, CancellationToken cancellation = default);
 
+        Task<Entities.User?> GetByIdAsync(Guid id, CancellationToken cancellation = default);
+
         Task<Entities.User?> GetByEmailAsync(string email, CancellationToken cancellation = default);
 
         Task<bool> UpdatePasswordAsync(string userName, string newPassword, CancellationToken cancellation = default);

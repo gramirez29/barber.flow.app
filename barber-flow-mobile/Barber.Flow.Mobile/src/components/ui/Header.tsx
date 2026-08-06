@@ -38,7 +38,7 @@ export const Header = ({ title, onMenuPress, onBellPress }: HeaderProps) => {
         ]}
     >
         <LinearGradient
-            colors={[theme.colors.background, theme.colors.surface, theme.colors.background]}
+            colors={[theme.colors.background, theme.colors.accent, theme.colors.background]}
             end={{ x: 1, y: 0.5 }}
             start={{ x: 0, y: 0.5 }}
             style={styles.gradient}

@@ -6,6 +6,7 @@ type AuthState = {
 	user: ApplicationUser | null;
 	setUser: (user: ApplicationUser) => void;
 	clearUser: () => void;
+	updateTokens: (token: string, refreshToken?: string) => void;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -17,4 +18,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 		useAdminAccessStore.getState().setSafeModeEnabled(true);
 	},
 	clearUser: () => set({ user: null }),
+	// Used by a silent background token refresh — unlike setUser, this must NOT
+	// re-arm admin safe mode, since the user didn't actually re-authenticate.
+	updateTokens: (token, refreshToken) =>
+		set((state) => (state.user ? { user: { ...state.user, token, refreshToken } } : state)),
 }));

@@ -1,14 +1,16 @@
 ﻿using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
 using Barber.Flow.Infrastructure.Services.Auth.DTOs;
+using Microsoft.Extensions.Logging;
 
 namespace Barber.Flow.Application.Services.Auth;
 
 public class AuthService(
-    IJwtAuthService jwtAuthService, 
-    IUserRepository userRepository, 
+    IJwtAuthService jwtAuthService,
+    IUserRepository userRepository,
     IPasswordResetRepository passwordResetRepository,
-    IEmailService emailService) : IAuthService
+    IEmailService emailService,
+    ILogger<AuthService> logger) : IAuthService
 {
     public async Task<LoginResult?> GetJsonWebTokenAsync(string userOrEmail, string password, CancellationToken cancellationToken = default)
     {
@@ -39,10 +41,17 @@ public class AuthService(
         // Send Email with OTP
         var subject = "Barber Flow - Código de recuperación de contraseña";
         var body = GetEmailTemplate(user.Name, otp);
-        
-        await emailService.SendEmailAsync(email, subject, body, true);
 
-        Console.WriteLine($"[DEBUG] OTP for {email}: {otp}");
+        try
+        {
+            await emailService.SendEmailAsync(email, subject, body, true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send password reset email to {Email}", email);
+            await passwordResetRepository.InvalidateAllForUserAsync(user.Id.ToString());
+            return false;
+        }
 
         return true;
     }

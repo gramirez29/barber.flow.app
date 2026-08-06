@@ -15,4 +15,6 @@ public class User
     public string? Role { get; set; } // e.g., Admin, Barber
 
     public string? Token { get; set; }
+
+    public string? RefreshToken { get; set; }
 }

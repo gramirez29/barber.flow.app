@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { Modal, StyleSheet, Text, View } from "react-native";
 import { Button } from "react-native-paper";
 import { AppTheme } from "../theme/themes";
@@ -25,6 +25,13 @@ const DialogContext = createContext<DialogContextType | undefined>(undefined);
 
 const DEFAULT_BUTTONS: DialogButton[] = [{ text: "OK" }];
 
+// Imperative bridge so non-component modules (e.g. apiClient.ts, which can't
+// use the useDialog hook) can still trigger the app-wide dialog.
+let bridgeShowAlert: DialogContextType["showAlert"] = () => {};
+
+export const showGlobalAlert: DialogContextType["showAlert"] = (title, message, buttons) =>
+	bridgeShowAlert(title, message, buttons);
+
 export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const { theme } = useAppTheme();
 	const styles = React.useMemo(() => createStyles(theme), [theme]);
@@ -41,6 +48,13 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 		},
 		[],
 	);
+
+	useEffect(() => {
+		bridgeShowAlert = showAlert;
+		return () => {
+			bridgeShowAlert = () => {};
+		};
+	}, [showAlert]);
 
 	const dismiss = () => {
 		setDialog((prev) => ({ ...prev, visible: false }));

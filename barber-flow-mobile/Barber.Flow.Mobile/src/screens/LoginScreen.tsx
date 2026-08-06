@@ -1,14 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
 	StyleSheet,
 	Text,
 	View,
 	ImageBackground,
-	KeyboardAvoidingView,
 	Platform,
 	ScrollView,
 	TouchableWithoutFeedback,
 	Keyboard,
+	KeyboardEvent,
 	Pressable,
 	ActivityIndicator,
 	useWindowDimensions,
@@ -51,6 +51,60 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 
+	const scrollRef = useRef<ScrollView>(null);
+	const scrollOffsetRef = useRef(0);
+	const usernameRowRef = useRef<View>(null);
+	const passwordRowRef = useRef<View>(null);
+	const focusedRowRef = useRef<React.RefObject<View | null> | null>(null);
+	const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+	// Scrolls just enough to clear the keyboard for the given row, instead of
+	// jumping to the end of the (keyboard-height-padded) content — measuring
+	// the row's actual on-screen position keeps the motion small and precise.
+	const scrollFieldAboveKeyboard = (rowRef: React.RefObject<View | null>) => {
+		const node = rowRef.current;
+		if (!node) return;
+
+		node.measure((_x, _y, _width, height, _pageX, pageY) => {
+			const margin = 16;
+			const visibleBottom = screenHeight - keyboardHeight - margin;
+			const fieldBottom = pageY + height;
+
+			if (fieldBottom > visibleBottom) {
+				const delta = fieldBottom - visibleBottom;
+				scrollRef.current?.scrollTo({ y: scrollOffsetRef.current + delta, animated: true });
+			}
+		});
+	};
+
+	// Manual keyboard-height tracking instead of relying on native window resize
+	// (adjustResize/KeyboardAvoidingView is unreliable on newer Android with
+	// edge-to-edge enabled) — we pad the scroll content ourselves and scroll
+	// to reveal the focused field once we know the real keyboard height.
+	useEffect(() => {
+		const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+		const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+		const showSub = Keyboard.addListener(showEvent, (e: KeyboardEvent) => {
+			setKeyboardHeight(e.endCoordinates.height);
+		});
+		const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+
+		return () => {
+			showSub.remove();
+			hideSub.remove();
+		};
+	}, []);
+
+	// Runs after the paddingBottom driven by keyboardHeight has actually
+	// re-rendered, instead of racing the scroll against a still-stale layout.
+	useEffect(() => {
+		if (keyboardHeight > 0 && focusedRowRef.current) {
+			scrollFieldAboveKeyboard(focusedRowRef.current);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [keyboardHeight]);
+
 	const setUser = useAuthStore((s) => s.setUser);
 
 	const submit = async () => {
@@ -73,15 +127,17 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 	return (
 		<SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
 			<StatusBar style="light" />
-			<KeyboardAvoidingView
-				style={styles.flex}
-				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-			>
+			<View style={styles.flex}>
 				<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
 					<ScrollView
-						contentContainerStyle={styles.scroll}
+						ref={scrollRef}
+						contentContainerStyle={[styles.scroll, { paddingBottom: keyboardHeight }]}
 						keyboardShouldPersistTaps="handled"
 						showsVerticalScrollIndicator={false}
+						onScroll={(e) => {
+							scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
+						}}
+						scrollEventThrottle={16}
 					>
 						{/* ── Hero image (top half) ── */}
 						<ImageBackground
@@ -128,6 +184,10 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
 							<View style={styles.inputs}>
 								{/* Username */}
+								<View
+									ref={usernameRowRef}
+									collapsable={false}
+								>
 								<PaperTextInput
 									mode="outlined"
 									label={translateText('login.username')}
@@ -137,6 +197,10 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 									autoCapitalize="none"
 									autoCorrect={false}
 									returnKeyType="next"
+									onFocus={() => {
+										focusedRowRef.current = usernameRowRef;
+										scrollFieldAboveKeyboard(usernameRowRef);
+									}}
 									theme={PAPER_THEME}
 									outlineStyle={styles.inputOutline}
 									style={styles.paperInput}
@@ -148,8 +212,13 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 										/>
 									}
 								/>
+								</View>
 
 								{/* Password */}
+								<View
+									ref={passwordRowRef}
+									collapsable={false}
+								>
 								<PaperTextInput
 									mode="outlined"
 									label={translateText('login.password')}
@@ -159,6 +228,10 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 									secureTextEntry={!passwordVisible}
 									returnKeyType="done"
 									onSubmitEditing={submit}
+									onFocus={() => {
+										focusedRowRef.current = passwordRowRef;
+										scrollFieldAboveKeyboard(passwordRowRef);
+									}}
 									theme={PAPER_THEME}
 									outlineStyle={styles.inputOutline}
 									style={styles.paperInput}
@@ -182,6 +255,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 										/>
 									}
 								/>
+							</View>
 							</View>
 
 							{/* Error banner */}
@@ -229,7 +303,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 						</View>
 					</ScrollView>
 				</TouchableWithoutFeedback>
-			</KeyboardAvoidingView>
+			</View>
 		</SafeAreaView>
 	);
 };

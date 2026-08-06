@@ -47,7 +47,7 @@ public static class ApplicationExtensions
         // Bind feature flags and MongoDB settings
         services.Configure<FeatureFlags>(configuration.GetSection("Features"));
         services.Configure<MongoDbSettings>(configuration.GetSection("MongoDb"));
-        services.Configure<EmailSettings>(configuration.GetSection("Email"));
+        services.Configure<ResendSettings>(configuration.GetSection("Resend"));
 
         var useMongoDb = configuration.GetValue<bool>("Features:UseMongoDb");
         var useRealEmail = configuration.GetValue<bool>("Features:UseRealEmail");
@@ -57,7 +57,14 @@ public static class ApplicationExtensions
 
         if (useRealEmail)
         {
-            services.AddScoped<IEmailService, EmailService>();
+            var resendApiKey = configuration.GetSection("Resend").Get<ResendSettings>()?.ApiKey
+                ?? throw new InvalidOperationException("Resend:ApiKey is required when Features:UseRealEmail is true.");
+
+            services.AddHttpClient<IEmailService, ResendEmailService>(client =>
+            {
+                client.BaseAddress = new Uri("https://api.resend.com/");
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", resendApiKey);
+            });
         }
         else
         {
@@ -82,6 +89,7 @@ public static class ApplicationExtensions
             services.AddSingleton<IBarberShopRepository, MongoDbBarberShopRepository>();
             services.AddSingleton<IAppointmentRepository, MongoDbAppointmentRepository>();
             services.AddSingleton<IPasswordResetRepository, MongoDbPasswordResetRepository>();
+            services.AddSingleton<IRefreshTokenRepository, MongoDbRefreshTokenRepository>();
             services.AddSingleton<IBarberRepository, MongoDbBarberRepository>();
             services.AddSingleton<IUserRepository, MongoDbUserRepository>();
             services.AddSingleton<Barber.Flow.Infrastructure.Services.IDataMigrationService, Barber.Flow.Infrastructure.Services.DataMigrationService>();
@@ -92,12 +100,14 @@ public static class ApplicationExtensions
             services.AddSingleton<IBarberShopRepository, InMemoryBarberShopRepository>();
             services.AddSingleton<IAppointmentRepository, InMemoryAppointmentRepository>();
             services.AddSingleton<IPasswordResetRepository, InMemoryPasswordResetRepository>();
+            services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
             services.AddSingleton<IBarberRepository, InMemoryBarberRepository>();
             services.AddSingleton<IUserRepository, InMemoryUserRepository>();
         }
 
         services.AddScoped<IBarberService, BarberService>();
 
+        services.AddSingleton<IUserTokenBuilder, UserTokenBuilder>();
         services.AddScoped<IUserService, UserService>();
 
         services.AddScoped<IReportService, ReportService>();
