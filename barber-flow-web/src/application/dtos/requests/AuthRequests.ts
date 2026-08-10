@@ -9,10 +9,11 @@ export interface ForgotPasswordRequest {
 
 export interface VerifyOtpRequest {
   email: string;
-  otp: string;
+  otpCode: string;
 }
 
 export interface ResetPasswordRequest {
   email: string;
+  otpCode: string;
   newPassword: string;
 }

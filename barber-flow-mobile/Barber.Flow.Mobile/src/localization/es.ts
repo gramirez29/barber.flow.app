@@ -206,6 +206,7 @@
 		appointmentServicePricePositive: "El precio debe ser mayor que 0.",
 		appointmentServicePriceRequired: "El precio del servicio es obligatorio.",
 		appointmentTimeRequired: "La hora es obligatoria.",
+		appointmentDateTimeFuture: "La fecha y hora deben ser en el futuro.",
 		addressRequired: "La dirección es obligatoria.",
 		barberNameRequired: "El nombre del barbero es obligatorio.",
 		barberPhoneFormat: "El teléfono del barbero debe tener el formato 0000-0000.",

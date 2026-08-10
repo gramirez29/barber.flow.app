@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Appointment, AppointmentDraft } from "./appointments.types";
-import { validateRequiredField } from "../../utils/formatUtil";
+import { isFutureDateTime, validateRequiredField } from "../../utils/formatUtil";
 
 export interface AppointmentFormErrors {
 	clientName?: string;
@@ -36,6 +36,7 @@ export const buildCreateDraft = (
 export const validateAppointmentField = (
 	key: keyof AppointmentDraft,
 	value: string | number | undefined,
+	date?: string,
 ): string | undefined => {
 	if (key === "clientName") {
 		return validateRequiredField(String(value ?? ""))
@@ -58,9 +59,17 @@ export const validateAppointmentField = (
 	}
 
 	if (key === "time") {
-		return validateRequiredField(String(value ?? ""))
-			? "validation.appointmentTimeRequired"
-			: undefined;
+		const normalizedTime = String(value ?? "");
+
+		if (validateRequiredField(normalizedTime)) {
+			return "validation.appointmentTimeRequired";
+		}
+
+		if (date && !isFutureDateTime(date, normalizedTime)) {
+			return "validation.appointmentDateTimeFuture";
+		}
+
+		return undefined;
 	}
 
 	if (key === "servicePrice") {
@@ -165,7 +174,7 @@ export const useAppointmentForm = ({
 			key === "servicePrice" ||
 			key === "paymentMethodUsed"
 		) {
-			const nextError = validateAppointmentField(key, String(value ?? ""));
+			const nextError = validateAppointmentField(key, String(value ?? ""), draft.date);
 			setErrors((currentErrors) => ({
 				...currentErrors,
 				[key]: nextError,
@@ -186,7 +195,7 @@ export const useAppointmentForm = ({
 			key === "servicePrice" ||
 			key === "paymentMethodUsed"
 		) {
-			const nextError = validateAppointmentField(key, String(draft[key] ?? ""));
+			const nextError = validateAppointmentField(key, String(draft[key] ?? ""), draft.date);
 			setErrors((currentErrors) => ({
 				...currentErrors,
 				[key]: nextError,
@@ -203,7 +212,7 @@ export const useAppointmentForm = ({
 			),
 			phone: validateAppointmentField("phone", draft.phone),
 			servicePrice: validateAppointmentField("servicePrice", draft.servicePrice),
-			time: validateAppointmentField("time", draft.time),
+			time: validateAppointmentField("time", draft.time, draft.date),
 		};
 
 		setErrors(nextErrors);

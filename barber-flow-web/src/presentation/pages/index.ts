@@ -3,6 +3,8 @@ export * from './DashboardPage';
 export * from './AppointmentsPage';
 export * from './ClientsPage';
 export * from './ReportsPage';
+export * from './NotificationsPage';
 export * from './SettingsPage';
 export * from './ForgotPasswordPage';
+export * from './VerifyOtpPage';
 export * from './ResetPasswordPage';

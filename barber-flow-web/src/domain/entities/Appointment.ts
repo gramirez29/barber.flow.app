@@ -1,5 +1,5 @@
-export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled';
-export type PaymentMethod = 'cash' | 'sinpe_movil' | 'transfer' | 'none';
+export type AppointmentStatus = 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+export type AppointmentPaymentMethod = 'cash' | 'sinpeMovil' | 'transfer';
 
 export interface Appointment {
   id?: string;
@@ -10,7 +10,7 @@ export interface Appointment {
   status: AppointmentStatus;
   serviceName?: string;
   servicePrice?: number;
-  paymentMethodUsed?: PaymentMethod;
+  paymentMethodUsed?: AppointmentPaymentMethod;
   notes?: string;
   shopId?: string;
 }
@@ -27,5 +27,5 @@ export interface CreateAppointmentRequest {
 
 export interface UpdateAppointmentRequest extends CreateAppointmentRequest {
   status?: AppointmentStatus;
-  paymentMethodUsed?: PaymentMethod;
+  paymentMethodUsed?: AppointmentPaymentMethod;
 }

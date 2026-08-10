@@ -92,6 +92,7 @@ public static class ApplicationExtensions
             services.AddSingleton<IRefreshTokenRepository, MongoDbRefreshTokenRepository>();
             services.AddSingleton<IBarberRepository, MongoDbBarberRepository>();
             services.AddSingleton<IUserRepository, MongoDbUserRepository>();
+            services.AddSingleton<IReportRepository, MongoDbReportRepository>();
             services.AddSingleton<Barber.Flow.Infrastructure.Services.IDataMigrationService, Barber.Flow.Infrastructure.Services.DataMigrationService>();
         }
         else
@@ -103,6 +104,7 @@ public static class ApplicationExtensions
             services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
             services.AddSingleton<IBarberRepository, InMemoryBarberRepository>();
             services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+            services.AddSingleton<IReportRepository, InMemoryReportRepository>();
         }
 
         services.AddScoped<IBarberService, BarberService>();
@@ -111,7 +113,6 @@ public static class ApplicationExtensions
         services.AddScoped<IUserService, UserService>();
 
         services.AddScoped<IReportService, ReportService>();
-        services.AddSingleton<IReportRepository, InMemoryReportRepository>();
 
         services.AddScoped<IAppointmentService, AppointmentService>();
 

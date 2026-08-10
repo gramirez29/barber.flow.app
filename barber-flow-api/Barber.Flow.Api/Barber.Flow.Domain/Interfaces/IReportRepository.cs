@@ -4,5 +4,5 @@ namespace Barber.Flow.Domain.Interfaces;
 
 public interface IReportRepository
 {
-    Task<DailyReport> GetDailyReportAsync(DateOnly reportDate, CancellationToken cancellationToken = default);
+    Task<DailyReport> GetDailyReportAsync(DateOnly reportDate, string? requestingUserName = null, CancellationToken cancellationToken = default);
 }

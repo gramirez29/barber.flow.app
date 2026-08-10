@@ -9,10 +9,10 @@ export class ForgotPasswordUseCase {
   }
 
   async verifyOtp(request: VerifyOtpRequest): Promise<{ message: string }> {
-    return this.authRepository.verifyOtp(request.email, request.otp);
+    return this.authRepository.verifyOtp(request.email, request.otpCode);
   }
 
   async resetPassword(request: ResetPasswordRequest): Promise<{ message: string }> {
-    return this.authRepository.resetPassword(request.email, request.newPassword);
+    return this.authRepository.resetPassword(request.email, request.otpCode, request.newPassword);
   }
 }

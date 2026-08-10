@@ -5,7 +5,7 @@ namespace Barber.Flow.Infrastructure.Services.InMemory;
 
 public class InMemoryReportRepository : IReportRepository
 {
-    public Task<DailyReport> GetDailyReportAsync(DateOnly reportDate, CancellationToken cancellationToken = default)
+    public Task<DailyReport> GetDailyReportAsync(DateOnly reportDate, string? requestingUserName = null, CancellationToken cancellationToken = default)
     {
         var daySeed = Math.Abs(reportDate.DayNumber % 7);
         var baseHour = 9;

@@ -6,17 +6,17 @@
 export const CLIENT_CONSTANTS = {
   // Payment Methods
   PAYMENT_METHODS: {
-    CASH: 'cash',
-    SINPE_MOVIL: 'sinpe_movil',
-    TRANSFER: 'transfer',
-    NONE: 'none',
+    CASH: 'Cash',
+    SINPE_MOVIL: 'Sinpe Movil',
+    TRANSFER: 'Transfer',
+    NONE: 'None',
   } as const,
 
   PAYMENT_METHOD_LABELS: {
-    cash: 'Efectivo',
-    sinpe_movil: 'SINPE Móvil',
-    transfer: 'Transferencia',
-    none: 'No especificado',
+    Cash: 'Efectivo',
+    'Sinpe Movil': 'SINPE Móvil',
+    Transfer: 'Transferencia',
+    None: 'No especificado',
   } as const,
 
   // Validación

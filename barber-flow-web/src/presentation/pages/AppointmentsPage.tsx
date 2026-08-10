@@ -1,119 +1,85 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Box, Typography, CircularProgress } from '@mui/material';
 import {
-  Container,
-  Box,
-  Typography,
-  Stack,
-  Tab,
-  Tabs,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  format,
+} from 'date-fns';
+import { es } from 'date-fns/locale';
 import {
   AppointmentForm,
-  AppointmentList,
-  AppointmentStats,
-  AppointmentFilter,
-  AppointmentCalendar,
+  AppointmentAgendaList,
+  AppointmentSummaryCard,
+  AppointmentCalendarGrid,
+  AppointmentWeekChips,
 } from '@presentation/components/appointments';
+import type { CalendarViewMode } from '@presentation/components/appointments';
 import { useAppointments } from '@presentation/hooks/useAppointments';
-import { useNotification } from '@presentation/context/NotificationContext';
 import { CreateAppointmentFormData } from '@shared/validation/appointmentSchemas';
 import { Appointment } from '@domain/entities/Appointment';
+import { appColors } from '@presentation/theme/appColors';
+import heroImage from '@/assets/images/barber-flow-background-image.jpg';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
+type ViewMode = CalendarViewMode;
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+const toKey = (date: Date) => format(date, 'yyyy-MM-dd');
 
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`appointments-tabpanel-${index}`}
-      aria-labelledby={`appointments-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
-/**
- * AppointmentsPage: Página de gestión de citas
- *
- * Features:
- * - Vista de calendario/tabla
- * - Crear nuevas citas
- * - Editar citas existentes
- * - Eliminar citas
- * - Cambiar estado (completada/cancelada)
- * - Mover citas a otro horario
- * - Buscar y filtrar citas
- * - Estadísticas del día
- */
 export const AppointmentsPage: React.FC = () => {
-  const [tabValue, setTabValue] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [visibleMonth, setVisibleMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [formOpen, setFormOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string | null>(null);
-  const [, setFilterDate] = useState('');
-  const { showNotification } = useNotification();
 
   const {
     appointments,
     isLoadingAppointments,
     fetchAppointmentsByDate,
-    searchAppointments,
+    fetchAppointmentsByDateRange,
     createAppointment,
     updateAppointment,
-    deleteAppointment,
-    updateAppointmentStatus,
+    moveAppointment,
   } = useAppointments();
 
-  // TODO: Reemplazar con datos reales cuando se integre el backend
-  const mockAppointments: Appointment[] = [];
-  const displayAppointments = appointments.length > 0 ? appointments : mockAppointments;
+  useEffect(() => {
+    if (viewMode === 'month') {
+      fetchAppointmentsByDateRange(
+        format(startOfMonth(visibleMonth), 'yyyy-MM-dd'),
+        format(endOfMonth(visibleMonth), 'yyyy-MM-dd')
+      );
+    } else if (viewMode === 'week') {
+      fetchAppointmentsByDateRange(
+        format(startOfWeek(selectedDate, { weekStartsOn: 0 }), 'yyyy-MM-dd'),
+        format(endOfWeek(selectedDate, { weekStartsOn: 0 }), 'yyyy-MM-dd')
+      );
+    } else {
+      fetchAppointmentsByDate(toKey(selectedDate));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, visibleMonth, selectedDate]);
 
-  // Estadísticas
-  const totalAppointments = displayAppointments.length;
-  const scheduledAppointments = displayAppointments.filter(
-    (apt) => apt.status === 'scheduled'
-  ).length;
-  const completedAppointments = displayAppointments.filter(
-    (apt) => apt.status === 'completed'
-  ).length;
-  const totalIncome = displayAppointments.reduce(
-    (sum, apt) => sum + (apt.servicePrice || 0),
-    0
+  const appointmentsForSelectedDay = useMemo(
+    () => appointments.filter((apt) => apt.date === toKey(selectedDate)),
+    [appointments, selectedDate]
   );
 
-  // Manejar creación/edición de citas
-  const handleFormSubmit = async (data: CreateAppointmentFormData) => {
-    try {
-      if (editingAppointment) {
-        await updateAppointment(editingAppointment.id!, data);
-        setEditingAppointment(null);
-      } else {
-        await createAppointment(data);
-      }
-      setFormOpen(false);
-    } catch {
-      // Error ya manejado por el hook
-    }
+  const appointmentDates = useMemo(() => new Set(appointments.map((apt) => apt.date)), [appointments]);
+
+  const appointmentCountByDate = useMemo(() => {
+    const map = new Map<string, number>();
+    appointments.forEach((apt) => map.set(apt.date, (map.get(apt.date) || 0) + 1));
+    return map;
+  }, [appointments]);
+
+  const handleOpenCreateForm = () => {
+    setEditingAppointment(null);
+    setFormOpen(true);
   };
 
-  const handleOpenForm = (appointment?: Appointment) => {
-    if (appointment) {
-      setEditingAppointment(appointment);
-    } else {
-      setEditingAppointment(null);
-    }
+  const handleSelectAppointment = (appointment: Appointment) => {
+    setEditingAppointment(appointment);
     setFormOpen(true);
   };
 
@@ -122,174 +88,185 @@ export const AppointmentsPage: React.FC = () => {
     setEditingAppointment(null);
   };
 
-  const handleEdit = (appointment: Appointment) => {
-    handleOpenForm(appointment);
-  };
-
-  const handleDelete = async (appointment: Appointment) => {
-    if (window.confirm(`¿Eliminar cita de ${appointment.clientName}?`)) {
-      try {
-        await deleteAppointment(appointment.id!);
-      } catch {
-        // Error ya manejado
-      }
+  const refreshCurrentRange = () => {
+    if (viewMode === 'month') {
+      fetchAppointmentsByDateRange(
+        format(startOfMonth(visibleMonth), 'yyyy-MM-dd'),
+        format(endOfMonth(visibleMonth), 'yyyy-MM-dd')
+      );
+    } else if (viewMode === 'week') {
+      fetchAppointmentsByDateRange(
+        format(startOfWeek(selectedDate, { weekStartsOn: 0 }), 'yyyy-MM-dd'),
+        format(endOfWeek(selectedDate, { weekStartsOn: 0 }), 'yyyy-MM-dd')
+      );
+    } else {
+      fetchAppointmentsByDate(toKey(selectedDate));
     }
   };
 
-  const handleComplete = async (appointment: Appointment) => {
-    try {
-      await updateAppointmentStatus(appointment.id!, 'completed');
-    } catch {
-      // Error ya manejado
+  const handleFormSubmit = async (data: CreateAppointmentFormData) => {
+    const { price, paymentMethod, ...rest } = data;
+    const request = {
+      ...rest,
+      servicePrice: price,
+      paymentMethodUsed: paymentMethod,
+    };
+
+    if (editingAppointment) {
+      await updateAppointment(editingAppointment.id!, request);
+    } else {
+      await createAppointment(request);
     }
+    refreshCurrentRange();
   };
 
-  const handleCancel = async (appointment: Appointment) => {
-    if (window.confirm(`¿Cancelar cita de ${appointment.clientName}?`)) {
-      try {
-        await updateAppointmentStatus(appointment.id!, 'cancelled');
-      } catch {
-        // Error ya manejado
-      }
-    }
+  const handleMove = async (appointmentId: string, newDate: string, newTime: string) => {
+    await moveAppointment(appointmentId, newDate, newTime);
+    refreshCurrentRange();
+    handleCloseForm();
   };
 
-  const handleMove = async (): Promise<void> => {
-    // TODO: Implementar diálogo para seleccionar nueva fecha/hora
-    showNotification('Funcionalidad en desarrollo', 'info');
+  const handleSelectDateFromMonth = (date: Date) => {
+    setSelectedDate(date);
+    setViewMode('day');
   };
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    searchAppointments(query);
+  const handleMonthChange = (date: Date) => {
+    setVisibleMonth(date);
   };
 
-  const handleFilterByStatus = (status: string | null) => {
-    setFilterStatus(status);
+  const handleToday = () => {
+    const today = new Date();
+    setSelectedDate(today);
+    setVisibleMonth(today);
   };
 
-  const handleFilterByDate = (date: string) => {
-    setFilterDate(date);
-    if (date) {
-      fetchAppointmentsByDate(date);
-    }
-  };
-
-  const handleReset = () => {
-    setSearchQuery('');
-    setFilterStatus(null);
-    setFilterDate('');
-    // Cargar citas de hoy
-    const today = new Date().toISOString().split('T')[0];
-    fetchAppointmentsByDate(today);
-  };
-
-  // Filtrar citas según criterios
-  const filteredAppointments = displayAppointments.filter((apt) => {
-    const matchesSearch =
-      !searchQuery ||
-      apt.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      apt.phone.includes(searchQuery);
-
-    const matchesStatus = !filterStatus || apt.status === filterStatus;
-
-    return matchesSearch && matchesStatus;
-  });
+  const emptyMessage =
+    viewMode === 'month'
+      ? 'Selecciona un día del calendario para ver sus citas o mantenlo presionado para crear una nueva reserva.'
+      : viewMode === 'week'
+        ? 'Selecciona un día de la semana y usa Nueva cita para crear la reserva.'
+        : 'Todavía no hay reservas para este día.';
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Header */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 4 }}>
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-            Citas
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Gestiona tus citas y horarios
-          </Typography>
-        </Box>
-      </Stack>
+    <Box
+      sx={{
+        minHeight: '100%',
+        backgroundImage: `linear-gradient(${appColors.overlay}, ${appColors.overlay}), url(${heroImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'top',
+        backgroundAttachment: 'fixed',
+        p: { xs: 2, sm: 3 },
+      }}
+    >
+      <Box sx={{ maxWidth: 720, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <AppointmentSummaryCard
+          selectedDateLabel={format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
+          appointmentCount={appointmentsForSelectedDay.length}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onNewAppointment={handleOpenCreateForm}
+          onToday={handleToday}
+        />
 
-      {/* Stats */}
-      <AppointmentStats
-        totalAppointments={totalAppointments}
-        scheduledAppointments={scheduledAppointments}
-        completedAppointments={completedAppointments}
-        totalIncome={totalIncome}
-        isLoading={isLoadingAppointments}
-        onNewAppointment={() => handleOpenForm()}
-      />
-
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 4, mb: 3 }}>
-        <Tabs
-          value={tabValue}
-          onChange={(_, newValue) => setTabValue(newValue)}
-          aria-label="appointment views"
+        <Box
+          sx={{
+            backgroundColor: appColors.surface,
+            borderRadius: '20px',
+            border: `1px solid ${appColors.border}`,
+            p: 2.5,
+            boxShadow: '0 4px 12px rgba(201, 168, 76, 0.08)',
+          }}
         >
-          <Tab label="Tabla" id="appointments-tab-0" />
-          <Tab label="Calendario" id="appointments-tab-1" />
-        </Tabs>
-      </Box>
-
-      {/* Filter */}
-      <AppointmentFilter
-        onSearch={handleSearch}
-        onFilterByStatus={handleFilterByStatus}
-        onFilterByDate={handleFilterByDate}
-        onReset={handleReset}
-        isLoading={isLoadingAppointments}
-      />
-
-      {/* Content */}
-      <Box sx={{ mt: 3 }}>
-        {isLoadingAppointments && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '1.2px',
+                  textTransform: 'uppercase',
+                  color: appColors.accent,
+                }}
+              >
+                {viewMode === 'month' ? 'Vista mensual' : viewMode === 'week' ? 'Vista semanal' : 'Vista diaria'}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 20,
+                  fontWeight: 700,
+                  textTransform: 'capitalize',
+                  color: appColors.textPrimary,
+                }}
+              >
+                {viewMode === 'week'
+                  ? `Semana de ${format(startOfWeek(selectedDate, { weekStartsOn: 0 }), 'd MMM', { locale: es })}`
+                  : format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
+              </Typography>
+              {isLoadingAppointments && <CircularProgress size={14} sx={{ color: appColors.accent, mt: 0.5 }} />}
+            </Box>
+            {viewMode !== 'day' && (
+              <Box
+                component="button"
+                onClick={handleOpenCreateForm}
+                sx={{
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  color: appColors.accent,
+                  fontSize: 14,
+                  fontWeight: 700,
+                }}
+              >
+                Agendar
+              </Box>
+            )}
           </Box>
-        )}
 
-        {!isLoadingAppointments && filteredAppointments.length === 0 && (
-          <Alert severity="info">No hay citas para mostrar</Alert>
-        )}
+          {viewMode === 'month' && (
+            <AppointmentCalendarGrid
+              visibleMonth={visibleMonth}
+              selectedDate={selectedDate}
+              appointmentDates={appointmentDates}
+              onSelectDate={handleSelectDateFromMonth}
+              onMonthChange={handleMonthChange}
+            />
+          )}
 
-        {!isLoadingAppointments && filteredAppointments.length > 0 && (
-          <>
-            <TabPanel value={tabValue} index={0}>
-              {/* Tabla de citas */}
-              <AppointmentList
-                appointments={filteredAppointments}
-                isLoading={isLoadingAppointments}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onComplete={handleComplete}
-                onCancel={handleCancel}
-                onMove={handleMove}
-              />
-            </TabPanel>
+          {viewMode === 'week' && (
+            <AppointmentWeekChips
+              selectedDate={selectedDate}
+              appointmentCountByDate={appointmentCountByDate}
+              onSelectDate={setSelectedDate}
+            />
+          )}
 
-            <TabPanel value={tabValue} index={1}>
-              {/* Calendario de citas */}
-              <AppointmentCalendar
-                appointments={filteredAppointments}
-                isLoading={isLoadingAppointments}
-                onDateSelect={handleFilterByDate}
-                onEventClick={handleEdit}
-              />
-            </TabPanel>
-          </>
-        )}
+          {viewMode === 'month' && (
+            <Box sx={{ height: 1, backgroundColor: appColors.border, my: 2.5 }} />
+          )}
+          {viewMode === 'week' && (
+            <Box sx={{ height: 1, backgroundColor: appColors.border, my: 2.5 }} />
+          )}
+
+          <AppointmentAgendaList
+            appointments={appointmentsForSelectedDay}
+            emptyMessage={emptyMessage}
+            onSelectAppointment={handleSelectAppointment}
+          />
+        </Box>
       </Box>
 
-      {/* Form Dialog */}
       <AppointmentForm
+        key={editingAppointment?.id ?? `new-${toKey(selectedDate)}`}
         open={formOpen}
-        title={editingAppointment ? 'Editar Cita' : 'Nueva Cita'}
+        title={editingAppointment ? editingAppointment.clientName : 'Agendar cita'}
         appointment={editingAppointment}
+        defaultDate={toKey(selectedDate)}
         onSubmit={handleFormSubmit}
+        onMove={handleMove}
         onClose={handleCloseForm}
         isLoading={isLoadingAppointments}
       />
-    </Container>
+    </Box>
   );
 };

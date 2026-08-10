@@ -2,6 +2,7 @@ import { Appointment, CreateAppointmentRequest, UpdateAppointmentRequest } from 
 
 export interface IAppointmentRepository {
   getByDate(date: string): Promise<Appointment[]>;
+  getByDateRange(startDate: string, endDate: string): Promise<Appointment[]>;
   getById(id: string): Promise<Appointment>;
   create(request: CreateAppointmentRequest): Promise<Appointment>;
   update(id: string, request: UpdateAppointmentRequest): Promise<Appointment>;

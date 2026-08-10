@@ -130,17 +130,41 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
     }
 
     /// <inheritdoc/>
-    public async Task<Appointments?> MoveAsync(string id, string newDate, CancellationToken cancellation = default)
+    public async Task<Appointments?> MoveAsync(string id, string newDate, string? newTime = null, CancellationToken cancellation = default)
     {
         var update = Builders<Appointments>.Update
             .Set(a => a.Date, newDate)
             .Set(a => a.UpdatedAt, DateTime.UtcNow);
+
+        if (!string.IsNullOrWhiteSpace(newTime))
+        {
+            update = update.Set(a => a.Time, newTime);
+        }
 
         return await _collection.FindOneAndUpdateAsync(
             Builders<Appointments>.Filter.Eq(a => a.Id, id),
             update,
             new FindOneAndUpdateOptions<Appointments> { ReturnDocument = ReturnDocument.After },
             cancellation);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> HasConflictAsync(string date, string time, string? excludeId, CancellationToken cancellation = default)
+    {
+        var filters = new List<FilterDefinition<Appointments>>
+        {
+            Builders<Appointments>.Filter.Eq(a => a.Date, date),
+            Builders<Appointments>.Filter.Eq(a => a.Time, time),
+            Builders<Appointments>.Filter.Ne(a => a.Status, "cancelled"),
+        };
+
+        if (!string.IsNullOrWhiteSpace(excludeId))
+        {
+            filters.Add(Builders<Appointments>.Filter.Ne(a => a.Id, excludeId));
+        }
+
+        var filter = Builders<Appointments>.Filter.And(filters);
+        return await _collection.Find(filter).AnyAsync(cancellation);
     }
 
     /// <inheritdoc/>

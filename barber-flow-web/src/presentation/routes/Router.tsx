@@ -7,22 +7,27 @@ import {
   AppointmentsPage,
   ClientsPage,
   ReportsPage,
+  NotificationsPage,
   SettingsPage,
   ForgotPasswordPage,
+  VerifyOtpPage,
   ResetPasswordPage,
 } from '@presentation/pages';
-import { ProtectedRoute, AppBar, SidebarDrawer } from '@presentation/components/shared';
+import { ProtectedRoute, OperationalRoute, AppBar, SidebarDrawer, Footer } from '@presentation/components/shared';
 import { useAuth } from '@presentation/context/AuthContext';
 
 const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar onMenuClick={() => setDrawerOpen(true)} />
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <SidebarDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <Box component="main" sx={{ flex: 1, overflow: 'auto' }}>
-        {children}
+      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <AppBar onMenuClick={() => setDrawerOpen(true)} />
+        <Box component="main" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+          {children}
+          <Footer />
+        </Box>
       </Box>
     </Box>
   );
@@ -42,6 +47,11 @@ export const Router: React.FC = () => {
       <Route
         path="/forgot-password"
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <ForgotPasswordPage />}
+      />
+
+      <Route
+        path="/verify-otp"
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <VerifyOtpPage />}
       />
 
       <Route
@@ -65,9 +75,11 @@ export const Router: React.FC = () => {
         path="/appointments"
         element={
           <ProtectedRoute>
-            <ProtectedLayout>
-              <AppointmentsPage />
-            </ProtectedLayout>
+            <OperationalRoute>
+              <ProtectedLayout>
+                <AppointmentsPage />
+              </ProtectedLayout>
+            </OperationalRoute>
           </ProtectedRoute>
         }
       />
@@ -76,9 +88,11 @@ export const Router: React.FC = () => {
         path="/clients"
         element={
           <ProtectedRoute>
-            <ProtectedLayout>
-              <ClientsPage />
-            </ProtectedLayout>
+            <OperationalRoute>
+              <ProtectedLayout>
+                <ClientsPage />
+              </ProtectedLayout>
+            </OperationalRoute>
           </ProtectedRoute>
         }
       />
@@ -87,9 +101,24 @@ export const Router: React.FC = () => {
         path="/reports"
         element={
           <ProtectedRoute>
-            <ProtectedLayout>
-              <ReportsPage />
-            </ProtectedLayout>
+            <OperationalRoute>
+              <ProtectedLayout>
+                <ReportsPage />
+              </ProtectedLayout>
+            </OperationalRoute>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <OperationalRoute>
+              <ProtectedLayout>
+                <NotificationsPage />
+              </ProtectedLayout>
+            </OperationalRoute>
           </ProtectedRoute>
         }
       />

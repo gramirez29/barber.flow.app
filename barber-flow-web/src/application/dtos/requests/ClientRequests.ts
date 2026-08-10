@@ -5,12 +5,13 @@ export interface CreateClientRequest {
   email?: string;
   address?: string;
   birthday?: string;
-  paymentMethod?: 'cash' | 'sinpe_movil' | 'transfer' | 'none';
+  preferences?: string;
+  paymentMethod?: 'Cash' | 'Sinpe Movil' | 'Transfer' | 'None';
+  active?: boolean;
 }
 
 export interface UpdateClientRequest extends CreateClientRequest {
   id: string;
-  active?: boolean;
 }
 
 export interface SearchClientRequest {

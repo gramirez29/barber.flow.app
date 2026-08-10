@@ -19,7 +19,7 @@ public interface IAppointmentService
         int? pageSize = null,
         CancellationToken cancellationToken = default);
 
-    Task<Domain.Entities.Appointments?> MoveAsync(string id, string newDate, CancellationToken cancellationToken = default);
+    Task<Domain.Entities.Appointments?> MoveAsync(string id, string newDate, string? newTime = null, CancellationToken cancellationToken = default);
 
     Task<string> GetNextIdAsync(CancellationToken cancellationToken = default);
 }

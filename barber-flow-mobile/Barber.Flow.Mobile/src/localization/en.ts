@@ -206,6 +206,7 @@
 		appointmentServicePricePositive: "Price must be greater than 0.",
 		appointmentServicePriceRequired: "Service price is required.",
 		appointmentTimeRequired: "Time is required.",
+		appointmentDateTimeFuture: "The date and time must be in the future.",
 		addressRequired: "Address is required.",
 		barberNameRequired: "Barber name is required.",
 		barberPhoneFormat: "Barber phone must be 0000-0000.",

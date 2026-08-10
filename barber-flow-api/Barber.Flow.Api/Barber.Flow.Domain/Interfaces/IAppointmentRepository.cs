@@ -56,13 +56,24 @@ public interface IAppointmentRepository
         CancellationToken cancellation = default);
 
     /// <summary>
-    /// Moves an appointment to a new date.
+    /// Moves an appointment to a new date and, optionally, a new time.
     /// </summary>
     /// <param name="id">The unique identifier of the appointment to be moved.</param>
     /// <param name="newDate">The new date for the appointment.</param>
+    /// <param name="newTime">The new time for the appointment, or null to leave the time unchanged.</param>
     /// <param name="cancellation">A token to monitor for cancellation requests.</param>
     /// <returns>The updated appointment entity, or null if the appointment does not exist.</returns>
-    Task<Entities.Appointments?> MoveAsync(string id, string newDate, CancellationToken cancellation = default);
+    Task<Entities.Appointments?> MoveAsync(string id, string newDate, string? newTime = null, CancellationToken cancellation = default);
+
+    /// <summary>
+    /// Checks whether a non-cancelled appointment already exists at the given date and time.
+    /// </summary>
+    /// <param name="date">The date to check.</param>
+    /// <param name="time">The time to check.</param>
+    /// <param name="excludeId">An appointment id to exclude from the check (e.g. the appointment being moved/updated).</param>
+    /// <param name="cancellation">A token to monitor for cancellation requests.</param>
+    /// <returns>True if a conflicting appointment exists, false otherwise.</returns>
+    Task<bool> HasConflictAsync(string date, string time, string? excludeId, CancellationToken cancellation = default);
 
     /// <summary>
     /// Generates the next unique identifier for an appointment.

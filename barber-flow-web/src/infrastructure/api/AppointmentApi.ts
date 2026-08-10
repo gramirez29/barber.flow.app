@@ -19,6 +19,13 @@ export class AppointmentApi implements IAppointmentRepository {
     return unwrapItems(response);
   }
 
+  async getByDateRange(startDate: string, endDate: string): Promise<Appointment[]> {
+    const response = await this.httpClient.get<ListResponse<Appointment>>('/api/appointments/search', {
+      params: { date: startDate, endDate },
+    });
+    return unwrapItems(response);
+  }
+
   async getById(id: string): Promise<Appointment> {
     return this.httpClient.get<Appointment>(`/api/appointments/getById/${id}`);
   }

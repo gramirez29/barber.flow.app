@@ -2,6 +2,8 @@ using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Reports;
 using Barber.Flow.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
+using System.Security.Claims;
 
 namespace Barber.Flow.Api.Apis;
 
@@ -24,6 +26,7 @@ public static class ReportsApi
     private static async Task<IResult> GetDailyReportAsync(
         [FromQuery] string? date,
         IReportService reportService,
+        HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
         var reportDate = ParseReportDate(date);
@@ -33,7 +36,12 @@ public static class ReportsApi
             return TypedResults.BadRequest(new { message = "The date query parameter must use yyyy-MM-dd format." });
         }
 
-        var report = await reportService.GetDailyReportAsync(reportDate.Value, cancellationToken);
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? httpContext.User.FindFirst("username")?.Value
+            ?? httpContext.User.Identity?.Name;
+
+        var report = await reportService.GetDailyReportAsync(reportDate.Value, userId, cancellationToken);
         return TypedResults.Ok(Map(report));
     }
 

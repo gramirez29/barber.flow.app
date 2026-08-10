@@ -160,16 +160,31 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
         return Task.FromResult(list);
     }
 
-    public Task<Domain.Entities.Appointments?> MoveAsync(string id, string newDate, CancellationToken cancellation = default)
+    public Task<Domain.Entities.Appointments?> MoveAsync(string id, string newDate, string? newTime = null, CancellationToken cancellation = default)
     {
         if (!_store.TryGetValue(id, out var existing))
             return Task.FromResult<Domain.Entities.Appointments?>(null);
 
         existing.Date = newDate;
+        if (!string.IsNullOrWhiteSpace(newTime))
+        {
+            existing.Time = newTime;
+        }
         existing.UpdatedAt = DateTime.UtcNow;
         _store[id] = existing;
 
         return Task.FromResult<Domain.Entities.Appointments?>(existing);
+    }
+
+    public Task<bool> HasConflictAsync(string date, string time, string? excludeId, CancellationToken cancellation = default)
+    {
+        var hasConflict = _store.Values.Any(a =>
+            a.Date == date &&
+            a.Time == time &&
+            a.Status != "cancelled" &&
+            (string.IsNullOrWhiteSpace(excludeId) || a.Id != excludeId));
+
+        return Task.FromResult(hasConflict);
     }
 
     public Task<IEnumerable<Domain.Entities.Appointments>> GetClientHistoryAsync(

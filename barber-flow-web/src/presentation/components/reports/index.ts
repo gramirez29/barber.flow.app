@@ -1,4 +1,5 @@
-export { ReportStats } from './ReportStats';
-export { ReportTable } from './ReportTable';
-export { ReportFilter } from './ReportFilter';
-export { ReportChart } from './ReportChart';
+export { ReportHeroCard } from './ReportHeroCard';
+export { ReportMetricsGrid } from './ReportMetricsGrid';
+export { ReportFormulaCard } from './ReportFormulaCard';
+export { ReportCollectionsCard } from './ReportCollectionsCard';
+export { ReportAttendanceList } from './ReportAttendanceList';

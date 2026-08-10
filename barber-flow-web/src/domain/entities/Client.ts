@@ -1,4 +1,4 @@
-import type { PaymentMethod } from './Appointment';
+export type ClientPaymentMethod = 'Cash' | 'Sinpe Movil' | 'Transfer' | 'None';
 
 export interface Client {
   id?: string;
@@ -8,7 +8,8 @@ export interface Client {
   email?: string;
   address?: string;
   birthday?: string; // ISO date (YYYY-MM-DD)
-  paymentMethod?: PaymentMethod;
+  preferences?: string;
+  paymentMethod?: ClientPaymentMethod;
   active?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -28,7 +29,8 @@ export interface CreateClientRequest {
   email?: string;
   address?: string;
   birthday?: string;
-  paymentMethod?: PaymentMethod;
+  preferences?: string;
+  paymentMethod?: ClientPaymentMethod;
 }
 
 export interface UpdateClientRequest extends CreateClientRequest {
