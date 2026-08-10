@@ -1,27 +1,27 @@
-export interface DailyReportStatsResponse {
-  date: string;
-  totalAppointments: number;
-  completedAppointments: number;
-  totalIncome: number;
-  incomeByCurrency: {
-    cash: number;
-    sinpeMovil: number;
-    transfer: number;
-  };
-  expenses?: number;
-  netIncome: number;
+export interface PaymentMethodBreakdownResponse {
+  paymentMethod: string;
+  label: string;
+  total: number;
+  appointmentCount: number;
+}
+
+export interface CompletedAppointmentReportItemResponse {
+  id: string;
+  clientName: string;
+  serviceName?: string;
+  time: string;
+  servicePrice: number;
+  paymentMethodUsed: string;
 }
 
 export interface DailyReportResponse {
-  id: string;
-  date: string;
-  appointments: Array<{
-    id: string;
-    clientName: string;
-    time: string;
-    status: string;
-    amount: number;
-    paymentMethod: string;
-  }>;
-  stats: DailyReportStatsResponse;
+  reportDate: string;
+  totalCustomersServed: number;
+  grossRevenue: number;
+  netProfit: number;
+  commissionAmount: number;
+  fixedDailyExpense: number;
+  paymentMethodBreakdown: PaymentMethodBreakdownResponse[];
+  completedAppointments: CompletedAppointmentReportItemResponse[];
+  generatedAt: string;
 }

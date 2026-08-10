@@ -1,6 +1,19 @@
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
 import { HttpClient, HttpRequestConfig } from './HttpClient';
 
+const AUTH_STORAGE_KEY = 'barber_flow_auth';
+
+function getStoredToken(): string | null {
+  try {
+    const data = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!data) return null;
+    const user = JSON.parse(data);
+    return user?.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export class AxiosHttpClient implements HttpClient {
   private client: AxiosInstance;
   private baseURL: string;
@@ -13,6 +26,17 @@ export class AxiosHttpClient implements HttpClient {
       headers: {
         'Content-Type': 'application/json',
       },
+    });
+
+    // Request interceptor: adjunta el token guardado en cada instancia,
+    // ya que cada hook/feature crea su propia instancia de AxiosHttpClient
+    // y setAuthToken() solo afecta a la instancia sobre la que se llama.
+    this.client.interceptors.request.use((config) => {
+      const token = getStoredToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
     });
 
     // Response interceptor para manejar errores
@@ -55,5 +79,6 @@ export class AxiosHttpClient implements HttpClient {
 
   clearAuthToken(): void {
     delete this.client.defaults.headers.common['Authorization'];
+    localStorage.removeItem(AUTH_STORAGE_KEY);
   }
 }

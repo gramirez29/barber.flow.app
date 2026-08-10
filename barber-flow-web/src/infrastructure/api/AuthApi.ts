@@ -40,13 +40,17 @@ export class AuthApi implements IAuthRepository {
   }
 
   async verifyOtp(email: string, otp: string): Promise<{ message: string }> {
-    const request: VerifyOtpRequest = { email, otp };
+    const request: VerifyOtpRequest = { email, otpCode: otp };
     return this.httpClient.post<{ message: string }>('/api/auth/verify-otp', request);
   }
 
-  async resetPassword(email: string, newPassword: string): Promise<{ message: string }> {
-    const request: ResetPasswordRequest = { email, newPassword };
+  async resetPassword(email: string, otp: string, newPassword: string): Promise<{ message: string }> {
+    const request: ResetPasswordRequest = { email, otpCode: otp, newPassword };
     return this.httpClient.post<{ message: string }>('/api/auth/reset-password', request);
+  }
+
+  async deleteSelf(): Promise<void> {
+    await this.httpClient.delete('/api/users/me');
   }
 
   async getStoredUser(): Promise<AuthenticatedUser | null> {

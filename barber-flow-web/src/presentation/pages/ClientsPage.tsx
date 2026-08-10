@@ -1,87 +1,42 @@
-import React, { useState } from 'react';
-import {
-  Container,
-  Box,
-  Button,
-  Typography,
-  Stack,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import React, { useEffect, useState } from 'react';
+import { Box } from '@mui/material';
 import {
   ClientForm,
-  ClientList,
-  ClientFilter,
+  ClientCard,
+  ClientsSummaryCard,
+  ClientsEmptyState,
 } from '@presentation/components/clients';
 import { useClients } from '@presentation/hooks/useClients';
-import { useNotification } from '@presentation/context/NotificationContext';
 import { CreateClientFormData } from '@shared/validation/clientSchemas';
 import { Client } from '@domain/entities/Client';
+import { useConfirmDialog } from '@presentation/context/ConfirmDialogContext';
+import { appColors } from '@presentation/theme/appColors';
+import heroImage from '@/assets/images/barber-flow-background-image.jpg';
 
-/**
- * ClientsPage: Página de gestión de clientes
- *
- * Features:
- * - Listar clientes
- * - Crear nuevos clientes
- * - Editar clientes existentes
- * - Eliminar clientes
- * - Buscar y filtrar clientes
- * - Ver detalles del cliente
- */
 export const ClientsPage: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { showNotification } = useNotification();
 
-  const {
-    clients,
-    isLoadingClients,
-    searchClients,
-    createClient,
-    updateClient,
-    deleteClient,
-  } = useClients();
+  const { clients, isLoadingClients, searchClients, createClient, updateClient, deleteClient } = useClients();
+  const { confirm } = useConfirmDialog();
 
-  // TODO: Reemplazar con datos reales cuando se integre el backend
-  const mockClients: Client[] = [];
-  const displayClients = clients.length > 0 ? clients : mockClients;
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchClients(searchQuery.trim());
+    }, 250);
 
-  // Filtrar clientes según búsqueda
-  const filteredClients = displayClients.filter((client) => {
-    const matchesSearch =
-      !searchQuery ||
-      client.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.phone.includes(searchQuery) ||
-      (client.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
-    return matchesSearch;
-  });
-
-  // Manejar creación/edición de clientes
-  const handleFormSubmit = async (data: CreateClientFormData) => {
-    try {
-      if (editingClient) {
-        await updateClient(editingClient.id!, { ...data, id: editingClient.id! });
-        setEditingClient(null);
-      } else {
-        await createClient(data);
-      }
-      setFormOpen(false);
-    } catch {
-      // Error ya manejado por el hook
-    }
+  const handleOpenCreateForm = () => {
+    setEditingClient(null);
+    setFormOpen(true);
   };
 
-  const handleOpenForm = (client?: Client) => {
-    if (client) {
-      setEditingClient(client);
-    } else {
-      setEditingClient(null);
-    }
+  const handleSelectClient = (client: Client) => {
+    setEditingClient(client);
     setFormOpen(true);
   };
 
@@ -90,96 +45,78 @@ export const ClientsPage: React.FC = () => {
     setEditingClient(null);
   };
 
-  const handleEdit = (client: Client) => {
-    handleOpenForm(client);
-  };
-
-  const handleDelete = async (client: Client) => {
-    if (window.confirm(`¿Eliminar cliente ${client.firstName} ${client.lastName}?`)) {
-      try {
-        await deleteClient(client.id!);
-      } catch {
-        // Error ya manejado
-      }
+  const handleFormSubmit = async (data: CreateClientFormData) => {
+    if (editingClient) {
+      await updateClient(editingClient.id!, { ...data, id: editingClient.id! });
+    } else {
+      await createClient(data);
     }
   };
 
-  const handleViewDetails = (client: Client) => {
-    // TODO: Implementar página de detalles del cliente o modal
-    showNotification(`Detalles de ${client.firstName} ${client.lastName}`, 'info');
-  };
+  const handleDelete = async (client: Client) => {
+    const confirmed = await confirm({
+      title: 'Eliminar cliente',
+      message: `¿Eliminar a ${client.firstName} ${client.lastName}? Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar',
+      destructive: true,
+    });
+    if (!confirmed) return;
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    searchClients(query);
-  };
-
-  const handleReset = () => {
-    setSearchQuery('');
-    searchClients('');
+    try {
+      await deleteClient(client.id!);
+    } catch {
+      // Error ya manejado por el hook
+    }
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Header */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 4 }} alignItems="center" justifyContent="space-between">
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-            Clientes
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Gestiona la base de clientes de tu barbería
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenForm()}
-          disabled={isLoadingClients}
+    <Box
+      sx={{
+        minHeight: '100%',
+        backgroundImage: `linear-gradient(${appColors.overlay}, ${appColors.overlay}), url(${heroImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'top',
+        backgroundAttachment: 'fixed',
+        p: { xs: 2, sm: 3 },
+      }}
+    >
+      <Box sx={{ maxWidth: 720, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <ClientsSummaryCard
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          totalCount={clients.length}
+          isLoading={isLoadingClients}
+          onNewClient={handleOpenCreateForm}
+        />
+
+        <Box
+          sx={{
+            backgroundColor: appColors.surface,
+            borderRadius: '20px',
+            border: `1px solid ${appColors.border}`,
+            p: 2.5,
+            boxShadow: '0 4px 12px rgba(201, 168, 76, 0.08)',
+          }}
         >
-          Nuevo Cliente
-        </Button>
-      </Stack>
-
-      {/* Filter */}
-      <ClientFilter
-        onSearch={handleSearch}
-        onReset={handleReset}
-        isLoading={isLoadingClients}
-      />
-
-      {/* Content */}
-      <Box sx={{ mt: 3 }}>
-        {isLoadingClients && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        )}
-
-        {!isLoadingClients && filteredClients.length === 0 && (
-          <Alert severity="info">No hay clientes para mostrar</Alert>
-        )}
-
-        {!isLoadingClients && filteredClients.length > 0 && (
-          <ClientList
-            clients={filteredClients}
-            isLoading={isLoadingClients}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onViewDetails={handleViewDetails}
-          />
-        )}
+          {clients.length === 0 ? (
+            <ClientsEmptyState loading={isLoadingClients} />
+          ) : (
+            clients.map((client) => (
+              <ClientCard key={client.id} client={client} onClick={handleSelectClient} onDelete={handleDelete} />
+            ))
+          )}
+        </Box>
       </Box>
 
-      {/* Form Dialog */}
       <ClientForm
+        key={editingClient?.id ?? 'new'}
         open={formOpen}
-        title={editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}
+        title={editingClient ? `${editingClient.firstName} ${editingClient.lastName}` : 'Nuevo cliente'}
         client={editingClient}
         onSubmit={handleFormSubmit}
         onClose={handleCloseForm}
         isLoading={isLoadingClients}
       />
-    </Container>
+    </Box>
   );
 };

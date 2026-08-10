@@ -3,6 +3,7 @@ using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Users;
 using Microsoft.AspNetCore.Http;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 
 namespace Barber.Flow.Api.Apis;
@@ -60,7 +61,14 @@ public static class UsersApi
         if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
             return TypedResults.Forbid();
 
-        var userId = context.User.FindFirst(JwtRegisteredClaimNames.NameId)?.Value;
+        // El token emite tanto "sub" (username) como "nameid" (Guid del usuario), y ambos
+        // se remapean por defecto a ClaimTypes.NameIdentifier al validar el JWT, así que
+        // terminan coexistiendo dos claims con ese mismo tipo — hay que quedarse con el
+        // valor que realmente sea un Guid, no simplemente el primero (FindFirst).
+        var userId = context.User.Claims
+            .Where(c => c.Type == ClaimTypes.NameIdentifier || c.Type == JwtRegisteredClaimNames.NameId)
+            .Select(c => c.Value)
+            .FirstOrDefault(value => Guid.TryParse(value, out _));
         if (string.IsNullOrWhiteSpace(userId))
             return TypedResults.Unauthorized();
 

@@ -9,8 +9,8 @@ export interface CreateAppointmentRequest {
 }
 
 export interface UpdateAppointmentRequest extends CreateAppointmentRequest {
-  status?: 'scheduled' | 'completed' | 'cancelled';
-  paymentMethodUsed?: 'cash' | 'sinpe_movil' | 'transfer' | 'none';
+  status?: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  paymentMethodUsed?: 'cash' | 'sinpeMovil' | 'transfer';
 }
 
 export interface MoveAppointmentRequest {

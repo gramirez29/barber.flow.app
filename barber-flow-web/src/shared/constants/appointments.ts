@@ -7,12 +7,14 @@ export const APPOINTMENT_CONSTANTS = {
   // Estatuses
   STATUSES: {
     SCHEDULED: 'scheduled',
+    CONFIRMED: 'confirmed',
     COMPLETED: 'completed',
     CANCELLED: 'cancelled',
   } as const,
 
   STATUS_LABELS: {
-    scheduled: 'Programada',
+    scheduled: 'Agendada',
+    confirmed: 'Confirmada',
     completed: 'Completada',
     cancelled: 'Cancelada',
   } as const,
@@ -20,13 +22,13 @@ export const APPOINTMENT_CONSTANTS = {
   // Payment Methods
   PAYMENT_METHODS: {
     CASH: 'cash',
-    SINPE_MOVIL: 'sinpe_movil',
+    SINPE_MOVIL: 'sinpeMovil',
     TRANSFER: 'transfer',
   } as const,
 
   PAYMENT_METHOD_LABELS: {
     cash: 'Efectivo',
-    sinpe_movil: 'SINPE Móvil',
+    sinpeMovil: 'SINPE Móvil',
     transfer: 'Transferencia',
     none: 'No especificado',
   } as const,

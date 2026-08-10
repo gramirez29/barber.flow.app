@@ -35,11 +35,19 @@ export const createClientSchema = z.object({
       (value) => !value || new Date(value) < new Date(),
       'La fecha de cumpleaños debe ser en el pasado'
     ),
+  preferences: z
+    .string()
+    .optional()
+    .refine(
+      (value) => !value || value.length <= 500,
+      'Las preferencias no pueden exceder 500 caracteres'
+    ),
   paymentMethod: z
-    .enum(['cash', 'sinpe_movil', 'transfer', 'none'], {
+    .enum(['Cash', 'Sinpe Movil', 'Transfer', 'None'], {
       errorMap: () => ({ message: 'Método de pago inválido' }),
     })
     .optional(),
+  active: z.boolean().optional(),
 });
 
 export type CreateClientFormData = z.infer<typeof createClientSchema>;

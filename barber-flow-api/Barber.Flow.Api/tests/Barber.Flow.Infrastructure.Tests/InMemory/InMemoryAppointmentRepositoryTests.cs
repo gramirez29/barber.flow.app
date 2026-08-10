@@ -65,6 +65,19 @@ public class InMemoryAppointmentRepositoryTests
     }
 
     [Fact]
+    public async Task MoveAsync_WithNewTime_ChangesDateAndTime()
+    {
+        var repo = new InMemoryAppointmentRepository();
+        var created = await repo.CreateAsync(BuildAppointment(date: "2031-01-15", time: "10:00"));
+
+        var moved = await repo.MoveAsync(created.Id, "2031-02-01", "14:30");
+
+        Assert.NotNull(moved);
+        Assert.Equal("2031-02-01", moved!.Date);
+        Assert.Equal("14:30", moved.Time);
+    }
+
+    [Fact]
     public async Task MoveAsync_AppointmentNotFound_ReturnsNull()
     {
         var repo = new InMemoryAppointmentRepository();
@@ -72,6 +85,51 @@ public class InMemoryAppointmentRepositoryTests
         var result = await repo.MoveAsync("missing-id", "2031-02-01");
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task HasConflictAsync_SameDateAndTimeNotCancelled_ReturnsTrue()
+    {
+        var repo = new InMemoryAppointmentRepository();
+        await repo.CreateAsync(BuildAppointment(date: "2031-01-15", time: "10:00"));
+
+        var result = await repo.HasConflictAsync("2031-01-15", "10:00", null);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task HasConflictAsync_CancelledAppointmentAtSameSlot_ReturnsFalse()
+    {
+        var repo = new InMemoryAppointmentRepository();
+        var created = await repo.CreateAsync(BuildAppointment(date: "2031-01-15", time: "10:00"));
+        created.Status = "cancelled";
+
+        var result = await repo.HasConflictAsync("2031-01-15", "10:00", null);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task HasConflictAsync_ExcludingSameAppointmentId_ReturnsFalse()
+    {
+        var repo = new InMemoryAppointmentRepository();
+        var created = await repo.CreateAsync(BuildAppointment(date: "2031-01-15", time: "10:00"));
+
+        var result = await repo.HasConflictAsync("2031-01-15", "10:00", created.Id);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task HasConflictAsync_NoAppointmentAtSlot_ReturnsFalse()
+    {
+        var repo = new InMemoryAppointmentRepository();
+        await repo.CreateAsync(BuildAppointment(date: "2031-01-15", time: "10:00"));
+
+        var result = await repo.HasConflictAsync("2031-01-15", "11:00", null);
+
+        Assert.False(result);
     }
 
     [Fact]

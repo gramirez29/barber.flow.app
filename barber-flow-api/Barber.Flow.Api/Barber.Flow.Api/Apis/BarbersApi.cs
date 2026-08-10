@@ -150,6 +150,9 @@ public static class BarbersApi
             BarberShopName = request.BarberShopName,
             BarberShopPhone = request.BarberShopPhone,
             PhotoUrl = request.PhotoUrl,
+            Settings = request.Settings != null
+                ? new BarberSettings(request.Settings.CommissionPercentage, request.Settings.FixedDailyExpense)
+                : null,
             UpdatedBy = userId ?? string.Empty
         };
 

@@ -75,8 +75,15 @@ public static class AppointmentsApi
             UpdatedBy = userId
         };
 
-        var created = await appointmentService.CreateAsync(appointment, cancellationToken);
-        return TypedResults.Ok(Map(created));
+        try
+        {
+            var created = await appointmentService.CreateAsync(appointment, cancellationToken);
+            return TypedResults.Ok(Map(created));
+        }
+        catch (AppointmentSchedulingException ex)
+        {
+            return TypedResults.BadRequest(new { message = ex.Message });
+        }
     }
 
     private static async Task<IResult> UpdateAppointmentAsync(
@@ -107,10 +114,17 @@ public static class AppointmentsApi
             UpdatedBy = userId
         };
 
-        var updated = await appointmentService.UpdateAsync(id, appointment, cancellationToken);
-        if (updated == null) return TypedResults.NotFound();
+        try
+        {
+            var updated = await appointmentService.UpdateAsync(id, appointment, cancellationToken);
+            if (updated == null) return TypedResults.NotFound();
 
-        return TypedResults.Ok(Map(updated));
+            return TypedResults.Ok(Map(updated));
+        }
+        catch (AppointmentSchedulingException ex)
+        {
+            return TypedResults.BadRequest(new { message = ex.Message });
+        }
     }
 
     private static async Task<IResult> MoveAppointmentAsync(
@@ -119,10 +133,17 @@ public static class AppointmentsApi
         IAppointmentService appointmentService,
         CancellationToken cancellationToken = default)
     {
-        var moved = await appointmentService.MoveAsync(id, request.NewDate, cancellationToken);
-        if (moved == null) return TypedResults.NotFound();
+        try
+        {
+            var moved = await appointmentService.MoveAsync(id, request.NewDate, request.NewTime, cancellationToken);
+            if (moved == null) return TypedResults.NotFound();
 
-        return TypedResults.Ok(Map(moved));
+            return TypedResults.Ok(Map(moved));
+        }
+        catch (AppointmentSchedulingException ex)
+        {
+            return TypedResults.BadRequest(new { message = ex.Message });
+        }
     }
 
     private static async Task<IResult> FindAppointmentsAsync(

@@ -51,10 +51,30 @@ export function useAppointments() {
       try {
         const data = await appointmentApi.getByDate(date);
         setAppointments(data);
-        showNotification('Citas cargadas correctamente', 'success');
       } catch (error) {
         const message = getErrorMessage(error, 'Error al cargar citas');
         showNotification(message, 'error');
+      } finally {
+        setIsLoadingAppointments(false);
+      }
+    },
+    [appointmentApi, showNotification]
+  );
+
+  /**
+   * Obtener citas por rango de fechas (usado por la vista de mes)
+   */
+  const fetchAppointmentsByDateRange = useCallback(
+    async (startDate: string, endDate: string) => {
+      setIsLoadingAppointments(true);
+      try {
+        const data = await appointmentApi.getByDateRange(startDate, endDate);
+        setAppointments(data);
+        return data;
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al cargar citas');
+        showNotification(message, 'error');
+        return [];
       } finally {
         setIsLoadingAppointments(false);
       }
@@ -205,6 +225,7 @@ export function useAppointments() {
 
     // Actions
     fetchAppointmentsByDate,
+    fetchAppointmentsByDateRange,
     searchAppointments,
     createAppointment,
     updateAppointment,

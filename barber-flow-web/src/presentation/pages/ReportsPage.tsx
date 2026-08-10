@@ -1,26 +1,31 @@
 import React, { useEffect } from 'react';
-import { Container, Box, Typography, Stack, CircularProgress, Alert } from '@mui/material';
-import { ReportStats, ReportTable, ReportFilter, ReportChart } from '@presentation/components/reports';
+import { Box, Typography } from '@mui/material';
+import {
+  ReportHeroCard,
+  ReportMetricsGrid,
+  ReportFormulaCard,
+  ReportCollectionsCard,
+  ReportAttendanceList,
+} from '@presentation/components/reports';
 import { useReports } from '@presentation/hooks/useReports';
+import { appColors } from '@presentation/theme/appColors';
+import heroImage from '@/assets/images/barber-flow-background-image.jpg';
 
-/**
- * ReportsPage: Página de reportes y análisis
- *
- * Features:
- * - Estadísticas del día (citas, ingresos por método)
- * - Tabla de citas con detalles de pago
- * - Gráfico de ingresos
- * - Navegación de fechas
- * - Búsqueda por rango (futuro)
- */
 export const ReportsPage: React.FC = () => {
-  const { report, stats, selectedDate, isLoadingReports, fetchDailyReport, previousDay, nextDay, goToToday, setSelectedDate } = useReports();
+  const {
+    report,
+    selectedDate,
+    isLoadingReports,
+    reportError,
+    fetchDailyReport,
+    goToToday,
+    setSelectedDate,
+  } = useReports();
 
-  // Cargar reporte del día actual al montar
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    fetchDailyReport(today);
-  }, [fetchDailyReport]);
+    goToToday();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
@@ -28,59 +33,78 @@ export const ReportsPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Header */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 4 }}>
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-            Reportes
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Análisis de citas e ingresos
-          </Typography>
-        </Box>
-      </Stack>
+    <Box
+      sx={{
+        minHeight: '100%',
+        backgroundImage: `linear-gradient(${appColors.overlay}, ${appColors.overlay}), url(${heroImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'top',
+        backgroundAttachment: 'fixed',
+        p: { xs: 2, sm: 3 },
+      }}
+    >
+      <Box sx={{ maxWidth: 720, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <ReportHeroCard
+          selectedDate={selectedDate}
+          onDateChange={handleDateChange}
+          onToday={goToToday}
+          isLoading={isLoadingReports}
+        />
 
-      {/* Filter */}
-      <ReportFilter
-        selectedDate={selectedDate}
-        onDateChange={handleDateChange}
-        onPreviousDay={previousDay}
-        onNextDay={nextDay}
-        onToday={goToToday}
-        isLoading={isLoadingReports}
-      />
+        {reportError && !isLoadingReports ? (
+          <Box
+            sx={{
+              backgroundColor: appColors.surface,
+              borderRadius: '20px',
+              border: `1px solid ${appColors.error}`,
+              p: 2.5,
+              textAlign: 'center',
+            }}
+          >
+            <Typography sx={{ fontSize: 16, fontWeight: 700, color: appColors.textPrimary, mb: 0.75 }}>
+              No se pudo cargar el reporte
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: appColors.textSecondary, mb: 2 }}>
+              {reportError}
+            </Typography>
+            <Box
+              component="button"
+              onClick={() => fetchDailyReport(selectedDate)}
+              sx={{
+                border: `1px solid ${appColors.accent}`,
+                cursor: 'pointer',
+                backgroundColor: 'transparent',
+                color: appColors.accent,
+                borderRadius: '12px',
+                px: 2.5,
+                py: 1,
+                fontSize: 14,
+                fontWeight: 700,
+              }}
+            >
+              Reintentar
+            </Box>
+          </Box>
+        ) : (
+          <>
+            <ReportMetricsGrid
+              totalCustomersServed={report?.totalCustomersServed ?? 0}
+              grossRevenue={report?.grossRevenue ?? 0}
+              netProfit={report?.netProfit ?? 0}
+              isLoading={isLoadingReports}
+            />
 
-      {/* Stats Cards */}
-      <ReportStats stats={stats} isLoading={isLoadingReports} />
+            <ReportFormulaCard
+              commissionAmount={report?.commissionAmount ?? 0}
+              fixedDailyExpense={report?.fixedDailyExpense ?? 0}
+            />
 
-      {/* Charts and Tables */}
-      <Stack spacing={3}>
-        {/* Chart */}
-        <Box>
-          <ReportChart stats={stats} isLoading={isLoadingReports} />
-        </Box>
+            <ReportCollectionsCard paymentMethodBreakdown={report?.paymentMethodBreakdown ?? []} />
 
-        {/* Appointments Table */}
-        <Box>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-            Citas del Día
-          </Typography>
-          <ReportTable appointments={report?.appointments || []} isLoading={isLoadingReports} />
-        </Box>
-      </Stack>
-
-      {/* Loading State */}
-      {isLoadingReports && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      {/* Error State */}
-      {!isLoadingReports && !stats && (
-        <Alert severity="warning">No se pudo cargar el reporte. Intenta nuevamente.</Alert>
-      )}
-    </Container>
+            <ReportAttendanceList completedAppointments={report?.completedAppointments ?? []} />
+          </>
+        )}
+      </Box>
+    </Box>
   );
 };

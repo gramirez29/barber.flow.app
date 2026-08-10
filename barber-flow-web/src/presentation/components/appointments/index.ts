@@ -1,5 +1,7 @@
 export { AppointmentForm } from './AppointmentForm';
-export { AppointmentList } from './AppointmentList';
-export { AppointmentStats } from './AppointmentStats';
-export { AppointmentFilter } from './AppointmentFilter';
-export { AppointmentCalendar } from './AppointmentCalendar';
+export { AppointmentCard } from './AppointmentCard';
+export { AppointmentAgendaList } from './AppointmentAgendaList';
+export { AppointmentSummaryCard } from './AppointmentSummaryCard';
+export type { CalendarViewMode } from './AppointmentSummaryCard';
+export { AppointmentCalendarGrid } from './AppointmentCalendarGrid';
+export { AppointmentWeekChips } from './AppointmentWeekChips';

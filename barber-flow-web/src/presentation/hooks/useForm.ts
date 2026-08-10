@@ -97,6 +97,10 @@ export function useForm<T extends Record<string, unknown>>(
           newErrors[path] = err.message;
         });
         setErrors(newErrors);
+        // Marca como "touched" los campos con error para que se muestren
+        // aunque el usuario nunca haya interactuado con ellos (p. ej. validaciones
+        // a nivel de objeto, como fecha+hora combinadas).
+        setTouched((prev) => new Set([...prev, ...(Object.keys(newErrors) as (keyof T)[])]));
       }
       setIsValidating(false);
       return false;

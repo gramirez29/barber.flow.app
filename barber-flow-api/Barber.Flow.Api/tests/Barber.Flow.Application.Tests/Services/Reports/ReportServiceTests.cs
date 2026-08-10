@@ -24,7 +24,7 @@ public class ReportServiceTests
             CompletedAppointments = [],
             GeneratedAt = DateTime.UtcNow,
         };
-        repo.Setup(r => r.GetDailyReportAsync(reportDate, It.IsAny<CancellationToken>())).ReturnsAsync(report);
+        repo.Setup(r => r.GetDailyReportAsync(reportDate, It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(report);
 
         var sut = new ReportService(repo.Object);
         var result = await sut.GetDailyReportAsync(reportDate);

@@ -73,6 +73,19 @@ public class MongoDbAppointmentRepositoryTests
     }
 
     [Fact]
+    public async Task MoveAsync_WithNewTime_ChangesDateAndTime()
+    {
+        var sut = CreateSut();
+        var appointment = await sut.CreateAsync(BuildAppointment(date: "2026-01-15", time: "10:00"));
+
+        var moved = await sut.MoveAsync(appointment.Id, "2026-02-01", "14:30");
+
+        Assert.NotNull(moved);
+        Assert.Equal("2026-02-01", moved!.Date);
+        Assert.Equal("14:30", moved.Time);
+    }
+
+    [Fact]
     public async Task MoveAsync_AppointmentNotFound_ReturnsNull()
     {
         var sut = CreateSut();
@@ -80,6 +93,41 @@ public class MongoDbAppointmentRepositoryTests
         var result = await sut.MoveAsync("APT-9999", "2026-02-01");
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task HasConflictAsync_SameDateAndTimeNotCancelled_ReturnsTrue()
+    {
+        var sut = CreateSut();
+        await sut.CreateAsync(BuildAppointment(date: "2026-03-15", time: "10:00"));
+
+        var result = await sut.HasConflictAsync("2026-03-15", "10:00", null);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task HasConflictAsync_CancelledAppointmentAtSameSlot_ReturnsFalse()
+    {
+        var sut = CreateSut();
+        var created = await sut.CreateAsync(BuildAppointment(date: "2026-03-16", time: "10:00"));
+        created.Status = "cancelled";
+        await sut.UpdateAsync(created.Id, created);
+
+        var result = await sut.HasConflictAsync("2026-03-16", "10:00", null);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task HasConflictAsync_ExcludingSameAppointmentId_ReturnsFalse()
+    {
+        var sut = CreateSut();
+        var created = await sut.CreateAsync(BuildAppointment(date: "2026-03-17", time: "10:00"));
+
+        var result = await sut.HasConflictAsync("2026-03-17", "10:00", created.Id);
+
+        Assert.False(result);
     }
 
     [Fact]
