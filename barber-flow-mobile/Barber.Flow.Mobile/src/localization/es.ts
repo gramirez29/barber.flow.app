@@ -54,6 +54,13 @@
 		signedInAs: "Sesión iniciada como %{identity}",
 		workspace: "Espacio de trabajo",
 	},
+	lock: {
+		title: "Sesión bloqueada",
+		subtitle: "Verifica que eres tú para seguir usando Barber Flow.",
+		unlock: "Desbloquear",
+		promptMessage: "Desbloquear Barber Flow",
+		authFailed: "No pudimos verificar tu identidad. Intenta de nuevo.",
+	},
 	login: {
 		appointments: "Citas",
 		authFailed: "Autenticación fallida",

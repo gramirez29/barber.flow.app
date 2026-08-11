@@ -16,7 +16,8 @@ public class MongoDbAppointmentRepositoryTests
         string clientName = "Juan",
         string date = "2026-01-15",
         string time = "10:00",
-        string createdBy = "admin") => new()
+        string createdBy = "admin",
+        string? shopId = null) => new()
     {
         ClientName = clientName,
         Phone = "8888-0000",
@@ -24,6 +25,7 @@ public class MongoDbAppointmentRepositoryTests
         Time = time,
         CreatedBy = createdBy,
         UpdatedBy = createdBy,
+        ShopId = shopId,
     };
 
     [Fact]
@@ -174,6 +176,30 @@ public class MongoDbAppointmentRepositoryTests
         Assert.Single(result);
         Assert.Equal(completed.Id, result.First().Id);
         Assert.NotEqual(scheduled.Id, result.First().Id);
+    }
+
+    [Fact]
+    public async Task FindAsync_ByShopId_ReturnsOnlyMatchingShop()
+    {
+        var sut = CreateSut();
+        await sut.CreateAsync(BuildAppointment(clientName: "Owned By A", shopId: "SHOP-A"));
+        await sut.CreateAsync(BuildAppointment(clientName: "Owned By B", shopId: "SHOP-B"));
+
+        var result = await sut.FindAsync(shopId: "SHOP-A");
+
+        Assert.Single(result);
+        Assert.Equal("Owned By A", result.First().ClientName);
+    }
+
+    [Fact]
+    public async Task FindAsync_WithPageZero_DoesNotThrowAndReturnsFirstPage()
+    {
+        var sut = CreateSut();
+        await sut.CreateAsync(BuildAppointment());
+
+        var result = await sut.FindAsync(page: 0, pageSize: 10);
+
+        Assert.Single(result);
     }
 
     [Fact]

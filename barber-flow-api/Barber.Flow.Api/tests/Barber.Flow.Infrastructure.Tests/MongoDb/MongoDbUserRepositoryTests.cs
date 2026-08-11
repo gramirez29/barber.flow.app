@@ -1,6 +1,8 @@
 using Barber.Flow.Domain.Entities;
+using Barber.Flow.Infrastructure.Services.Auth;
 using Barber.Flow.Infrastructure.Services.MongoDb;
 using Microsoft.Extensions.Configuration;
+using MongoDB.Driver;
 
 namespace Barber.Flow.Infrastructure.Tests.MongoDb;
 
@@ -65,6 +67,38 @@ public class MongoDbUserRepositoryTests
         var result = await sut.GetAuthenticationUserAsync("missing", "password");
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task CreateAsync_StoresPasswordAsBCryptHash_NotPlainText()
+    {
+        var sut = CreateSut();
+        var user = BuildUser();
+
+        var created = await sut.CreateAsync(user);
+
+        Assert.NotEqual("password", created.Password);
+        Assert.True(PasswordHasher.IsHashed(created.Password));
+    }
+
+    [Fact]
+    public async Task GetAuthenticationUserAsync_LegacyPlainTextPassword_VerifiesAndMigratesToHash()
+    {
+        var database = _fixture.CreateDatabase();
+        var sut = new MongoDbUserRepository(database, BuildJwtConfig());
+        var collection = database.GetCollection<User>("users");
+        var user = BuildUser();
+        // Bypass CreateAsync's hashing to simulate a pre-existing plain-text row.
+        await collection.InsertOneAsync(user);
+
+        var firstLogin = await sut.GetAuthenticationUserAsync("admin", "password");
+        Assert.NotNull(firstLogin);
+
+        var storedAfterLogin = await collection.Find(u => u.Id == user.Id).FirstOrDefaultAsync();
+        Assert.True(PasswordHasher.IsHashed(storedAfterLogin!.Password));
+
+        var secondLogin = await sut.GetAuthenticationUserAsync("admin", "password");
+        Assert.NotNull(secondLogin);
     }
 
     [Fact]

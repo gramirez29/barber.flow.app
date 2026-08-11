@@ -67,5 +67,12 @@ module.exports = {
 					"Permite a Barber Flow acceder a la camara para tomar una foto de perfil.",
 			},
 		],
+		[
+			"expo-local-authentication",
+			{
+				faceIDPermission:
+					"Permite a Barber Flow usar Face ID para proteger el acceso a tu cuenta.",
+			},
+		],
 	],
 };

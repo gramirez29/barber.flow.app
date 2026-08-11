@@ -81,6 +81,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
         string? query = null,
         int? page = null,
         int? pageSize = null,
+        string? shopId = null,
         CancellationToken cancellation = default)
     {
         var filters = new List<FilterDefinition<Appointments>>();
@@ -105,11 +106,16 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
 
         if (!string.IsNullOrWhiteSpace(query))
         {
-            var regex = new BsonRegularExpression(query.Trim(), "i");
+            var regex = new BsonRegularExpression(System.Text.RegularExpressions.Regex.Escape(query.Trim()), "i");
             filters.Add(Builders<Appointments>.Filter.Or(
                 Builders<Appointments>.Filter.Regex(a => a.ClientName, regex),
                 Builders<Appointments>.Filter.Regex(a => a.Phone, regex)
             ));
+        }
+
+        if (!string.IsNullOrWhiteSpace(shopId))
+        {
+            filters.Add(Builders<Appointments>.Filter.Eq(a => a.ShopId, shopId));
         }
 
         var filter = filters.Count > 0
@@ -120,8 +126,8 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
             .Find(filter)
             .Sort(Builders<Appointments>.Sort.Ascending(a => a.Date).Ascending(a => a.Time));
 
-        var ps = pageSize ?? 50;
-        var pg = (page ?? 1) - 1;
+        var ps = Math.Clamp(pageSize ?? 50, 1, 100);
+        var pg = Math.Max(0, (page ?? 1) - 1);
 
         return await findCursor
             .Skip(pg * ps)

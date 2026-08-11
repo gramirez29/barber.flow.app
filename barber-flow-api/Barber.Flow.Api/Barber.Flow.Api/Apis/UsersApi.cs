@@ -2,6 +2,7 @@
 using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Users;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -18,7 +19,8 @@ public static class UsersApi
 
         api.MapPost("/authentication", GetAuthenticationUserAsync)
             .WithName(nameof(GetAuthenticationUserAsync))
-            .WithTags(UsersTag);
+            .WithTags(UsersTag)
+            .RequireRateLimiting("auth");
 
         api.MapPost("/refresh", RefreshTokenAsync)
             .WithName(nameof(RefreshTokenAsync))

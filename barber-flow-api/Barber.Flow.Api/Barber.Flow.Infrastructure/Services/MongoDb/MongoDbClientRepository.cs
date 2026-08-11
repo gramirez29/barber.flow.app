@@ -63,33 +63,46 @@ public sealed class MongoDbClientRepository : IClientRepository
         string? query = null,
         int? page = null,
         int? pageSize = null,
+        string? shopId = null,
         CancellationToken cancellation = default)
     {
-        var filter = BuildSearchFilter(query);
+        var filter = BuildSearchFilter(query, shopId);
         var findCursor = _collection
             .Find(filter)
             .SortByDescending(c => c.CreatedAt);
 
         if (page.HasValue && pageSize.HasValue)
+        {
+            var ps = Math.Clamp(pageSize.Value, 1, 200);
+            var pg = Math.Max(0, page.Value - 1);
             return await findCursor
-                .Skip((page.Value - 1) * pageSize.Value)
-                .Limit(pageSize.Value)
+                .Skip(pg * ps)
+                .Limit(ps)
                 .ToListAsync(cancellation);
+        }
 
         return await findCursor.ToListAsync(cancellation);
     }
 
-    private static FilterDefinition<Client> BuildSearchFilter(string? query)
+    private static FilterDefinition<Client> BuildSearchFilter(string? query, string? shopId)
     {
-        if (string.IsNullOrWhiteSpace(query))
-            return Builders<Client>.Filter.Empty;
+        var filters = new List<FilterDefinition<Client>>();
 
-        // Case-insensitive regex; escape input to prevent regex injection
-        var regex = new BsonRegularExpression(Regex.Escape(query.Trim()), "i");
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            // Case-insensitive regex; escape input to prevent regex injection
+            var regex = new BsonRegularExpression(Regex.Escape(query.Trim()), "i");
+            filters.Add(Builders<Client>.Filter.Or(
+                Builders<Client>.Filter.Regex(c => c.FirstName, regex),
+                Builders<Client>.Filter.Regex(c => c.LastName, regex),
+                Builders<Client>.Filter.Regex(c => c.Phone, regex)));
+        }
 
-        return Builders<Client>.Filter.Or(
-            Builders<Client>.Filter.Regex(c => c.FirstName, regex),
-            Builders<Client>.Filter.Regex(c => c.LastName, regex),
-            Builders<Client>.Filter.Regex(c => c.Phone, regex));
+        if (!string.IsNullOrWhiteSpace(shopId))
+        {
+            filters.Add(Builders<Client>.Filter.Eq(c => c.ShopId, shopId));
+        }
+
+        return filters.Count > 0 ? Builders<Client>.Filter.And(filters) : Builders<Client>.Filter.Empty;
     }
 }

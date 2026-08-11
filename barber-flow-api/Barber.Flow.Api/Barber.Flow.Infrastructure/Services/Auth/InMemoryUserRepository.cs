@@ -14,9 +14,8 @@ public class InMemoryUserRepository() : IUserRepository
 
     public InMemoryUserRepository(IConfiguration config) : this()
     {
-        // In real applications, passwords should be hashed and salted
-        var user1 = new User { Id = Guid.Parse("1dc8d729-51f9-4633-aaab-46c9273bf44e"), Name = "Admin User", UserName = "admin", Password = "password", Email = "g.raba29@gmail.com", Role = "Admin" };
-        var user2 = new User { Id = Guid.NewGuid(), Name = "Barber User", UserName = "barber", Password = "barber", Email = "barber@example.com", Role = "Barber" };
+        var user1 = new User { Id = Guid.Parse("1dc8d729-51f9-4633-aaab-46c9273bf44e"), Name = "Admin User", UserName = "admin", Password = PasswordHasher.Hash("password"), Email = "g.raba29@gmail.com", Role = "Admin" };
+        var user2 = new User { Id = Guid.NewGuid(), Name = "Barber User", UserName = "barber", Password = PasswordHasher.Hash("barber"), Email = "barber@example.com", Role = "Barber" };
 
         _store[user1.Name] = user1;
         _store[user2.Name] = user2;
@@ -26,6 +25,11 @@ public class InMemoryUserRepository() : IUserRepository
 
     public Task<User> CreateAsync(User user, CancellationToken cancellation = default)
     {
+        if (!string.IsNullOrEmpty(user.Password) && !PasswordHasher.IsHashed(user.Password))
+        {
+            user.Password = PasswordHasher.Hash(user.Password);
+        }
+
         _store[user.UserName] = user;
         return Task.FromResult(user);
     }
@@ -39,24 +43,34 @@ public class InMemoryUserRepository() : IUserRepository
 
     public Task<User?> GetAuthenticationUserAsync(string userName, string password, CancellationToken cancellation = default)
     {
-        var users = _store.Values.AsEnumerable();
-        if (!string.IsNullOrWhiteSpace(userName) && !string.IsNullOrWhiteSpace(password))
-        {
-            userName = userName.Trim().ToLowerInvariant();
-            password = password.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password))
+            return Task.FromResult<User?>(null);
 
-            users = users
-                .Where(user => user.UserName.ToLowerInvariant() == userName
-                && user.Password.Equals(password, StringComparison.InvariantCultureIgnoreCase));
+        var trimmedUserName = userName.Trim();
+        var trimmedPassword = password.Trim();
+
+        var user = _store.Values.FirstOrDefault(u =>
+            string.Equals(u.UserName, trimmedUserName, StringComparison.OrdinalIgnoreCase));
+        if (user == null) return Task.FromResult<User?>(null);
+
+        bool isValid;
+        if (PasswordHasher.IsHashed(user.Password))
+        {
+            isValid = PasswordHasher.Verify(trimmedPassword, user.Password);
+        }
+        else
+        {
+            isValid = string.Equals(user.Password, trimmedPassword, StringComparison.Ordinal);
+            if (isValid)
+            {
+                user.Password = PasswordHasher.Hash(trimmedPassword);
+            }
         }
 
-        var user = users.FirstOrDefault();
-        if (user != null && string.Equals(user.Password, password, StringComparison.Ordinal))
-        {
-            user.Token = JwtTokenBuilder.Build(user, _config ?? throw new InvalidOperationException("Jwt configuration not available"));
-        }
+        if (!isValid) return Task.FromResult<User?>(null);
 
-        return Task.FromResult(user);
+        user.Token = JwtTokenBuilder.Build(user, _config ?? throw new InvalidOperationException("Jwt configuration not available"));
+        return Task.FromResult<User?>(user);
     }
 
     public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellation = default)
@@ -81,7 +95,7 @@ public class InMemoryUserRepository() : IUserRepository
         var existing = _store.Values.FirstOrDefault(u =>
             string.Equals(u.UserName, userName, StringComparison.OrdinalIgnoreCase));
         if (existing == null) return Task.FromResult(false);
-        existing.Password = newPassword;
+        existing.Password = PasswordHasher.Hash(newPassword);
         return Task.FromResult(true);
     }
 }

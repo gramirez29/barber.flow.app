@@ -9,13 +9,24 @@ public class InMemoryRefreshTokenRepository : IRefreshTokenRepository
 
     public Task SaveTokenAsync(RefreshToken token)
     {
-        _tokens.Add(token);
+        // Persist a hashed copy so the raw token never lands in the store - the caller keeps
+        // holding the raw value (e.g. UserService returns it to the client), only storage is hashed.
+        _tokens.Add(new RefreshToken
+        {
+            Id = token.Id,
+            UserId = token.UserId,
+            Token = RefreshTokenHasher.Hash(token.Token),
+            ExpiresAt = token.ExpiresAt,
+            CreatedAt = token.CreatedAt,
+            IsRevoked = token.IsRevoked,
+        });
         return Task.CompletedTask;
     }
 
     public Task<RefreshToken?> GetValidTokenAsync(string token)
     {
-        var found = _tokens.FirstOrDefault(t => t.Token == token && t.IsValid());
+        var hashed = RefreshTokenHasher.Hash(token);
+        var found = _tokens.FirstOrDefault(t => t.Token == hashed && t.IsValid());
         return Task.FromResult(found);
     }
 

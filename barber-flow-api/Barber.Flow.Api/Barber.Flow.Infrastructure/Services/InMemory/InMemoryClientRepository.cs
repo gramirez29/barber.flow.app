@@ -83,26 +83,28 @@ public class InMemoryClientRepository : IClientRepository
         return Task.FromResult(client);
     }
 
-    public Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, CancellationToken ct = default)
+    public Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, string? shopId = null, CancellationToken ct = default)
     {
         var clients = _store.Values.AsEnumerable();
 
-		// If no query is provided, return all clients: It could change if we want to get aproximation results
-        if (string.IsNullOrWhiteSpace(query))
+        if (!string.IsNullOrWhiteSpace(query))
         {
-            if (page.HasValue && pageSize.HasValue)
-                clients = clients.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
-            return Task.FromResult(clients);
+            var q = query.Trim().ToLowerInvariant();
+            clients = clients.Where(client =>
+                client.FirstName.ToLowerInvariant().Contains(q, StringComparison.InvariantCultureIgnoreCase) ||
+                client.LastName.ToLowerInvariant().Contains(q, StringComparison.InvariantCultureIgnoreCase) ||
+                (client.Phone ?? string.Empty).Contains(q, StringComparison.InvariantCultureIgnoreCase));
         }
-        
-        query = query.Trim().ToLowerInvariant();
-        clients = clients.Where(client =>
-            client.FirstName.ToLowerInvariant().Contains(query, StringComparison.InvariantCultureIgnoreCase) ||
-            client.LastName.ToLowerInvariant().Contains(query, StringComparison.InvariantCultureIgnoreCase) ||
-            (client.Phone ?? string.Empty).Contains(query,  StringComparison.InvariantCultureIgnoreCase));
-        
+
+        if (!string.IsNullOrWhiteSpace(shopId))
+            clients = clients.Where(client => client.ShopId == shopId);
+
         if (page.HasValue && pageSize.HasValue)
-            clients = clients.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
+        {
+            var ps = Math.Clamp(pageSize.Value, 1, 200);
+            var pg = Math.Max(0, page.Value - 1);
+            clients = clients.Skip(pg * ps).Take(ps);
+        }
 
         return Task.FromResult(clients);
     }
