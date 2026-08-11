@@ -1,23 +1,16 @@
 ﻿using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
-using Barber.Flow.Infrastructure.Services.Auth.DTOs;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 
 namespace Barber.Flow.Application.Services.Auth;
 
 public class AuthService(
-    IJwtAuthService jwtAuthService,
     IUserRepository userRepository,
     IPasswordResetRepository passwordResetRepository,
     IEmailService emailService,
     ILogger<AuthService> logger) : IAuthService
 {
-    public async Task<LoginResult?> GetJsonWebTokenAsync(string userOrEmail, string password, CancellationToken cancellationToken = default)
-    {
-        var jsonWebToken = await jwtAuthService.GetJsonWebTokenAsync(userOrEmail, password, cancellationToken);
-        return jsonWebToken == null ? null : new LoginResult(jsonWebToken.Username, jsonWebToken.Token);
-    }
-
     public async Task<bool> RequestPasswordResetAsync(string email, CancellationToken cancellationToken = default)
     {
         var user = await userRepository.GetByEmailAsync(email, cancellationToken);
@@ -26,8 +19,8 @@ public class AuthService(
         // Invalidate previous tokens
         await passwordResetRepository.InvalidateAllForUserAsync(user.Id.ToString());
 
-        // Generate 6-digit OTP
-        var otp = new Random().Next(100000, 999999).ToString();
+        // Generate 6-digit OTP using a cryptographically secure generator (predictable OTPs are brute-forceable)
+        var otp = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
 
         var token = new PasswordResetToken
         {

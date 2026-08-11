@@ -54,6 +54,13 @@
 		signedInAs: "Signed in as %{identity}",
 		workspace: "Workspace",
 	},
+	lock: {
+		title: "Session locked",
+		subtitle: "Verify it's you to keep using Barber Flow.",
+		unlock: "Unlock",
+		promptMessage: "Unlock Barber Flow",
+		authFailed: "We couldn't verify your identity. Try again.",
+	},
 	login: {
 		appointments: "Appointments",
 		authFailed: "Authentication failed",

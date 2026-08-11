@@ -9,7 +9,7 @@ public interface IClientService
     Task<Client?> UpdateAsync(string id, Client client, CancellationToken cancellationToken = default);
 
     Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
-    Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, string? shopId = null, CancellationToken cancellationToken = default);
 
     Task<Client?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
 }

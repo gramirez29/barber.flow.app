@@ -1,9 +1,9 @@
 using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.DTOs.Responses;
+using Barber.Flow.Api.Extensions;
 using Barber.Flow.Application.Services.Appointments;
+using Barber.Flow.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.JsonWebTokens;
-using System.Security.Claims;
 
 namespace Barber.Flow.Api.Apis;
 
@@ -53,11 +53,7 @@ public static class AppointmentsApi
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
-            ?? httpContext.User.FindFirst("username")?.Value
-            ?? httpContext.User.Identity?.Name
-            ?? string.Empty;
+        var userId = httpContext.User.GetUserName() ?? string.Empty;
 
         var appointment = new Domain.Entities.Appointments
         {
@@ -90,14 +86,17 @@ public static class AppointmentsApi
         string id,
         AppointmentRequest request,
         IAppointmentService appointmentService,
+        IBarberRepository barberRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
-            ?? httpContext.User.FindFirst("username")?.Value
-            ?? httpContext.User.Identity?.Name
-            ?? string.Empty;
+        var existing = await appointmentService.GetByIdAsync(id, cancellationToken);
+        if (existing == null) return TypedResults.NotFound();
+
+        var caller = await ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
+        if (!CanAccess(caller, existing.ShopId)) return TypedResults.NotFound();
+
+        var userId = httpContext.User.GetUserName() ?? string.Empty;
 
         var appointment = new Domain.Entities.Appointments
         {
@@ -131,8 +130,16 @@ public static class AppointmentsApi
         string id,
         MoveAppointmentRequest request,
         IAppointmentService appointmentService,
+        IBarberRepository barberRepository,
+        HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
+        var existing = await appointmentService.GetByIdAsync(id, cancellationToken);
+        if (existing == null) return TypedResults.NotFound();
+
+        var caller = await ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
+        if (!CanAccess(caller, existing.ShopId)) return TypedResults.NotFound();
+
         try
         {
             var moved = await appointmentService.MoveAsync(id, request.NewDate, request.NewTime, cancellationToken);
@@ -154,26 +161,46 @@ public static class AppointmentsApi
         [FromQuery] int? page,
         [FromQuery] int? pageSize,
         IAppointmentService appointmentService,
+        IBarberRepository barberRepository,
+        HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var list = await appointmentService.FindAsync(date, endDate, status, query, page, pageSize, cancellationToken);
+        var caller = await ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
+        var shopIdFilter = caller.IsAdmin ? null : caller.ShopId;
+
+        var list = await appointmentService.FindAsync(date, endDate, status, query, page, pageSize, shopIdFilter, cancellationToken);
         return TypedResults.Ok(list.Select(Map));
     }
 
     private static async Task<IResult> GetAppointmentAsync(
         string id,
         IAppointmentService appointmentService,
+        IBarberRepository barberRepository,
+        HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
         var appointment = await appointmentService.GetByIdAsync(id, cancellationToken);
-        return appointment == null ? TypedResults.NotFound() : TypedResults.Ok(Map(appointment));
+        if (appointment == null) return TypedResults.NotFound();
+
+        var caller = await ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
+        if (!CanAccess(caller, appointment.ShopId)) return TypedResults.NotFound();
+
+        return TypedResults.Ok(Map(appointment));
     }
 
     private static async Task<IResult> DeleteAppointmentAsync(
         string id,
         IAppointmentService appointmentService,
+        IBarberRepository barberRepository,
+        HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
+        var existing = await appointmentService.GetByIdAsync(id, cancellationToken);
+        if (existing == null) return TypedResults.NotFound();
+
+        var caller = await ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
+        if (!CanAccess(caller, existing.ShopId)) return TypedResults.NotFound();
+
         var ok = await appointmentService.DeleteAsync(id, cancellationToken);
         return ok ? TypedResults.NoContent() : TypedResults.NotFound();
     }
@@ -183,6 +210,27 @@ public static class AppointmentsApi
         var id = await appointmentService.GetNextIdAsync();
         return TypedResults.Ok(new { nextId = id });
     }
+
+    /// <summary>
+    /// Resolves the calling barber's ShopId (the tenant boundary appointments/clients are
+    /// isolated by) and whether they're Admin, which bypasses that isolation entirely.
+    /// </summary>
+    internal static async Task<CallerContext> ResolveCallerAsync(
+        HttpContext httpContext, IBarberRepository barberRepository, CancellationToken cancellationToken)
+    {
+        if (httpContext.User.IsAdmin()) return new CallerContext(true, null);
+
+        var userName = httpContext.User.GetUserName();
+        if (string.IsNullOrWhiteSpace(userName)) return new CallerContext(false, null);
+
+        var barber = await barberRepository.GetByUserNameAsync(userName, cancellationToken);
+        return new CallerContext(false, barber?.ShopId);
+    }
+
+    internal static bool CanAccess(CallerContext caller, string? recordShopId) =>
+        caller.IsAdmin || (!string.IsNullOrEmpty(caller.ShopId) && caller.ShopId == recordShopId);
+
+    internal readonly record struct CallerContext(bool IsAdmin, string? ShopId);
 
     private static AppointmentResponse Map(Domain.Entities.Appointments a) => new(
         a.Id,

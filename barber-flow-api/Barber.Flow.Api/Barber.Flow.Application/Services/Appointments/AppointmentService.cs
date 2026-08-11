@@ -57,8 +57,9 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
         string? query = null,
         int? page = null,
         int? pageSize = null,
+        string? shopId = null,
         CancellationToken cancellationToken = default)
-        => _repo.FindAsync(date, endDate, status, query, page, pageSize, cancellationToken);
+        => _repo.FindAsync(date, endDate, status, query, page, pageSize, shopId, cancellationToken);
 
     public async Task<Domain.Entities.Appointments?> MoveAsync(string id, string newDate, string? newTime = null, CancellationToken cancellationToken = default)
     {

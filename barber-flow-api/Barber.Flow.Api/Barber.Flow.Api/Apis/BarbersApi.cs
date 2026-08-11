@@ -31,12 +31,12 @@ public static class BarbersApi
         api.MapGet("/search", FindBarbersAsync)
             .WithName(nameof(FindBarbersAsync))
             .WithTags(BarberTag)
-            .AllowAnonymous();
+            .RequireAuthorization();
 
         api.MapGet("/getById/{id}", GetBarberAsync)
             .WithName(nameof(GetBarberAsync))
             .WithTags(BarberTag)
-            .AllowAnonymous();
+            .RequireAuthorization();
 
         api.MapGet("/nextId", NextIdAsync)
             .WithName(nameof(NextIdAsync))

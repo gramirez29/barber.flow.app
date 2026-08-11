@@ -1,5 +1,7 @@
 using Barber.Flow.Domain.Entities;
+using Barber.Flow.Domain.Interfaces;
 using Barber.Flow.Domain.ValueObjects;
+using Barber.Flow.Infrastructure.Services.Auth;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
@@ -13,11 +15,13 @@ namespace Barber.Flow.Infrastructure.Services.MongoDb;
 public sealed class MongoDbBootstrapper : IHostedService
 {
     private readonly IMongoDatabase _database;
+    private readonly IBarberShopRepository _barberShopRepo;
     private readonly ILogger<MongoDbBootstrapper> _logger;
 
-    public MongoDbBootstrapper(IMongoDatabase database, ILogger<MongoDbBootstrapper> logger)
+    public MongoDbBootstrapper(IMongoDatabase database, IBarberShopRepository barberShopRepo, ILogger<MongoDbBootstrapper> logger)
     {
         _database = database;
+        _barberShopRepo = barberShopRepo;
         _logger = logger;
     }
 
@@ -26,6 +30,7 @@ public sealed class MongoDbBootstrapper : IHostedService
         RegisterClassMaps();
         await EnsureIndexesAsync(cancellationToken);
         await SeedInitialAdminUserAsync(cancellationToken);
+        await EnsureBarberShopIdsAsync(cancellationToken);
         _logger.LogInformation("MongoDB bootstrapped against '{Database}'.", _database.DatabaseNamespace.DatabaseName);
     }
 
@@ -221,12 +226,75 @@ public sealed class MongoDbBootstrapper : IHostedService
             Id = Guid.Parse("1dc8d729-51f9-4633-aaab-46c9273bf44e"),
             Name = "Admin User",
             UserName = "admin",
-            Password = "password",
+            Password = PasswordHasher.Hash("password"),
             Email = "g.raba29@gmail.com",
             Role = "Admin"
         };
 
         await users.InsertOneAsync(adminUser, cancellationToken: cancellationToken);
         _logger.LogInformation("Seeded initial admin user '{UserName}' into MongoDB.", adminUser.UserName);
+    }
+
+    /// <summary>
+    /// One-time, idempotent backfill: any Barber that predates the "every barber always gets a
+    /// ShopId" guarantee (see BarberService.CreateAsync) is given its own BarberShop here, and
+    /// their existing Appointments/Clients are updated to point at it. ShopId is the tenant
+    /// boundary used to isolate each barber's data from every other barber's, so this must run
+    /// before that isolation can be enforced safely. Runs on every startup but is a no-op once
+    /// no Barber is missing a ShopId.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task EnsureBarberShopIdsAsync(CancellationToken cancellationToken = default)
+    {
+        var barbers = _database.GetCollection<BarberEntity>("barbers");
+        var missingShopFilter = Builders<BarberEntity>.Filter.Or(
+            Builders<BarberEntity>.Filter.Eq(b => b.ShopId, null),
+            Builders<BarberEntity>.Filter.Eq(b => b.ShopId, string.Empty));
+
+        var barbersWithoutShop = await barbers.Find(missingShopFilter).ToListAsync(cancellationToken);
+        if (barbersWithoutShop.Count == 0) return;
+
+        var appointments = _database.GetCollection<Appointments>("appointments");
+        var clients = _database.GetCollection<Client>("clients");
+
+        foreach (var barber in barbersWithoutShop)
+        {
+            var shop = await _barberShopRepo.CreateAsync(new BarberShop
+            {
+                Name = string.IsNullOrWhiteSpace(barber.BarberShopName) ? barber.BarberName : barber.BarberShopName,
+                Phone = barber.BarberShopPhone,
+                Address = barber.Address,
+                CreatedBy = barber.CreatedBy,
+                UpdatedBy = barber.CreatedBy,
+            });
+
+            await barbers.UpdateOneAsync(
+                Builders<BarberEntity>.Filter.Eq(b => b.Id, barber.Id),
+                Builders<BarberEntity>.Update.Set(b => b.ShopId, shop.Id),
+                cancellationToken: cancellationToken);
+
+            var ownedByThisBarberWithNoShop = Builders<Appointments>.Filter.And(
+                Builders<Appointments>.Filter.Eq(a => a.CreatedBy, barber.UserName),
+                Builders<Appointments>.Filter.Or(
+                    Builders<Appointments>.Filter.Eq(a => a.ShopId, null),
+                    Builders<Appointments>.Filter.Eq(a => a.ShopId, string.Empty)));
+            await appointments.UpdateManyAsync(
+                ownedByThisBarberWithNoShop,
+                Builders<Appointments>.Update.Set(a => a.ShopId, shop.Id),
+                cancellationToken: cancellationToken);
+
+            var clientsOwnedByThisBarberWithNoShop = Builders<Client>.Filter.And(
+                Builders<Client>.Filter.Eq(c => c.CreatedBy, barber.UserName),
+                Builders<Client>.Filter.Or(
+                    Builders<Client>.Filter.Eq(c => c.ShopId, null),
+                    Builders<Client>.Filter.Eq(c => c.ShopId, string.Empty)));
+            await clients.UpdateManyAsync(
+                clientsOwnedByThisBarberWithNoShop,
+                Builders<Client>.Update.Set(c => c.ShopId, shop.Id),
+                cancellationToken: cancellationToken);
+        }
+
+        _logger.LogInformation("Backfilled ShopId for {Count} barber(s) that were missing one.", barbersWithoutShop.Count);
     }
 }

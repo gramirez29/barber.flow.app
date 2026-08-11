@@ -14,16 +14,21 @@ public class BarberServiceTests
     private BarberService CreateSut() => new(_repo.Object, _shopRepo.Object);
 
     [Fact]
-    public async Task CreateAsync_WithoutShopName_DelegatesToRepositoryAndDoesNotCreateShop()
+    public async Task CreateAsync_WithoutShopName_StillCreatesShopUsingBarberNameAndLinksShopId()
     {
-        var barber = new BarberEntity { BarberName = "Main Barber" };
-        var created = new BarberEntity { Id = "CRB-0001", BarberName = "Main Barber" };
-        _repo.Setup(r => r.CreateAsync(barber, It.IsAny<CancellationToken>())).ReturnsAsync(created);
+        // Every barber must always end up with a ShopId - it's the tenant boundary used to
+        // isolate each barber's appointments/clients from every other barber's.
+        var barber = new BarberEntity { BarberName = "Main Barber", CreatedBy = "admin" };
+        var createdShop = new BarberShop { Id = "SHOP-0001", Name = "Main Barber", CreatedBy = "admin", UpdatedBy = "admin" };
+        _shopRepo.Setup(s => s.CreateAsync(It.Is<BarberShop>(bs => bs.Name == "Main Barber" && bs.CreatedBy == "admin")))
+            .ReturnsAsync(createdShop);
+        _repo.Setup(r => r.CreateAsync(It.IsAny<BarberEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BarberEntity b, CancellationToken _) => b);
 
         var result = await CreateSut().CreateAsync(barber);
 
-        Assert.Same(created, result);
-        _shopRepo.Verify(s => s.CreateAsync(It.IsAny<BarberShop>()), Times.Never);
+        Assert.Equal("SHOP-0001", result.ShopId);
+        _repo.Verify(r => r.CreateAsync(It.Is<BarberEntity>(b => b.ShopId == "SHOP-0001"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

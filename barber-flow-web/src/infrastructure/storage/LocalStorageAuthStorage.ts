@@ -1,6 +1,8 @@
 import { AuthenticatedUser } from '@domain/entities';
 
 const AUTH_STORAGE_KEY = 'barber_flow_auth';
+const NOTIFICATIONS_STORAGE_KEY = 'barber_flow_notifications';
+const NOTIFICATIONS_ENABLED_STORAGE_KEY = 'barber_flow_notifications_enabled';
 
 export class LocalStorageAuthStorage {
   saveUser(user: AuthenticatedUser): void {
@@ -24,6 +26,10 @@ export class LocalStorageAuthStorage {
   clearUser(): void {
     try {
       localStorage.removeItem(AUTH_STORAGE_KEY);
+      // Also clear cached client data (names/phones) so the next person to use this
+      // device doesn't inherit the previous session's notification inbox.
+      localStorage.removeItem(NOTIFICATIONS_STORAGE_KEY);
+      localStorage.removeItem(NOTIFICATIONS_ENABLED_STORAGE_KEY);
     } catch (error) {
       console.error('Error clearing user from storage:', error);
     }

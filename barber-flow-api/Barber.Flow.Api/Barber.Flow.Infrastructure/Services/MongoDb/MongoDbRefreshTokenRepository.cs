@@ -1,5 +1,6 @@
 using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
+using Barber.Flow.Infrastructure.Services.Auth;
 using MongoDB.Driver;
 
 namespace Barber.Flow.Infrastructure.Services.MongoDb;
@@ -15,13 +16,24 @@ public class MongoDbRefreshTokenRepository : IRefreshTokenRepository
 
     public async Task SaveTokenAsync(RefreshToken token)
     {
-        await _collection.InsertOneAsync(token);
+        // Persist a hashed copy so the raw token never lands in the database - the caller keeps
+        // holding the raw value (e.g. UserService returns it to the client), only storage is hashed.
+        var toStore = new RefreshToken
+        {
+            Id = token.Id,
+            UserId = token.UserId,
+            Token = RefreshTokenHasher.Hash(token.Token),
+            ExpiresAt = token.ExpiresAt,
+            CreatedAt = token.CreatedAt,
+            IsRevoked = token.IsRevoked,
+        };
+        await _collection.InsertOneAsync(toStore);
     }
 
     public async Task<RefreshToken?> GetValidTokenAsync(string token)
     {
         var filter = Builders<RefreshToken>.Filter.And(
-            Builders<RefreshToken>.Filter.Eq(t => t.Token, token),
+            Builders<RefreshToken>.Filter.Eq(t => t.Token, RefreshTokenHasher.Hash(token)),
             Builders<RefreshToken>.Filter.Eq(t => t.IsRevoked, false),
             Builders<RefreshToken>.Filter.Gte(t => t.ExpiresAt, DateTime.UtcNow)
         );

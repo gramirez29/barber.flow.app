@@ -10,18 +10,18 @@ public class BarberService(IBarberRepository repo, IBarberShopRepository shopRep
 
     public async Task<Domain.Entities.Barber> CreateAsync(Domain.Entities.Barber barber, CancellationToken cancellationToken = default)
     {
-        if (!string.IsNullOrWhiteSpace(barber.BarberShopName))
+        // Every barber always gets their own BarberShop, even if they didn't name one explicitly,
+        // so ShopId is never null - it's the tenant boundary used to isolate each barber's
+        // appointments/clients from every other barber's.
+        var shop = await _shopRepo.CreateAsync(new BarberShop
         {
-            var shop = await _shopRepo.CreateAsync(new BarberShop
-            {
-                Name = barber.BarberShopName,
-                Phone = barber.BarberShopPhone,
-                Address = barber.Address,
-                CreatedBy = barber.CreatedBy,
-                UpdatedBy = barber.CreatedBy,
-            });
-            barber.ShopId = shop.Id;
-        }
+            Name = string.IsNullOrWhiteSpace(barber.BarberShopName) ? barber.BarberName : barber.BarberShopName,
+            Phone = barber.BarberShopPhone,
+            Address = barber.Address,
+            CreatedBy = barber.CreatedBy,
+            UpdatedBy = barber.CreatedBy,
+        });
+        barber.ShopId = shop.Id;
 
         return await _repo.CreateAsync(barber, cancellationToken);
     }

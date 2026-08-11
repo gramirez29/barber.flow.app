@@ -61,9 +61,19 @@ public class BarbersApiTests : IClassFixture<ApiWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Search_AllowsAnonymous()
+    public async Task Search_WithoutToken_ReturnsUnauthorized()
     {
         var client = _factory.CreateClient();
+
+        var response = await client.GetAsync("/api/barbers/search");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Search_WithToken_ReturnsOk()
+    {
+        var client = await CreateAuthenticatedClientAsync("admin", "password");
 
         var response = await client.GetAsync("/api/barbers/search");
 

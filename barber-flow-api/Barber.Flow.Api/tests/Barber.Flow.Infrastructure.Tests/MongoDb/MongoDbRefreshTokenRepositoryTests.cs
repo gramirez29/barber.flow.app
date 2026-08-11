@@ -1,5 +1,6 @@
 using Barber.Flow.Domain.Entities;
 using Barber.Flow.Infrastructure.Services.MongoDb;
+using MongoDB.Driver;
 
 namespace Barber.Flow.Infrastructure.Tests.MongoDb;
 
@@ -67,5 +68,23 @@ public class MongoDbRefreshTokenRepositoryTests
 
         var result = await sut.GetValidTokenAsync("revoked-token");
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task SaveTokenAsync_StoresHashedTokenNotRawValue()
+    {
+        var database = _fixture.CreateDatabase();
+        var sut = new MongoDbRefreshTokenRepository(database);
+        var userId = Guid.NewGuid().ToString();
+        var token = BuildToken(userId, "plaintext-token-value");
+
+        await sut.SaveTokenAsync(token);
+
+        var stored = await database.GetCollection<RefreshToken>("refresh_tokens")
+            .Find(Builders<RefreshToken>.Filter.Eq(t => t.Id, token.Id))
+            .FirstOrDefaultAsync();
+
+        Assert.NotNull(stored);
+        Assert.NotEqual("plaintext-token-value", stored!.Token);
     }
 }

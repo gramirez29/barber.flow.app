@@ -12,5 +12,5 @@ public interface IClientRepository
 
     Task<Client?> GetByIdAsync(string id, CancellationToken cancellation = default);
 
-    Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, CancellationToken cancellation = default);
+    Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, string? shopId = null, CancellationToken cancellation = default);
 }

@@ -121,6 +121,7 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
         string? query = null,
         int? page = null,
         int? pageSize = null,
+        string? shopId = null,
         CancellationToken cancellation = default)
     {
         var list = _store.Values.AsEnumerable();
@@ -151,10 +152,13 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
                 a.Phone.ToLowerInvariant().Contains(q));
         }
 
+        if (!string.IsNullOrWhiteSpace(shopId))
+            list = list.Where(a => a.ShopId == shopId);
+
         list = list.OrderBy(a => a.Date).ThenBy(a => a.Time);
 
-        var ps = pageSize ?? 50;
-        var pg = (page ?? 1) - 1;
+        var ps = Math.Clamp(pageSize ?? 50, 1, 100);
+        var pg = Math.Max(0, (page ?? 1) - 1);
         list = list.Skip(pg * ps).Take(ps);
 
         return Task.FromResult(list);

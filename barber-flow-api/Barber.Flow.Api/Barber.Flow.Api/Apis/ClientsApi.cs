@@ -1,11 +1,10 @@
 ﻿using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.DTOs.Responses;
+using Barber.Flow.Api.Extensions;
 using Barber.Flow.Application.Services.Clients;
 using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using static System.Net.WebRequestMethods;
 
 namespace Barber.Flow.Api.Apis;
 
@@ -18,26 +17,21 @@ public static class ClientsApi
         var api = app.MapGroup("api/clients")
             .RequireAuthorization();
 
-        // OPTIONAL: .AllowAnonymous(); -> Allow anonymous for read/list if you want public listing
-
         api.MapPost("/create", CreateClientAsync)
             .WithName(nameof(CreateClientAsync))
-            .WithTags(ClientTagName)
-            .AllowAnonymous();
+            .WithTags(ClientTagName);
 
         api.MapPut("/update/{id}", UpdateClientAsync)
             .WithName(nameof(UpdateClientAsync))
             .WithTags(ClientTagName);
-        
+
         api.MapGet("/search", FindClientsAsync)
             .WithName(nameof(FindClientsAsync))
-            .WithTags(ClientTagName)
-            .AllowAnonymous();
-        
+            .WithTags(ClientTagName);
+
         api.MapGet("/getById/{id}", GetClientAsync)
             .WithName(nameof(GetClientAsync))
-            .WithTags(ClientTagName)
-            .AllowAnonymous();
+            .WithTags(ClientTagName);
         
         api.MapDelete("/delete/{id}", DeleteClientAsync)
             .WithName(nameof(DeleteClientAsync))
@@ -64,8 +58,7 @@ public static class ClientsApi
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var userId = 
-            httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??httpContext.User.Identity?.Name;
+        var userId = httpContext.User.GetUserName() ?? string.Empty;
 
         var client = new Client
         {
@@ -79,8 +72,8 @@ public static class ClientsApi
             PaymentMethod = request.PaymentMethod,
             Active = request.Active,
             PhotoUrl = request.PhotoUrl,
-            CreatedBy = userId!,
-            UpdatedBy = userId!
+            CreatedBy = userId,
+            UpdatedBy = userId
         };
 
         var created = await clientService.CreateAsync(client, cancellationToken);
@@ -92,12 +85,18 @@ public static class ClientsApi
         string id,
         ClientRequest request,
         IClientService clientService,
+        IBarberRepository barberRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken = default
         )
     {
-        var userId = 
-            httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??httpContext.User.Identity?.Name;
+        var existing = await clientService.GetByIdAsync(id, cancellationToken);
+        if (existing == null) return TypedResults.NotFound();
+
+        var caller = await AppointmentsApi.ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
+        if (!AppointmentsApi.CanAccess(caller, existing.ShopId)) return TypedResults.NotFound();
+
+        var userId = httpContext.User.GetUserName() ?? string.Empty;
 
         var client = new Client
         {
@@ -111,10 +110,10 @@ public static class ClientsApi
             PaymentMethod = request.PaymentMethod,
             Active = request.Active,
             PhotoUrl = request.PhotoUrl,
-            UpdatedBy = userId!
+            UpdatedBy = userId
         };
 
-        var updated = await clientService.UpdateAsync(id, client);
+        var updated = await clientService.UpdateAsync(id, client, cancellationToken);
         if (updated == null)
         {
             return TypedResults.NotFound();
@@ -123,21 +122,52 @@ public static class ClientsApi
         return TypedResults.Ok(Map(updated));
     }
 
-    private static async Task<IResult> FindClientsAsync([FromQuery] string? query, [FromQuery] int? page, [FromQuery] int? pageSize, IClientService clientService)
+    private static async Task<IResult> FindClientsAsync(
+        [FromQuery] string? query,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize,
+        IClientService clientService,
+        IBarberRepository barberRepository,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
     {
-        var list = await clientService.FindAsync(query, page, pageSize);
+        var caller = await AppointmentsApi.ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
+        var shopIdFilter = caller.IsAdmin ? null : caller.ShopId;
+
+        var list = await clientService.FindAsync(query, page, pageSize, shopIdFilter, cancellationToken);
         return TypedResults.Ok(list.Select(Map));
     }
 
-    private static async Task<IResult> GetClientAsync(string id, IClientService clientService)
+    private static async Task<IResult> GetClientAsync(
+        string id,
+        IClientService clientService,
+        IBarberRepository barberRepository,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
     {
-        var c = await clientService.GetByIdAsync(id);
-        return c == null ? TypedResults.NotFound() : TypedResults.Ok(Map(c));
+        var c = await clientService.GetByIdAsync(id, cancellationToken);
+        if (c == null) return TypedResults.NotFound();
+
+        var caller = await AppointmentsApi.ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
+        if (!AppointmentsApi.CanAccess(caller, c.ShopId)) return TypedResults.NotFound();
+
+        return TypedResults.Ok(Map(c));
     }
 
-    private static async Task<IResult> DeleteClientAsync(string id, IClientService clientService)
+    private static async Task<IResult> DeleteClientAsync(
+        string id,
+        IClientService clientService,
+        IBarberRepository barberRepository,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
     {
-        var ok = await clientService.DeleteAsync(id);
+        var existing = await clientService.GetByIdAsync(id, cancellationToken);
+        if (existing == null) return TypedResults.NotFound();
+
+        var caller = await AppointmentsApi.ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
+        if (!AppointmentsApi.CanAccess(caller, existing.ShopId)) return TypedResults.NotFound();
+
+        var ok = await clientService.DeleteAsync(id, cancellationToken);
         return ok ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
@@ -168,8 +198,7 @@ public static class ClientsApi
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                     ?? httpContext.User.Identity?.Name 
+        var userId = httpContext.User.GetUserName()
                      ?? throw new UnauthorizedAccessException("User not authenticated");
 
         var history = await appointmentRepository.GetClientHistoryAsync(id, userId, page, pageSize, cancellationToken);
@@ -183,8 +212,7 @@ public static class ClientsApi
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                     ?? httpContext.User.Identity?.Name 
+        var userId = httpContext.User.GetUserName()
                      ?? throw new UnauthorizedAccessException("User not authenticated");
 
         var allAppointments = await appointmentRepository.GetClientHistoryAsync(id, userId, 1, 1000, cancellationToken);
@@ -217,12 +245,11 @@ public static class ClientsApi
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                     ?? httpContext.User.Identity?.Name 
+        var userId = httpContext.User.GetUserName()
                      ?? throw new UnauthorizedAccessException("User not authenticated");
 
         // Try to find client by phone
-        var clients = await clientService.FindAsync(phone, 1, 1, cancellationToken);
+        var clients = await clientService.FindAsync(phone, 1, 1, cancellationToken: cancellationToken);
         var client = clients.FirstOrDefault();
 
         if (client != null)

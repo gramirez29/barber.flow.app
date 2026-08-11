@@ -44,6 +44,7 @@ public interface IAppointmentRepository
     /// <param name="query">A search query to filter appointments.</param>
     /// <param name="page">The page number for pagination.</param>
     /// <param name="pageSize">The number of appointments per page.</param>
+    /// <param name="shopId">When provided, restricts results to appointments belonging to this shop.</param>
     /// <param name="cancellation">A token to monitor for cancellation requests.</param>
     /// <returns>A collection of appointments matching the search criteria.</returns>
     Task<IEnumerable<Entities.Appointments>> FindAsync(
@@ -53,6 +54,7 @@ public interface IAppointmentRepository
         string? query = null,
         int? page = null,
         int? pageSize = null,
+        string? shopId = null,
         CancellationToken cancellation = default);
 
     /// <summary>

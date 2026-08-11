@@ -159,4 +159,32 @@ public class MongoDbClientRepositoryTests
         Assert.Equal(2, secondPage.Count());
         Assert.Empty(firstPage.Select(c => c.Id).Intersect(secondPage.Select(c => c.Id)));
     }
+
+    [Fact]
+    public async Task FindAsync_ByShopId_ReturnsOnlyMatchingShop()
+    {
+        var sut = CreateSut();
+        var clientA = BuildClient("Juan", "Perez", "8888-0003");
+        clientA.ShopId = "SHOP-A";
+        var clientB = BuildClient("Maria", "Gomez", "8888-0004");
+        clientB.ShopId = "SHOP-B";
+        await sut.CreateAsync(clientA);
+        await sut.CreateAsync(clientB);
+
+        var result = await sut.FindAsync(shopId: "SHOP-A");
+
+        Assert.Single(result);
+        Assert.Equal("Juan", result.First().FirstName);
+    }
+
+    [Fact]
+    public async Task FindAsync_WithPageZero_DoesNotThrowAndReturnsFirstPage()
+    {
+        var sut = CreateSut();
+        await sut.CreateAsync(BuildClient("Juan", "Perez", "8888-0005"));
+
+        var result = await sut.FindAsync(page: 0, pageSize: 10);
+
+        Assert.Single(result);
+    }
 }

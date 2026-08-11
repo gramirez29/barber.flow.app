@@ -1,7 +1,20 @@
 import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { ApplicationUser } from "../types/applicationUser";
 import { BASE_URL } from "../config";
 import { apiFetch } from "./apis/apiClient";
+
+// Business-data caches keyed by the previous session - cleared on logout/account deletion so the
+// next person to use this device doesn't inherit the previous user's appointments/notifications/settings.
+const CACHED_DATA_KEYS = [
+	"barber-flow-appointments",
+	"barber-flow-notifications",
+	"barber-flow-settings-preferences",
+];
+
+const clearCachedData = async () => {
+	await AsyncStorage.multiRemove(CACHED_DATA_KEYS);
+};
 
 // Revisar la funcionalidad del calendario para verficar que todo esté funcionando correctamente, 
 // especialmente en lo que respecta a la gestión de citas y la visualización de las mismas. Además,
@@ -35,10 +48,12 @@ export const authService = {
 	},
 	clearStoredUser: async () => {
 		await SecureStore.deleteItemAsync("applicationUser");
+		await clearCachedData();
 	},
 	deleteSelf: async (): Promise<void> => {
 		await apiFetch("/api/users/me", { method: "DELETE" });
 		await SecureStore.deleteItemAsync("applicationUser");
+		await clearCachedData();
 	},
 
 	requestPasswordReset: async (email: string): Promise<void> => {

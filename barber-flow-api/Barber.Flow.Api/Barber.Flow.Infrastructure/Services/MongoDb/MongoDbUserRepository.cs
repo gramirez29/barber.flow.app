@@ -19,6 +19,11 @@ public sealed class MongoDbUserRepository : IUserRepository
 
     public async Task<User> CreateAsync(User user, CancellationToken cancellation = default)
     {
+        if (!string.IsNullOrEmpty(user.Password) && !PasswordHasher.IsHashed(user.Password))
+        {
+            user.Password = PasswordHasher.Hash(user.Password);
+        }
+
         await _collection.InsertOneAsync(user, cancellationToken: cancellation);
         return user;
     }
@@ -45,8 +50,27 @@ public sealed class MongoDbUserRepository : IUserRepository
             new MongoDB.Bson.BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(userName.Trim())}$", "i"));
 
         var user = await _collection.Find(filter).FirstOrDefaultAsync(cancellation);
-        if (user == null || !string.Equals(user.Password, password.Trim(), StringComparison.Ordinal))
-            return null;
+        if (user == null) return null;
+
+        var trimmedPassword = password.Trim();
+
+        if (PasswordHasher.IsHashed(user.Password))
+        {
+            if (!PasswordHasher.Verify(trimmedPassword, user.Password)) return null;
+        }
+        else
+        {
+            // Legacy plain-text password: verify as before, then migrate it to a hash now that
+            // we've confirmed it's correct, so it's never stored in plain text again.
+            if (!string.Equals(user.Password, trimmedPassword, StringComparison.Ordinal)) return null;
+
+            var hashed = PasswordHasher.Hash(trimmedPassword);
+            await _collection.UpdateOneAsync(
+                Builders<User>.Filter.Eq(u => u.Id, user.Id),
+                Builders<User>.Update.Set(u => u.Password, hashed),
+                cancellationToken: cancellation);
+            user.Password = hashed;
+        }
 
         user.Token = JwtTokenBuilder.Build(user, _config);
         return user;
@@ -69,7 +93,7 @@ public sealed class MongoDbUserRepository : IUserRepository
     {
         var filter = Builders<User>.Filter.Regex(u => u.UserName,
             new MongoDB.Bson.BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(userName.Trim())}$", "i"));
-        var update = Builders<User>.Update.Set(u => u.Password, newPassword);
+        var update = Builders<User>.Update.Set(u => u.Password, PasswordHasher.Hash(newPassword));
 
         var result = await _collection.UpdateOneAsync(filter, update, cancellationToken: cancellation);
         return result.ModifiedCount > 0;

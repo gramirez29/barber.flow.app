@@ -19,7 +19,9 @@ using Barber.Flow.Application.Services.Users;
 using Barber.Flow.Application.Services.Reports;
 using Barber.Flow.Api.DTOs.Requests;
 using FluentValidation;
+using Microsoft.AspNetCore.RateLimiting;
 using MongoDB.Driver;
+using System.Threading.RateLimiting;
 
 namespace Barber.Flow.Api.Extensions;
 
@@ -42,7 +44,6 @@ public static class ApplicationExtensions
         services.AddTransient<ISampleQuery, SampleQuery>();
 
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IJwtAuthService, JwtAuthService>();
 
         // Bind feature flags and MongoDB settings
         services.Configure<FeatureFlags>(configuration.GetSection("Features"));
@@ -123,16 +124,53 @@ public static class ApplicationExtensions
         return services;
     }
 
-    public static IServiceCollection AddAllowCORS(this IServiceCollection services) 
+    public static IServiceCollection AddAllowCORS(this IServiceCollection services, IConfiguration configuration)
     {
+        // Only browsers enforce CORS - the mobile app calls the API directly and is unaffected.
+        // Defaults cover local Vite dev; add real deployed web origins via the Cors:AllowedOrigins
+        // config section (or the Cors__AllowedOrigins__0, __1, ... env vars) once one exists.
+        var configuredOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+        var defaultDevOrigins = new[] { "http://localhost:3005", "http://localhost:5173" };
+        var allowedOrigins = configuredOrigins.Concat(defaultDevOrigins).Distinct().ToArray();
+
         services.AddCors(options =>
         {
             options.AddPolicy("AllowExpoApp", policy =>
             {
                 policy
-                    .AllowAnyOrigin()
+                    .WithOrigins(allowedOrigins)
                     .AllowAnyHeader()
                     .AllowAnyMethod();
+            });
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Simple per-IP rate limit for login and password-recovery endpoints, to slow down
+    /// credential-stuffing and OTP brute-force attempts. Named policy "auth", applied per-route
+    /// via .RequireRateLimiting("auth"). Kept generous in Development so local dev/test runs
+    /// (both use the "Development" environment, including the integration test host, which
+    /// re-authenticates many times per run) never trip it.
+    /// </summary>
+    public static IServiceCollection AddAuthRateLimiting(this IServiceCollection services, IHostEnvironment environment)
+    {
+        var permitLimit = environment.IsDevelopment() ? 1000 : 5;
+
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            options.AddPolicy("auth", context =>
+            {
+                var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = permitLimit,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                });
             });
         });
 
@@ -144,6 +182,17 @@ public static class ApplicationExtensions
         // Retrieve JWT configuration
         var jwt = configuration.GetSection("Jwt");
         var key = jwt["Key"] ?? throw new InvalidOperationException("Jwt:Key not configured");
+
+        if (environment.IsProduction())
+        {
+            const string placeholder = "ReplaceViaRailwayEnvVar-Jwt__Key";
+            if (key == placeholder || Encoding.UTF8.GetByteCount(key) < 32)
+            {
+                throw new InvalidOperationException(
+                    "Jwt:Key is missing, still the placeholder value, or too short for HS256 (needs at least 32 bytes). " +
+                    "Set a real secret via the Jwt__Key environment variable before starting in Production.");
+            }
+        }
 
         services.AddAuthentication(options =>
         {

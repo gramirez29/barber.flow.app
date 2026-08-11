@@ -1,7 +1,6 @@
 using Barber.Flow.Application.Services.Auth;
 using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
-using Barber.Flow.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -9,14 +8,12 @@ namespace Barber.Flow.Application.Tests.Services.Auth;
 
 public class AuthServiceTests
 {
-    private readonly Mock<IJwtAuthService> _jwtAuthService = new();
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IPasswordResetRepository> _passwordResetRepository = new();
     private readonly Mock<IEmailService> _emailService = new();
     private readonly Mock<ILogger<AuthService>> _logger = new();
 
     private AuthService CreateSut() => new(
-        _jwtAuthService.Object,
         _userRepository.Object,
         _passwordResetRepository.Object,
         _emailService.Object,
@@ -31,32 +28,6 @@ public class AuthServiceTests
         Email = email,
         Role = "Barber",
     };
-
-    [Fact]
-    public async Task GetJsonWebTokenAsync_JwtServiceReturnsNull_ReturnsNull()
-    {
-        _jwtAuthService
-            .Setup(s => s.GetJsonWebTokenAsync("admin", "wrong", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AuthResult?)null);
-
-        var result = await CreateSut().GetJsonWebTokenAsync("admin", "wrong");
-
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public async Task GetJsonWebTokenAsync_JwtServiceReturnsResult_MapsUsernameAndToken()
-    {
-        _jwtAuthService
-            .Setup(s => s.GetJsonWebTokenAsync("admin", "password", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AuthResult("admin", "jwt-token-value"));
-
-        var result = await CreateSut().GetJsonWebTokenAsync("admin", "password");
-
-        Assert.NotNull(result);
-        Assert.Equal("admin", result!.Username);
-        Assert.Equal("jwt-token-value", result.Token);
-    }
 
     [Fact]
     public async Task RequestPasswordResetAsync_UserNotFound_ReturnsFalseAndSendsNoEmail()
