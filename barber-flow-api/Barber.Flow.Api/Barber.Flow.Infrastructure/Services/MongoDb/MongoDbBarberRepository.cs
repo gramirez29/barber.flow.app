@@ -83,9 +83,14 @@ public sealed class MongoDbBarberRepository : IBarberRepository
         CancellationToken cancellation = default)
     {
         var filter = BuildSearchFilter(query);
+        // CreatedAt alone isn't a stable sort key: barbers created in the same millisecond
+        // tie, and Mongo doesn't guarantee tie order is preserved across separate Skip/Limit
+        // queries - Id breaks ties deterministically so paginated pages never overlap or
+        // drop a document.
         var findCursor = _collection
             .Find(filter)
-            .SortByDescending(b => b.CreatedAt);
+            .SortByDescending(b => b.CreatedAt)
+            .ThenByDescending(b => b.Id);
 
         if (page.HasValue && pageSize.HasValue)
             return await findCursor
