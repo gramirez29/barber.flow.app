@@ -1,4 +1,5 @@
 export * from './LoginPage';
+export * from './LandingPage';
 export * from './DashboardPage';
 export * from './AppointmentsPage';
 export * from './ClientsPage';

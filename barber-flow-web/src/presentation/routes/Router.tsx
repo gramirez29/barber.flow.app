@@ -12,6 +12,7 @@ import {
   ForgotPasswordPage,
   VerifyOtpPage,
   ResetPasswordPage,
+  LandingPage,
 } from '@presentation/pages';
 import { ProtectedRoute, OperationalRoute, AppBar, SidebarDrawer, Footer } from '@presentation/components/shared';
 import { useAuth } from '@presentation/context/AuthContext';
@@ -33,8 +34,11 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   );
 };
 
+const LANDING_HOSTNAME = 'haircutsflowcr.com';
+
 export const Router: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const isLandingHost = window.location.hostname === LANDING_HOSTNAME;
 
   return (
     <Routes>
@@ -134,8 +138,19 @@ export const Router: React.FC = () => {
         }
       />
 
+      {/* Root: apex domain shows the public landing page, every other host keeps the auth redirect */}
+      <Route
+        path="/"
+        element={
+          isLandingHost ? (
+            <LandingPage />
+          ) : (
+            <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />
+          )
+        }
+      />
+
       {/* Fallback */}
-      <Route path="/" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
       <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
     </Routes>
   );
