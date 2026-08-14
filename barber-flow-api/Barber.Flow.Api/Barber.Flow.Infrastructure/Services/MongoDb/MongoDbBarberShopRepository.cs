@@ -20,7 +20,12 @@ public sealed class MongoDbBarberShopRepository : IBarberShopRepository
         var filter = Builders<BarberShop>.Filter.Eq(s => s.CreatedBy, userName);
         return await _collection
             .Find(filter)
+            // CreatedAt alone isn't a stable sort key: shops created in the same millisecond
+            // tie, and Mongo doesn't guarantee tie order is preserved across separate
+            // Skip/Limit queries - Id breaks ties deterministically so paginated pages never
+            // overlap or drop a document.
             .SortByDescending(s => s.CreatedAt)
+            .ThenByDescending(s => s.Id)
             .Skip((page - 1) * pageSize)
             .Limit(pageSize)
             .ToListAsync();
