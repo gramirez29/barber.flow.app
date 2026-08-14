@@ -45,6 +45,14 @@ jobs:
         run: npm install -g @railway/cli
 
       - name: Deploy to Railway
-        run: railway up --service barber.flow.app --environment develop --detach
+        # main -> environment de producción, develop -> environment de desarrollo.
+        # El environment "production" debe existir en Railway antes de que esto corra en main.
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            RAILWAY_ENVIRONMENT="production"
+          else
+            RAILWAY_ENVIRONMENT="develop"
+          fi
+          railway up --service barber.flow.app --environment "$RAILWAY_ENVIRONMENT" --detach
         env:
          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
