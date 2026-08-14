@@ -1,29 +1,24 @@
-version: "3.9"
-
 services:
-  postgres:
-    image: postgres:16
-    container_name: barberflow-postgres
-    environment:
-      POSTGRES_DB: barberflow
-      POSTGRES_USER: barberflow_user
-      POSTGRES_PASSWORD: barberflow_pass
+  mongodb:
+    image: mongo:7.0  # Versión estable reciente
+    container_name: barber-flow-mongodb-dev
+    restart: always
     ports:
-      - "5432:5432"
+      - "27017:27017"  # Expone MongoDB en localhost:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: barberflow_2026
+      MONGO_INITDB_DATABASE: barber-flow-dev-db
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  api:
-    build:
-      context: ./barber-flow-api
-      dockerfile: Dockerfile
-    ports:
-      - "5119:80"
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=barberflow;Username=barberflow_user;Password=barberflow_pass
-    depends_on:
-      - postgres
+      - mongodb_data:/data/db  # Persiste los datos
+      - ./mongo-init:/docker-entrypoint-initdb.d  # Scripts iniciales opcionales
+    networks:
+      - backend-network
 
 volumes:
-  postgres_data:
+  mongodb_data:
+    driver: local
+
+networks:
+  backend-network:
+    driver: bridge

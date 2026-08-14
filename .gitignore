@@ -1,0 +1,54 @@
+# Repo-root .gitignore — ignore external module files and common binaries
+
+# Node.js
+node_modules/
+**/node_modules/
+
+# Yarn Plug'n'Play
+.pnp.cjs
+.pnp.js
+
+# Yarn v2+ cache and releases
+.yarn/
+!.yarn/releases/
+!.yarn/plugins/
+!.yarn/sdks/
+!.yarn/versions/
+
+# Packages / external libraries
+packages/
+**/packages/
+vendor/
+**/vendor/
+bower_components/
+
+# NuGet and .NET packages
+.nuget/
+**/artifacts/
+**/[Pp]ackages/*
+
+# CocoaPods
+Pods/
+**/Pods/
+
+# Gradle / Android
+.gradle/
+**/.gradle/
+
+# Composer
+composer.lock
+
+# Archives and binaries
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# IDEs and OS artifacts (common)
+.vscode/
+.idea/
+.vs/
+.DS_Store
+Thumbs.db

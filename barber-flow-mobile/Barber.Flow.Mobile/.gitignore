@@ -1,0 +1,108 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+# dotenv environment files
+.env.development
+.env.staging
+.env.production
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+ /ios
+ /android
+
+# Built app packages and binaries
+*.apk
+*.apks
+*.aab
+*.ipa
+*.xcarchive
+*.app
+*.dSYM
+*.so
+*.dll
+*.exe
+*.msi
+*.deb
+*.rpm
+
+# Archives and installers
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# IDEs and editors
+.vscode/
+.idea/
+*.iml
+*.sublime-workspace
+*.sublime-project
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Gradle / Android build folders
+**/build/
+android/.gradle/
+android/app/build/
+
+# CocoaPods / iOS build folders
+ios/Pods/
+Pods/
+DerivedData/
+build/
+xcuserdata/
+
+# Logs
+*.log
+
+# Certificates and keys (repeated for clarity)
+*.pem
+*.key
+*.p12
+*.jks
+*.mobileprovision

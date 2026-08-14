@@ -1,0 +1,15 @@
+export const appColors = {
+  background: '#1A1A1A',
+  surface: '#242424',
+  surfaceElevated: '#2D2D2D',
+  border: '#333333',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#A1A1AA',
+  accent: '#C9A84C',
+  accentLight: '#E5C878',
+  error: '#DC2626',
+  errorBg: 'rgba(220, 38, 38, 0.1)',
+  overlay: 'rgba(0, 0, 0, 0.7)',
+  onAccent: '#0F172A',
+  heroBodyText: 'rgba(255, 255, 255, 0.85)',
+};

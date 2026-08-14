@@ -1,0 +1,50 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# tsc -b (project references) build output for vite.config.ts
+# was previously emitted alongside the source (vite.config.js/.d.ts) and got
+# committed by accident, which broke lint in CI ('__dirname' is not defined
+# because ESLint's flat config doesn't apply Node globals to a compiled .js
+# file living next to the .ts source). tsconfig.node.json now redirects
+# emit to node_modules/.tsbuild-node, but keep these ignored as a safety net.
+vite.config.js
+vite.config.d.ts
+*.tsbuildinfo
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
