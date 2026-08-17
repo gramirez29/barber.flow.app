@@ -59,3 +59,7 @@ jobs:
          # account/team token that can deploy to multiple environments must be passed as
          # RAILWAY_API_TOKEN instead, or the CLI rejects it as invalid.
          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+         # A project-scoped token knows its own project automatically; an account token
+         # doesn't, so it needs to be told which project to act on or `railway up` fails
+         # with "No linked project found" before it ever gets to pick an environment.
+         RAILWAY_PROJECT_ID: ebb6ff97-3097-41df-a558-94ef61eae624
