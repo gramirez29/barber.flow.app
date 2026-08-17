@@ -34,7 +34,9 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   );
 };
 
-const LANDING_HOSTNAME = 'haircutsflowcr.com';
+// The apex domain redirects to www at the DNS/Cloudflare level (see PRODUCTION_IMPLEMENTATION.md
+// §7.6), so www is the only hostname that ever actually reaches this app.
+const LANDING_HOSTNAME = 'www.haircutsflowcr.com';
 
 export const Router: React.FC = () => {
   const { isAuthenticated } = useAuth();
