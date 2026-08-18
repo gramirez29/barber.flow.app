@@ -32,7 +32,7 @@ public class AuthService(
         await passwordResetRepository.SaveTokenAsync(token);
 
         // Send Email with OTP
-        var subject = "Barber Flow - Código de recuperación de contraseña";
+        var subject = "HairCutsFlow CR - Código de recuperación de contraseña";
         var body = GetEmailTemplate(user.Name, otp);
 
         try
@@ -54,7 +54,7 @@ public class AuthService(
         return $@"
             <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #1A1A1A; color: white;'>
                 <div style='text-align: center; margin-bottom: 20px;'>
-                    <h1 style='color: #C9A84C;'>BARBER FLOW</h1>
+                    <h1 style='color: #C9A84C;'>HAIRCUTSFLOW CR</h1>
                 </div>
                 <h2>Hola {userName},</h2>
                 <p>Recibimos una solicitud para restablecer tu contraseña. Utiliza el siguiente código de 6 dígitos para completar el proceso:</p>
@@ -64,7 +64,10 @@ public class AuthService(
                 <p>Este código vencerá en 15 minutos.</p>
                 <p>Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
                 <hr style='border: 0; border-top: 1px solid #C9A84C; margin: 20px 0;'>
-                <p style='font-size: 12px; color: #aaa; text-align: center;'>© 2024 Barber Flow. Premium Grooming Experience.</p>
+                <p style='font-size: 12px; color: #aaa; text-align: center;'>
+                    © {DateTime.UtcNow.Year} HairCutsFlow CR. Premium Grooming Experience.<br>
+                    <a href='https://www.haircutsflowcr.com' style='color: #C9A84C; text-decoration: none;'>www.haircutsflowcr.com</a>
+                </p>
             </div>";
     }
 
