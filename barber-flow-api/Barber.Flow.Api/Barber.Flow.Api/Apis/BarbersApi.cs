@@ -2,6 +2,7 @@ using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Application.Services.Users;
+using Barber.Flow.Domain.Interfaces;
 using Barber.Flow.Domain.ValueObjects;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
@@ -55,6 +56,7 @@ public static class BarbersApi
         BarberRequest request,
         IBarberService barberService,
         IUserService userService,
+        IUserRepository userRepository,
         IValidator<BarberRequest> validator,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
@@ -109,7 +111,7 @@ public static class BarbersApi
             await userService.CreateAsync(newUser, cancellationToken);
         }
 
-        var dto = Map(created);
+        var dto = await MapAsync(created, userRepository, cancellationToken);
         return TypedResults.Ok(dto);
     }
 
@@ -118,6 +120,7 @@ public static class BarbersApi
         BarberRequest request,
         IBarberService barberService,
         IUserService userService,
+        IUserRepository userRepository,
         IValidator<BarberRequest> validator,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
@@ -164,19 +167,26 @@ public static class BarbersApi
             await userService.UpdatePasswordAsync(request.UserName, request.Password, cancellationToken);
         }
 
-        return TypedResults.Ok(Map(updated));
+        return TypedResults.Ok(await MapAsync(updated, userRepository, cancellationToken));
     }
 
-    private static async Task<IResult> FindBarbersAsync([FromQuery] string? query, [FromQuery] int? page, [FromQuery] int? pageSize, IBarberService barberService)
+    private static async Task<IResult> FindBarbersAsync(
+        [FromQuery] string? query,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize,
+        IBarberService barberService,
+        IUserRepository userRepository,
+        CancellationToken cancellationToken = default)
     {
         var list = await barberService.FindAsync(query, page, pageSize);
-        return TypedResults.Ok(list.Select(Map));
+        var mapped = await Task.WhenAll(list.Select(b => MapAsync(b, userRepository, cancellationToken)));
+        return TypedResults.Ok(mapped);
     }
 
-    private static async Task<IResult> GetBarberAsync(string id, IBarberService barberService)
+    private static async Task<IResult> GetBarberAsync(string id, IBarberService barberService, IUserRepository userRepository, CancellationToken cancellationToken = default)
     {
         var b = await barberService.GetByIdAsync(id);
-        return b == null ? TypedResults.NotFound() : TypedResults.Ok(Map(b));
+        return b == null ? TypedResults.NotFound() : TypedResults.Ok(await MapAsync(b, userRepository, cancellationToken));
     }
 
     private static async Task<IResult> DeleteBarberAsync(string id, IBarberService barberService, HttpContext httpContext, CancellationToken cancellationToken = default)
@@ -202,22 +212,31 @@ public static class BarbersApi
         return TypedResults.Ok(new { nextId = id });
     }
 
-    private static BarberResponse Map(Domain.Entities.Barber b) => new(
-        b.Id,
-        b.UserName,
-        b.UserPhone,
-        b.UserEmail,
-        b.BarberName,
-        b.BarberPhone,
-        b.Address,
-        b.BarberShopName,
-        b.BarberShopPhone,
-        b.PhotoUrl,
-        b.Settings != null 
-            ? new BarberSettingsDto(b.Settings.CommissionPercentage, b.Settings.FixedDailyExpense) 
-            : null,
-        b.ShopId,
-        b.CreatedAt,
-        b.UpdatedAt
-    );
+    private static async Task<BarberResponse> MapAsync(Domain.Entities.Barber b, IUserRepository userRepository, CancellationToken cancellationToken)
+    {
+        var linkedUser = string.IsNullOrWhiteSpace(b.UserName)
+            ? null
+            : await userRepository.GetByUserNameAsync(b.UserName, cancellationToken);
+
+        return new BarberResponse(
+            b.Id,
+            b.UserName,
+            b.UserPhone,
+            b.UserEmail,
+            b.BarberName,
+            b.BarberPhone,
+            b.Address,
+            b.BarberShopName,
+            b.BarberShopPhone,
+            b.PhotoUrl,
+            b.Settings != null
+                ? new BarberSettingsDto(b.Settings.CommissionPercentage, b.Settings.FixedDailyExpense)
+                : null,
+            b.ShopId,
+            b.CreatedAt,
+            b.UpdatedAt,
+            linkedUser?.Id,
+            linkedUser?.IsBlocked
+        );
+    }
 }

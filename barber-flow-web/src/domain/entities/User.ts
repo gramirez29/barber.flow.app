@@ -5,6 +5,7 @@ export interface User {
   email: string;
   userName: string;
   role: string;
+  isBlocked?: boolean;
 }
 
 export interface AuthenticatedUser extends User {

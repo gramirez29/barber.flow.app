@@ -48,6 +48,17 @@ export class AxiosHttpClient implements HttpClient {
           this.clearAuthToken();
           window.location.href = '/login';
         }
+
+        const data = error.response?.data as { code?: string } | undefined;
+        if (error.response?.status === 403 && data?.code === 'ACCOUNT_BLOCKED') {
+          // Cuenta bloqueada por falta de pago: la sesión sigue siendo válida (no se
+          // limpia el token), solo se redirige a la pantalla de bloqueo de inmediato,
+          // sin esperar al próximo poll de estado.
+          if (window.location.pathname !== '/blocked') {
+            window.location.href = '/blocked';
+          }
+        }
+
         return Promise.reject(error.response?.data || error.message);
       }
     );

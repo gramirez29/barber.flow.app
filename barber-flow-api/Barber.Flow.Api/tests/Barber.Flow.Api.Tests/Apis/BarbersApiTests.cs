@@ -61,6 +61,21 @@ public class BarbersApiTests : IClassFixture<ApiWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Create_WithLinkedUser_ResponseIncludesUserIdAndBlockStatus()
+    {
+        var client = await CreateAuthenticatedClientAsync("admin", "password");
+        var request = BuildRequest() with { UserName = "linked-barber", Password = "secret123" };
+
+        var response = await client.PostAsJsonAsync("/api/barbers/create", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var created = await response.Content.ReadFromJsonAsync<BarberResponse>();
+        Assert.NotNull(created);
+        Assert.NotNull(created!.UserId);
+        Assert.False(created.IsBlocked);
+    }
+
+    [Fact]
     public async Task Search_WithoutToken_ReturnsUnauthorized()
     {
         var client = _factory.CreateClient();

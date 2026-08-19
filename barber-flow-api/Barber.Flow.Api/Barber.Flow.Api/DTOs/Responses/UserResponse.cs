@@ -7,5 +7,6 @@ public record UserResponse(
     string UserName,
     string? Role,
     string? Token,
-    string? RefreshToken
+    string? RefreshToken,
+    bool IsBlocked
 );

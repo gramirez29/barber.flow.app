@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Dialog, DialogContent, Typography, InputAdornment, CircularProgress } from '@mui/material';
+import { Box, Dialog, DialogContent, Typography, InputAdornment, CircularProgress, Switch } from '@mui/material';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
@@ -71,14 +71,17 @@ const emptyFormValues: CreateBarberFormData = {
 };
 
 export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ open, onClose }) => {
-  const { searchBarbers, createBarber, updateBarber, deleteBarber } = useBarbers();
+  const { searchBarbers, createBarber, updateBarber, deleteBarber, setBlocked } = useBarbers();
   const { confirm } = useConfirmDialog();
 
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editingIsBlocked, setEditingIsBlocked] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Barber[]>([]);
   const [loading, setLoading] = useState(false);
+  const [blockToggleLoading, setBlockToggleLoading] = useState(false);
 
   const form = useForm<CreateBarberFormData>(emptyFormValues, mode === 'edit' ? updateBarberSchema : createBarberSchema);
 
@@ -86,6 +89,8 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
     form.reset(emptyFormValues);
     setMode('create');
     setEditingId(null);
+    setEditingUserId(null);
+    setEditingIsBlocked(false);
     setSearchResults([]);
     setSearchQuery('');
   };
@@ -104,6 +109,26 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
     });
     setMode('edit');
     setEditingId(barber.id);
+    setEditingUserId(barber.userId ?? null);
+    setEditingIsBlocked(barber.isBlocked ?? false);
+  };
+
+  // Hint de UI únicamente (mismo username de fallback que usa el backend) — el
+  // rechazo real de bloquear a la cuenta admin siempre se enforce del lado del servidor.
+  const isAdminAccount = form.values.userName.trim().toLowerCase() === 'admin';
+
+  const handleToggleBlocked = async () => {
+    if (!editingUserId) return;
+    const nextValue = !editingIsBlocked;
+    setBlockToggleLoading(true);
+    try {
+      await setBlocked(editingUserId, nextValue);
+      setEditingIsBlocked(nextValue);
+    } catch {
+      // El error ya se notificó vía useNotification dentro de setBlocked.
+    } finally {
+      setBlockToggleLoading(false);
+    }
   };
 
   const handleSearch = async () => {
@@ -512,6 +537,41 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
                   ),
                 }}
               />
+
+              {mode === 'edit' && editingUserId && !isAdminAccount && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: appColors.surfaceElevated,
+                    border: `1px solid ${editingIsBlocked ? appColors.error : appColors.border}`,
+                    borderRadius: '12px',
+                    px: 2,
+                    py: 1,
+                  }}
+                >
+                  <Box>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: appColors.textPrimary }}>
+                      Cuenta bloqueada
+                    </Typography>
+                    <Typography sx={{ fontSize: 12, color: appColors.textSecondary }}>
+                      {editingIsBlocked
+                        ? 'Sin acceso a la app por falta de pago.'
+                        : 'Bloquea el acceso a toda la app por falta de pago.'}
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={editingIsBlocked}
+                    onChange={() => void handleToggleBlocked()}
+                    disabled={blockToggleLoading || loading}
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': { color: appColors.error },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: appColors.error },
+                    }}
+                  />
+                </Box>
+              )}
             </Box>
 
             {/* Acciones */}

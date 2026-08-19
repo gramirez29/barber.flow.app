@@ -9,4 +9,6 @@ public interface IUserService
     Task<User> CreateAsync(User user, CancellationToken cancellation = default);
     Task<bool> UpdatePasswordAsync(string userName, string newPassword, CancellationToken cancellation = default);
     Task<bool> DeleteAsync(string id, CancellationToken cancellation = default);
+    Task<User?> GetByIdAsync(Guid id, CancellationToken cancellation = default);
+    Task<bool?> SetBlockedAsync(string id, bool isBlocked, string actingAdmin, CancellationToken cancellation = default);
 }

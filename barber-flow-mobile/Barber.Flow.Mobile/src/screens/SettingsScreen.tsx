@@ -72,6 +72,7 @@ export const SettingsScreen = () => {
 
 	const [applicationUserLoading, setApplicationUserLoading] = useState(false);
 	const [applicationUserResults, setApplicationUserResults] = useState<BarberApiResponse[]>([]);
+	const [selectedApplicationUser, setSelectedApplicationUser] = useState<BarberApiResponse | null>(null);
 	const [isManageUsersModalVisible, setIsManageUsersModalVisible] = useState(false);
 	const [reportSettingsLoading, setReportSettingsLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -187,6 +188,7 @@ export const SettingsScreen = () => {
 					translateText("settings.alerts.applicationUserUpdated", { id: updated.id }),
 				);
 				loadValues(mapBarberResponseToForm(updated), "edit");
+				setSelectedApplicationUser(updated);
 			} else {
 				const barberIdToUse = values.barberId?.trim() || (await settingsService.getNextBarberId());
 				const created = await settingsService.createApplicationUser({
@@ -303,6 +305,7 @@ export const SettingsScreen = () => {
 	const handleResetApplicationUser = async () => {
 		resetValues();
 		setApplicationUserResults([]);
+		setSelectedApplicationUser(null);
 		setSearchQuery("");
 		await primeNextBarberId();
 	};
@@ -315,6 +318,31 @@ export const SettingsScreen = () => {
 	const handleSelectApplicationUserResult = (result: BarberApiResponse) => {
 		loadValues(mapBarberResponseToForm(result), "edit");
 		setApplicationUserResults([result]);
+		setSelectedApplicationUser(result);
+	};
+
+	const handleToggleApplicationUserBlocked = async () => {
+		if (!selectedApplicationUser?.userId) return;
+		const nextValue = !selectedApplicationUser.isBlocked;
+
+		setApplicationUserLoading(true);
+		try {
+			await settingsService.setApplicationUserBlocked(selectedApplicationUser.userId, nextValue);
+			setSelectedApplicationUser({ ...selectedApplicationUser, isBlocked: nextValue });
+			showAlert(
+				translateText("common.save"),
+				nextValue
+					? translateText("settings.alerts.applicationUserBlocked")
+					: translateText("settings.alerts.applicationUserUnblocked"),
+			);
+		} catch (error: unknown) {
+			showAlert(
+				translateText("common.save"),
+				getErrorMessage(error) || translateText("settings.alerts.saveFailed"),
+			);
+		} finally {
+			setApplicationUserLoading(false);
+		}
 	};
 
 	const handleSaveReportSettings = async () => {
@@ -626,8 +654,11 @@ export const SettingsScreen = () => {
 						onSearchQueryChange={setSearchQuery}
 						onSelectResult={handleSelectApplicationUserResult}
 						onSubmit={() => void handleApplicationUserSubmit()}
+						onToggleBlocked={() => void handleToggleApplicationUserBlocked()}
 						searchQuery={searchQuery}
 						searchResults={applicationUserResults}
+						selectedIsBlocked={selectedApplicationUser?.isBlocked ?? false}
+						selectedUserId={selectedApplicationUser?.userId ?? null}
 						touched={touched}
 						values={values}
 					/>

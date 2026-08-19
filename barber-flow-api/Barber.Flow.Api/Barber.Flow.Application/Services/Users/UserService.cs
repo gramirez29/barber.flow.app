@@ -1,17 +1,20 @@
 using System.Security.Cryptography;
 using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
+using Microsoft.Extensions.Configuration;
 
 namespace Barber.Flow.Application.Services.Users;
 
 public class UserService(
     IUserRepository userRepository,
     IRefreshTokenRepository refreshTokenRepository,
-    IUserTokenBuilder tokenBuilder) : IUserService
+    IUserTokenBuilder tokenBuilder,
+    IConfiguration configuration) : IUserService
 {
     private readonly IUserRepository _repo = userRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepo = refreshTokenRepository;
     private readonly IUserTokenBuilder _tokenBuilder = tokenBuilder;
+    private readonly IConfiguration _config = configuration;
 
     public async Task<User?> GetAuthenticationUserAsync(string userName, string password, CancellationToken cancellation = default)
     {
@@ -64,6 +67,29 @@ public class UserService(
     public Task<bool> DeleteAsync(string id, CancellationToken cancellation = default)
     {
         return _repo.DeleteAsync(id, cancellation);
+    }
+
+    public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellation = default)
+    {
+        return _repo.GetByIdAsync(id, cancellation);
+    }
+
+    // Returns null when the target account may never be blocked (it's the admin account) —
+    // enforced here too, not just at the API gate, so no other caller can slip past it.
+    public async Task<bool?> SetBlockedAsync(string id, bool isBlocked, string actingAdmin, CancellationToken cancellation = default)
+    {
+        if (!Guid.TryParse(id, out var userId)) return false;
+
+        var target = await _repo.GetByIdAsync(userId, cancellation);
+        if (target == null) return false;
+
+        var adminUsername = _config["BARBERFLOW_ADMIN_USERNAME"] ?? _config["AdminUsername"] ?? "admin";
+        var isAdminAccount = string.Equals(target.UserName, adminUsername, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(target.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+        if (isAdminAccount) return null;
+
+        var updated = await _repo.SetBlockedAsync(id, isBlocked, actingAdmin, cancellation);
+        return updated;
     }
 
     private async Task<string> IssueRefreshTokenAsync(string userId)

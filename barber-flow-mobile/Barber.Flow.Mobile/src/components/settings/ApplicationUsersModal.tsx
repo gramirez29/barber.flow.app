@@ -29,8 +29,11 @@ interface ApplicationUsersModalProps {
 	onSearchQueryChange: (value: string) => void;
 	onSelectResult: (result: BarberApiResponse) => void;
 	onSubmit: () => void;
+	onToggleBlocked: () => void;
 	searchQuery: string;
 	searchResults: BarberApiResponse[];
+	selectedIsBlocked: boolean;
+	selectedUserId: string | null;
 	touched: ApplicationUserFormTouched;
 	values: ApplicationUserSettingsForm;
 	visible: boolean;
@@ -50,8 +53,11 @@ export const ApplicationUsersModal: React.FC<ApplicationUsersModalProps> = ({
 	onSearchQueryChange,
 	onSelectResult,
 	onSubmit,
+	onToggleBlocked,
 	searchQuery,
 	searchResults,
+	selectedIsBlocked,
+	selectedUserId,
 	touched,
 	values,
 	visible,
@@ -105,8 +111,11 @@ export const ApplicationUsersModal: React.FC<ApplicationUsersModalProps> = ({
 								onSearchQueryChange={onSearchQueryChange}
 								onSelectResult={onSelectResult}
 								onSubmit={onSubmit}
+								onToggleBlocked={onToggleBlocked}
 								searchQuery={searchQuery}
 								searchResults={searchResults}
+								selectedIsBlocked={selectedIsBlocked}
+								selectedUserId={selectedUserId}
 								touched={touched}
 								values={values}
 							/>

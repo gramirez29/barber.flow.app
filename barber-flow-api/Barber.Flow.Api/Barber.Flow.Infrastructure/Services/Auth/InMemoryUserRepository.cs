@@ -80,9 +80,27 @@ public class InMemoryUserRepository() : IUserRepository
 
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellation = default)
     {
-        var user = _store.Values.FirstOrDefault(u => 
+        var user = _store.Values.FirstOrDefault(u =>
             string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(user);
+    }
+
+    public Task<User?> GetByUserNameAsync(string userName, CancellationToken cancellation = default)
+    {
+        var user = _store.Values.FirstOrDefault(u =>
+            string.Equals(u.UserName, userName.Trim(), StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(user);
+    }
+
+    public Task<bool> SetBlockedAsync(string id, bool isBlocked, string? actingAdmin, CancellationToken cancellation = default)
+    {
+        var user = _store.Values.FirstOrDefault(u => u.Id.ToString() == id);
+        if (user == null) return Task.FromResult(false);
+
+        user.IsBlocked = isBlocked;
+        user.BlockedAt = isBlocked ? DateTime.UtcNow : null;
+        user.BlockedBy = isBlocked ? actingAdmin : null;
+        return Task.FromResult(true);
     }
 
     public Task<User?> UpdateAsync(string id, User user, CancellationToken cancellation = default)

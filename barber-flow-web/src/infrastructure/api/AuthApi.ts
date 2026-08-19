@@ -23,6 +23,7 @@ export class AuthApi implements IAuthRepository {
       userName: response.userName,
       role: response.role,
       token: response.token,
+      isBlocked: response.isBlocked,
     };
 
     this.httpClient.setAuthToken(user.token);

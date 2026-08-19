@@ -13,6 +13,7 @@ import {
   VerifyOtpPage,
   ResetPasswordPage,
   LandingPage,
+  BlockedPage,
 } from '@presentation/pages';
 import { ProtectedRoute, OperationalRoute, AppBar, SidebarDrawer, Footer } from '@presentation/components/shared';
 import { useAuth } from '@presentation/context/AuthContext';
@@ -39,7 +40,7 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 const LANDING_HOSTNAME = 'www.haircutsflowcr.com';
 
 export const Router: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const isLandingHost = window.location.hostname === LANDING_HOSTNAME;
 
   return (
@@ -48,6 +49,19 @@ export const Router: React.FC = () => {
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+      />
+
+      <Route
+        path="/blocked"
+        element={
+          !isAuthenticated ? (
+            <Navigate to="/login" replace />
+          ) : !user?.isBlocked ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <BlockedPage />
+          )
+        }
       />
 
       <Route
