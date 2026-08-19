@@ -5,6 +5,11 @@ export interface UserResponse {
   userName: string;
   role: string;
   token: string;
+  isBlocked: boolean;
+}
+
+export interface AppStatusResponse {
+  isBlocked: boolean;
 }
 
 export interface AuthResponse {

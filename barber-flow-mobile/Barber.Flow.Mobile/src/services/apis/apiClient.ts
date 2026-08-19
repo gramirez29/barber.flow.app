@@ -17,6 +17,17 @@ export class SessionExpiredError extends Error {
     }
 }
 
+// Thrown when the backend rejects a request with 403 ACCOUNT_BLOCKED. The auth store's
+// isBlocked flag is already updated at the point this is thrown, so RootNavigator picks
+// up the change on its next render and shows BlockedScreen — callers can treat this as
+// already-handled, same as SessionExpiredError.
+export class AccountBlockedError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "AccountBlockedError";
+    }
+}
+
 const getStoredUser = async (): Promise<ApplicationUser | null> => {
     const storedUser = await SecureStore.getItemAsync(APPLICATION_USER_STORAGE_KEY);
 
@@ -182,6 +193,11 @@ export async function apiFetch(path: string, opts: ApiFetchOptions = {}, _isRetr
     if (!response.ok && response.status === 401) {
         await clearSessionOnUnauthorized();
         throw new SessionExpiredError(translate("session.expiredMessage"));
+    }
+
+    if (!response.ok && response.status === 403 && (response.body as { code?: string } | null)?.code === "ACCOUNT_BLOCKED") {
+        useAuthStore.getState().setBlocked(true);
+        throw new AccountBlockedError(extractErrorMessage(response.body, response.status));
     }
 
     if (!response.ok) {

@@ -14,5 +14,9 @@ public interface IUserRepository
 
         Task<Entities.User?> GetByEmailAsync(string email, CancellationToken cancellation = default);
 
+        Task<Entities.User?> GetByUserNameAsync(string userName, CancellationToken cancellation = default);
+
         Task<bool> UpdatePasswordAsync(string userName, string newPassword, CancellationToken cancellation = default);
+
+        Task<bool> SetBlockedAsync(string id, bool isBlocked, string? actingAdmin, CancellationToken cancellation = default);
 }

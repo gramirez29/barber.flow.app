@@ -61,6 +61,8 @@ const mapBarberResponse = (response: Record<string, unknown>): BarberApiResponse
 		settings,
 		createdAt: (response.createdAt ?? response.CreatedAt) as string | undefined,
 		updatedAt: (response.updatedAt ?? response.UpdatedAt) as string | undefined,
+		userId: (response.userId ?? response.UserId) as string | undefined,
+		isBlocked: (response.isBlocked ?? response.IsBlocked) as boolean | undefined,
 	};
 };
 
@@ -233,6 +235,17 @@ export const settingsService = {
 		});
 
 		return mapBarberResponse(response);
+	},
+
+	setApplicationUserBlocked: async (userId: string, isBlocked: boolean): Promise<void> => {
+		await apiFetch(`/api/users/${userId}/block`, {
+			json: { isBlocked },
+			method: "PATCH",
+		});
+	},
+
+	getMyStatus: async (): Promise<{ isBlocked: boolean }> => {
+		return apiFetch("/api/users/me/status", { method: "GET" });
 	},
 
 	/**

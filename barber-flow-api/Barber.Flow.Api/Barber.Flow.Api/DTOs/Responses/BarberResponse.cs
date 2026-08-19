@@ -16,5 +16,7 @@ public record BarberResponse(
     BarberSettingsDto? Settings,
     string? ShopId,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    Guid? UserId,
+    bool? IsBlocked
 );

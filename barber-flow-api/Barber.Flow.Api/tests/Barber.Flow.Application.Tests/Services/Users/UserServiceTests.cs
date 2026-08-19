@@ -1,6 +1,7 @@
 using Barber.Flow.Application.Services.Users;
 using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Moq;
 
 namespace Barber.Flow.Application.Tests.Services.Users;
@@ -10,13 +11,15 @@ public class UserServiceTests
     private readonly Mock<IUserRepository> _repo = new();
     private readonly Mock<IRefreshTokenRepository> _refreshTokenRepo = new();
     private readonly Mock<IUserTokenBuilder> _tokenBuilder = new();
+    private readonly Mock<IConfiguration> _config = new();
 
     public UserServiceTests()
     {
         _tokenBuilder.Setup(t => t.RefreshTokenExpiryDays).Returns(30);
+        _config.Setup(c => c[It.IsAny<string>()]).Returns((string?)null);
     }
 
-    private UserService CreateSut() => new(_repo.Object, _refreshTokenRepo.Object, _tokenBuilder.Object);
+    private UserService CreateSut() => new(_repo.Object, _refreshTokenRepo.Object, _tokenBuilder.Object, _config.Object);
 
     [Fact]
     public async Task GetAuthenticationUserAsync_InvalidCredentials_ReturnsNull()
@@ -133,5 +136,39 @@ public class UserServiceTests
         var result = await CreateSut().DeleteAsync("missing-id");
 
         Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SetBlockedAsync_TargetIsAdminAccount_ReturnsNullAndDoesNotBlock()
+    {
+        var admin = new User { Id = Guid.NewGuid(), UserName = "admin", Role = "Admin" };
+        _repo.Setup(r => r.GetByIdAsync(admin.Id, It.IsAny<CancellationToken>())).ReturnsAsync(admin);
+
+        var result = await CreateSut().SetBlockedAsync(admin.Id.ToString(), true, "admin");
+
+        Assert.Null(result);
+        _repo.Verify(r => r.SetBlockedAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SetBlockedAsync_TargetNotFound_ReturnsFalse()
+    {
+        _repo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+
+        var result = await CreateSut().SetBlockedAsync(Guid.NewGuid().ToString(), true, "admin");
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SetBlockedAsync_ValidNonAdminTarget_DelegatesToRepository()
+    {
+        var barber = new User { Id = Guid.NewGuid(), UserName = "barber1", Role = "Barber" };
+        _repo.Setup(r => r.GetByIdAsync(barber.Id, It.IsAny<CancellationToken>())).ReturnsAsync(barber);
+        _repo.Setup(r => r.SetBlockedAsync(barber.Id.ToString(), true, "admin", It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await CreateSut().SetBlockedAsync(barber.Id.ToString(), true, "admin");
+
+        Assert.True(result);
     }
 }
