@@ -85,7 +85,6 @@ public static class ClientsApi
         string id,
         ClientRequest request,
         IClientService clientService,
-        IBarberRepository barberRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken = default
         )
@@ -93,8 +92,8 @@ public static class ClientsApi
         var existing = await clientService.GetByIdAsync(id, cancellationToken);
         if (existing == null) return TypedResults.NotFound();
 
-        var caller = await AppointmentsApi.ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
-        if (!AppointmentsApi.CanAccess(caller, existing.ShopId)) return TypedResults.NotFound();
+        var caller = AppointmentsApi.ResolveCaller(httpContext);
+        if (!AppointmentsApi.CanAccess(caller, existing.CreatedBy)) return TypedResults.NotFound();
 
         var userId = httpContext.User.GetUserName() ?? string.Empty;
 
@@ -127,29 +126,27 @@ public static class ClientsApi
         [FromQuery] int? page,
         [FromQuery] int? pageSize,
         IClientService clientService,
-        IBarberRepository barberRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var caller = await AppointmentsApi.ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
-        var shopIdFilter = caller.IsAdmin ? null : caller.ShopId;
+        var caller = AppointmentsApi.ResolveCaller(httpContext);
+        var createdByFilter = caller.IsAdmin ? null : caller.UserName;
 
-        var list = await clientService.FindAsync(query, page, pageSize, shopIdFilter, cancellationToken);
+        var list = await clientService.FindAsync(query, page, pageSize, createdBy: createdByFilter, cancellationToken: cancellationToken);
         return TypedResults.Ok(list.Select(Map));
     }
 
     private static async Task<IResult> GetClientAsync(
         string id,
         IClientService clientService,
-        IBarberRepository barberRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
         var c = await clientService.GetByIdAsync(id, cancellationToken);
         if (c == null) return TypedResults.NotFound();
 
-        var caller = await AppointmentsApi.ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
-        if (!AppointmentsApi.CanAccess(caller, c.ShopId)) return TypedResults.NotFound();
+        var caller = AppointmentsApi.ResolveCaller(httpContext);
+        if (!AppointmentsApi.CanAccess(caller, c.CreatedBy)) return TypedResults.NotFound();
 
         return TypedResults.Ok(Map(c));
     }
@@ -157,15 +154,14 @@ public static class ClientsApi
     private static async Task<IResult> DeleteClientAsync(
         string id,
         IClientService clientService,
-        IBarberRepository barberRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
         var existing = await clientService.GetByIdAsync(id, cancellationToken);
         if (existing == null) return TypedResults.NotFound();
 
-        var caller = await AppointmentsApi.ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
-        if (!AppointmentsApi.CanAccess(caller, existing.ShopId)) return TypedResults.NotFound();
+        var caller = AppointmentsApi.ResolveCaller(httpContext);
+        if (!AppointmentsApi.CanAccess(caller, existing.CreatedBy)) return TypedResults.NotFound();
 
         var ok = await clientService.DeleteAsync(id, cancellationToken);
         return ok ? TypedResults.NoContent() : TypedResults.NotFound();

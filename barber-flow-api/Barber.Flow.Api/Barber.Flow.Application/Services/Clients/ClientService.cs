@@ -26,9 +26,9 @@ public class ClientService(IClientRepository repo, IBarberRepository barberRepo)
         return _repo.DeleteAsync(id, cancellationToken);
     }
 
-    public Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, string? shopId = null, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, string? shopId = null, string? createdBy = null, CancellationToken cancellationToken = default)
     {
-        return _repo.FindAsync(query, page, pageSize, shopId, cancellationToken);
+        return _repo.FindAsync(query, page, pageSize, shopId, createdBy, cancellationToken);
     }
 
     public Task<Client?> GetByIdAsync(string id, CancellationToken cancellationToken = default)

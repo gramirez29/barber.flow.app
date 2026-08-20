@@ -82,6 +82,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
         int? page = null,
         int? pageSize = null,
         string? shopId = null,
+        string? createdBy = null,
         CancellationToken cancellation = default)
     {
         var filters = new List<FilterDefinition<Appointments>>();
@@ -116,6 +117,11 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
         if (!string.IsNullOrWhiteSpace(shopId))
         {
             filters.Add(Builders<Appointments>.Filter.Eq(a => a.ShopId, shopId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(createdBy))
+        {
+            filters.Add(Builders<Appointments>.Filter.Eq(a => a.CreatedBy, createdBy));
         }
 
         var filter = filters.Count > 0

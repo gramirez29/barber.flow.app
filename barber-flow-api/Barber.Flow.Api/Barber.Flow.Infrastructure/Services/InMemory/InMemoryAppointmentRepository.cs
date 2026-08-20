@@ -122,6 +122,7 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
         int? page = null,
         int? pageSize = null,
         string? shopId = null,
+        string? createdBy = null,
         CancellationToken cancellation = default)
     {
         var list = _store.Values.AsEnumerable();
@@ -154,6 +155,9 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
 
         if (!string.IsNullOrWhiteSpace(shopId))
             list = list.Where(a => a.ShopId == shopId);
+
+        if (!string.IsNullOrWhiteSpace(createdBy))
+            list = list.Where(a => a.CreatedBy == createdBy);
 
         list = list.OrderBy(a => a.Date).ThenBy(a => a.Time);
 

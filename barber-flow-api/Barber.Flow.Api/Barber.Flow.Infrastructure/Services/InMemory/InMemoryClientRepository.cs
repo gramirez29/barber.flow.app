@@ -83,7 +83,7 @@ public class InMemoryClientRepository : IClientRepository
         return Task.FromResult(client);
     }
 
-    public Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, string? shopId = null, CancellationToken ct = default)
+    public Task<IEnumerable<Client>> FindAsync(string? query = null, int? page = null, int? pageSize = null, string? shopId = null, string? createdBy = null, CancellationToken ct = default)
     {
         var clients = _store.Values.AsEnumerable();
 
@@ -98,6 +98,9 @@ public class InMemoryClientRepository : IClientRepository
 
         if (!string.IsNullOrWhiteSpace(shopId))
             clients = clients.Where(client => client.ShopId == shopId);
+
+        if (!string.IsNullOrWhiteSpace(createdBy))
+            clients = clients.Where(client => client.CreatedBy == createdBy);
 
         if (page.HasValue && pageSize.HasValue)
         {

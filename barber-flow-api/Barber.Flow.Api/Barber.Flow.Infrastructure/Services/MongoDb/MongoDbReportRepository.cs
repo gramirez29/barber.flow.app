@@ -46,16 +46,17 @@ public sealed class MongoDbReportRepository : IReportRepository
             ? null
             : await _barberRepository.GetByUserNameAsync(requestingUserName, cancellationToken);
 
-        // Scope the report to the requesting barber's shop, same tenant boundary already
-        // enforced on Appointments/Clients search — without it, one barbershop's daily
-        // report would silently include every other shop's revenue on the platform. A null
-        // ShopId (the shared admin account, or a Barber with no shop link) intentionally
-        // falls through to "no filter", matching AppointmentsApi/ClientsApi's admin bypass.
+        // Scope the report to the requesting barber (CreatedBy is the actual per-barber
+        // ownership boundary, same as Appointments/Clients search — not ShopId, which is
+        // informational only) — without it, one barber's daily report would silently
+        // include every other barber's revenue. A missing Barber link (the shared admin
+        // account) intentionally falls through to "no filter", matching
+        // AppointmentsApi/ClientsApi's admin bypass.
         var completedAppointments = (await _appointmentRepository.FindAsync(
             date: dateKey,
             endDate: dateKey,
             status: "completed",
-            shopId: barber?.ShopId,
+            createdBy: barber != null ? requestingUserName : null,
             cancellation: cancellationToken)).ToList();
 
         var commissionPercentage = barber?.Settings?.CommissionPercentage ?? DefaultCommissionPercentage;
