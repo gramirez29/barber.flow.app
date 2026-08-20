@@ -67,7 +67,7 @@ public class ClientServiceTests
     public async Task FindAsync_PropagatesQueryAndPaginationToRepository()
     {
         var expected = new List<Client> { new() { Id = "1" } };
-        _repo.Setup(r => r.FindAsync("Juan", 2, 10, null, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+        _repo.Setup(r => r.FindAsync("Juan", 2, 10, null, null, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
         var result = await CreateSut().FindAsync("Juan", 2, 10);
 

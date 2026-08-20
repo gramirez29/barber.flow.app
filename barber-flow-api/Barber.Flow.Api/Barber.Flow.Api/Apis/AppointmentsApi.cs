@@ -86,15 +86,14 @@ public static class AppointmentsApi
         string id,
         AppointmentRequest request,
         IAppointmentService appointmentService,
-        IBarberRepository barberRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
         var existing = await appointmentService.GetByIdAsync(id, cancellationToken);
         if (existing == null) return TypedResults.NotFound();
 
-        var caller = await ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
-        if (!CanAccess(caller, existing.ShopId)) return TypedResults.NotFound();
+        var caller = ResolveCaller(httpContext);
+        if (!CanAccess(caller, existing.CreatedBy)) return TypedResults.NotFound();
 
         var userId = httpContext.User.GetUserName() ?? string.Empty;
 
@@ -130,15 +129,14 @@ public static class AppointmentsApi
         string id,
         MoveAppointmentRequest request,
         IAppointmentService appointmentService,
-        IBarberRepository barberRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
         var existing = await appointmentService.GetByIdAsync(id, cancellationToken);
         if (existing == null) return TypedResults.NotFound();
 
-        var caller = await ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
-        if (!CanAccess(caller, existing.ShopId)) return TypedResults.NotFound();
+        var caller = ResolveCaller(httpContext);
+        if (!CanAccess(caller, existing.CreatedBy)) return TypedResults.NotFound();
 
         try
         {
@@ -161,29 +159,27 @@ public static class AppointmentsApi
         [FromQuery] int? page,
         [FromQuery] int? pageSize,
         IAppointmentService appointmentService,
-        IBarberRepository barberRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var caller = await ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
-        var shopIdFilter = caller.IsAdmin ? null : caller.ShopId;
+        var caller = ResolveCaller(httpContext);
+        var createdByFilter = caller.IsAdmin ? null : caller.UserName;
 
-        var list = await appointmentService.FindAsync(date, endDate, status, query, page, pageSize, shopIdFilter, cancellationToken);
+        var list = await appointmentService.FindAsync(date, endDate, status, query, page, pageSize, createdBy: createdByFilter, cancellationToken: cancellationToken);
         return TypedResults.Ok(list.Select(Map));
     }
 
     private static async Task<IResult> GetAppointmentAsync(
         string id,
         IAppointmentService appointmentService,
-        IBarberRepository barberRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
         var appointment = await appointmentService.GetByIdAsync(id, cancellationToken);
         if (appointment == null) return TypedResults.NotFound();
 
-        var caller = await ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
-        if (!CanAccess(caller, appointment.ShopId)) return TypedResults.NotFound();
+        var caller = ResolveCaller(httpContext);
+        if (!CanAccess(caller, appointment.CreatedBy)) return TypedResults.NotFound();
 
         return TypedResults.Ok(Map(appointment));
     }
@@ -191,15 +187,14 @@ public static class AppointmentsApi
     private static async Task<IResult> DeleteAppointmentAsync(
         string id,
         IAppointmentService appointmentService,
-        IBarberRepository barberRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
         var existing = await appointmentService.GetByIdAsync(id, cancellationToken);
         if (existing == null) return TypedResults.NotFound();
 
-        var caller = await ResolveCallerAsync(httpContext, barberRepository, cancellationToken);
-        if (!CanAccess(caller, existing.ShopId)) return TypedResults.NotFound();
+        var caller = ResolveCaller(httpContext);
+        if (!CanAccess(caller, existing.CreatedBy)) return TypedResults.NotFound();
 
         var ok = await appointmentService.DeleteAsync(id, cancellationToken);
         return ok ? TypedResults.NoContent() : TypedResults.NotFound();
@@ -212,25 +207,24 @@ public static class AppointmentsApi
     }
 
     /// <summary>
-    /// Resolves the calling barber's ShopId (the tenant boundary appointments/clients are
-    /// isolated by) and whether they're Admin, which bypasses that isolation entirely.
+    /// Resolves the calling user's identity and whether they're Admin, which bypasses
+    /// ownership checks entirely. Ownership (see <see cref="CanAccess"/>) is per-barber
+    /// (matched against a record's CreatedBy), not per-shop: two barbers who happen to
+    /// share a ShopId still can't see each other's appointments/clients - ShopId is
+    /// informational grouping only, never the access-control boundary.
     /// </summary>
-    internal static async Task<CallerContext> ResolveCallerAsync(
-        HttpContext httpContext, IBarberRepository barberRepository, CancellationToken cancellationToken)
+    internal static CallerContext ResolveCaller(HttpContext httpContext)
     {
         if (httpContext.User.IsAdmin()) return new CallerContext(true, null);
 
         var userName = httpContext.User.GetUserName();
-        if (string.IsNullOrWhiteSpace(userName)) return new CallerContext(false, null);
-
-        var barber = await barberRepository.GetByUserNameAsync(userName, cancellationToken);
-        return new CallerContext(false, barber?.ShopId);
+        return new CallerContext(false, userName);
     }
 
-    internal static bool CanAccess(CallerContext caller, string? recordShopId) =>
-        caller.IsAdmin || (!string.IsNullOrEmpty(caller.ShopId) && caller.ShopId == recordShopId);
+    internal static bool CanAccess(CallerContext caller, string? recordCreatedBy) =>
+        caller.IsAdmin || (!string.IsNullOrEmpty(caller.UserName) && caller.UserName == recordCreatedBy);
 
-    internal readonly record struct CallerContext(bool IsAdmin, string? ShopId);
+    internal readonly record struct CallerContext(bool IsAdmin, string? UserName);
 
     private static AppointmentResponse Map(Domain.Entities.Appointments a) => new(
         a.Id,

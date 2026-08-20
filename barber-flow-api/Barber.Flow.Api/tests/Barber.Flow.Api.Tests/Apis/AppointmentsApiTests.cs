@@ -3,6 +3,8 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.DTOs.Responses;
+using Barber.Flow.Domain.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Barber.Flow.Api.Tests.Apis;
 
@@ -22,9 +24,9 @@ public class AppointmentsApiTests : IClassFixture<ApiWebApplicationFactory>
     }
 
     /// <summary>
-    /// Creates a real Barber account (via the admin-only /api/barbers/create endpoint), which is
-    /// what gives it its own unique ShopId - the tenant boundary appointment/client ownership
-    /// checks are keyed on. Returns an authenticated client logged in as that new barber.
+    /// Creates a real Barber account (via the admin-only /api/barbers/create endpoint). Returns
+    /// an authenticated client logged in as that new barber. Appointment ownership checks are
+    /// keyed on the barber's own username (CreatedBy), not the shop they belong to.
     /// </summary>
     private async Task<HttpClient> CreateBarberClientAsync(string userName)
     {
@@ -126,6 +128,42 @@ public class AppointmentsApiTests : IClassFixture<ApiWebApplicationFactory>
         var response = await adminClient.GetAsync($"/api/appointments/getById/{created!.Id}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task OtherBarber_CannotAccessAppointment_EvenWhenSharingShopId()
+    {
+        // The /api/barbers/create flow always mints a brand-new, unique shop per barber, so
+        // two barbers never actually share a ShopId today - this test forces that scenario
+        // directly against the repository to prove ownership is enforced by CreatedBy, not
+        // ShopId, in case a future "several barbers, one physical shop" feature ever lets
+        // that happen for real.
+        var userNameA = $"barberF-{Guid.NewGuid():N}";
+        var userNameB = $"barberG-{Guid.NewGuid():N}";
+        var barberA = await CreateBarberClientAsync(userNameA);
+        var barberB = await CreateBarberClientAsync(userNameB);
+
+        using var scope = _factory.Services.CreateScope();
+        var barberRepository = scope.ServiceProvider.GetRequiredService<IBarberRepository>();
+        var entityA = await barberRepository.GetByUserNameAsync(userNameA);
+        var entityB = await barberRepository.GetByUserNameAsync(userNameB);
+        Assert.NotNull(entityA);
+        Assert.NotNull(entityB);
+
+        entityB!.ShopId = entityA!.ShopId;
+        await barberRepository.UpdateAsync(entityB.Id, entityB);
+
+        var createRequest = new AppointmentRequest("Owned By F", "9999-0005", null, "2031-02-14", "09:00", "scheduled", null, null, null, null, null, null);
+        var createResponse = await barberA.PostAsJsonAsync("/api/appointments/create", createRequest);
+        createResponse.EnsureSuccessStatusCode();
+        var created = await createResponse.Content.ReadFromJsonAsync<AppointmentResponse>();
+
+        var getResponse = await barberB.GetAsync($"/api/appointments/getById/{created!.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+
+        var searchResponse = await barberB.GetAsync("/api/appointments/search?date=2031-02-14");
+        var results = await searchResponse.Content.ReadFromJsonAsync<List<AppointmentResponse>>();
+        Assert.DoesNotContain(results!, a => a.ClientName == "Owned By F");
     }
 
     [Fact]
