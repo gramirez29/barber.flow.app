@@ -28,8 +28,11 @@ public static class AuthApi
 
     public static async Task<IResult> ForgotPasswordAsync(ForgotPasswordRequest request, IAuthService authService)
     {
-        var result = await authService.RequestPasswordResetAsync(request.Email);
-        return result ? TypedResults.Ok(new { message = "OTP sent if account exists" }) : TypedResults.BadRequest(new { message = "Error requesting OTP" });
+        // Always respond 200 with the same generic message, whether the email is registered or
+        // not (and even if the send fails) - branching the status code on the result would let an
+        // attacker enumerate registered accounts by watching for 200 vs 400.
+        await authService.RequestPasswordResetAsync(request.Email);
+        return TypedResults.Ok(new { message = "OTP sent if account exists" });
     }
 
     public static async Task<IResult> VerifyOtpAsync(VerifyOtpRequest request, IAuthService authService)
