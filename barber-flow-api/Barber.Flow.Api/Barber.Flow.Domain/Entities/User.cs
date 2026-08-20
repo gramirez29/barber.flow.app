@@ -17,4 +17,10 @@ public class User
     public string? Token { get; set; }
 
     public string? RefreshToken { get; set; }
+
+    public bool IsBlocked { get; set; }
+
+    public DateTime? BlockedAt { get; set; }
+
+    public string? BlockedBy { get; set; }
 }

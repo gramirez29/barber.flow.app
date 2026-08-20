@@ -44,7 +44,8 @@ public interface IAppointmentRepository
     /// <param name="query">A search query to filter appointments.</param>
     /// <param name="page">The page number for pagination.</param>
     /// <param name="pageSize">The number of appointments per page.</param>
-    /// <param name="shopId">When provided, restricts results to appointments belonging to this shop.</param>
+    /// <param name="shopId">When provided, restricts results to appointments belonging to this shop. Informational grouping only - not used as the access-control boundary (see <paramref name="createdBy"/>).</param>
+    /// <param name="createdBy">When provided, restricts results to appointments created by this exact user - the actual per-barber ownership/tenant boundary.</param>
     /// <param name="cancellation">A token to monitor for cancellation requests.</param>
     /// <returns>A collection of appointments matching the search criteria.</returns>
     Task<IEnumerable<Entities.Appointments>> FindAsync(
@@ -55,6 +56,7 @@ public interface IAppointmentRepository
         int? page = null,
         int? pageSize = null,
         string? shopId = null,
+        string? createdBy = null,
         CancellationToken cancellation = default);
 
     /// <summary>

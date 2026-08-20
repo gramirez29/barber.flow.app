@@ -23,11 +23,18 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      # Restores/builds/tests the whole solution (not just the API csproj) so this
+      # workflow's own deploy job is actually gated on tests passing - previously it
+      # only built the API project directly, so a push with failing tests (only caught
+      # by the separate, independent ci-cd.yml workflow) could still deploy to Railway.
       - name: Restore dependencies
-        run: dotnet restore barber-flow-api/Barber.Flow.Api/Barber.Flow.Api/Barber.Flow.Api.csproj
+        run: dotnet restore barber-flow-api/Barber.Flow.Api/Barber.Flow.Api.slnx
 
-      - name: Build project
-        run: dotnet build barber-flow-api/Barber.Flow.Api/Barber.Flow.Api/Barber.Flow.Api.csproj --configuration Release --no-restore
+      - name: Build solution
+        run: dotnet build barber-flow-api/Barber.Flow.Api/Barber.Flow.Api.slnx --no-restore --configuration Release
+
+      - name: Test solution
+        run: dotnet test barber-flow-api/Barber.Flow.Api/Barber.Flow.Api.slnx --no-build --configuration Release --verbosity normal
 
   deploy:
     name: Deploy to Railway

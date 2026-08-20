@@ -66,4 +66,10 @@ export interface BarberApiResponse {
 	settings?: ReportCalculationSettings;
 	createdAt?: string;
 	updatedAt?: string;
+	userId?: string;
+	isBlocked?: boolean;
+}
+
+export interface AppStatusResponse {
+	isBlocked: boolean;
 }

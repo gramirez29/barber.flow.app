@@ -98,4 +98,28 @@ public sealed class MongoDbUserRepository : IUserRepository
         var result = await _collection.UpdateOneAsync(filter, update, cancellationToken: cancellation);
         return result.ModifiedCount > 0;
     }
+
+    public async Task<User?> GetByUserNameAsync(string userName, CancellationToken cancellation = default)
+    {
+        var filter = Builders<User>.Filter.Regex(u => u.UserName,
+            new MongoDB.Bson.BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(userName.Trim())}$", "i"));
+
+        return await _collection.Find(filter).FirstOrDefaultAsync(cancellation);
+    }
+
+    public async Task<bool> SetBlockedAsync(string id, bool isBlocked, string? actingAdmin, CancellationToken cancellation = default)
+    {
+        if (!Guid.TryParse(id, out var userId)) return false;
+
+        var update = Builders<User>.Update
+            .Set(u => u.IsBlocked, isBlocked)
+            .Set(u => u.BlockedAt, isBlocked ? DateTime.UtcNow : null)
+            .Set(u => u.BlockedBy, isBlocked ? actingAdmin : null);
+
+        var result = await _collection.UpdateOneAsync(
+            Builders<User>.Filter.Eq(u => u.Id, userId),
+            update,
+            cancellationToken: cancellation);
+        return result.MatchedCount > 0;
+    }
 }

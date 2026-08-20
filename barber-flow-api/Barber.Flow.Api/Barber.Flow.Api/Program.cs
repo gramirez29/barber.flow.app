@@ -1,5 +1,6 @@
 using Barber.Flow.Api.Apis;
 using Barber.Flow.Api.Extensions;
+using Barber.Flow.Api.Middleware;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
 
@@ -66,6 +67,7 @@ if (app.Environment.IsDevelopment())
 app.MapSampleApi();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<BlockedUserMiddleware>();
 app.MapControllers();
 app.MapAuthApi();
 app.MapClientsApi();

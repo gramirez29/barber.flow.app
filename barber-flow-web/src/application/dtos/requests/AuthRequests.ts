@@ -17,3 +17,7 @@ export interface ResetPasswordRequest {
   otpCode: string;
   newPassword: string;
 }
+
+export interface SetBlockedRequest {
+  isBlocked: boolean;
+}

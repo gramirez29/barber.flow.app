@@ -13,6 +13,7 @@ import {
   VerifyOtpPage,
   ResetPasswordPage,
   LandingPage,
+  BlockedPage,
 } from '@presentation/pages';
 import { ProtectedRoute, OperationalRoute, AppBar, SidebarDrawer, Footer } from '@presentation/components/shared';
 import { useAuth } from '@presentation/context/AuthContext';
@@ -35,12 +36,14 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 };
 
 // The apex domain redirects to www at the DNS/Cloudflare level (see PRODUCTION_IMPLEMENTATION.md
-// §7.6), so www is the only hostname that ever actually reaches this app.
-const LANDING_HOSTNAME = 'www.haircutsflowcr.com';
+// §7.6), so www is the only production hostname that ever actually reaches this app. The staging
+// domain is included too so the landing page content can be previewed/iterated on before promoting
+// to production.
+const LANDING_HOSTNAMES = ['www.haircutsflowcr.com', 'develop.haircutsflowcr.com'];
 
 export const Router: React.FC = () => {
-  const { isAuthenticated } = useAuth();
-  const isLandingHost = window.location.hostname === LANDING_HOSTNAME;
+  const { isAuthenticated, user } = useAuth();
+  const isLandingHost = LANDING_HOSTNAMES.includes(window.location.hostname);
 
   return (
     <Routes>
@@ -48,6 +51,19 @@ export const Router: React.FC = () => {
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+      />
+
+      <Route
+        path="/blocked"
+        element={
+          !isAuthenticated ? (
+            <Navigate to="/login" replace />
+          ) : !user?.isBlocked ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <BlockedPage />
+          )
+        }
       />
 
       <Route

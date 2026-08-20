@@ -7,4 +7,5 @@ export interface ApplicationUser {
 	role: string;
 	token: string;
 	refreshToken?: string;
+	isBlocked?: boolean;
 }

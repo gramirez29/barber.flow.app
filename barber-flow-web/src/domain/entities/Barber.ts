@@ -18,4 +18,6 @@ export interface Barber {
   shopId?: string;
   createdAt?: string;
   updatedAt?: string;
+  userId?: string;
+  isBlocked?: boolean;
 }

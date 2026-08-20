@@ -61,6 +61,11 @@
 		promptMessage: "Desbloquear Barber Flow",
 		authFailed: "No pudimos verificar tu identidad. Intenta de nuevo.",
 	},
+	blocked: {
+		title: "Cuenta está temporalmente bloqueada",
+		subtitle:
+			"El acceso a tu cuenta fue temporalmente suspendido ya que no has relizado el pago del servicio. Tus datos están protegidos. Realiza el pago correspondiente por el medio acordado y contacta al administrador para reactivar tu cuenta y recuperar el acceso.",
+	},
 	login: {
 		appointments: "Citas",
 		authFailed: "Autenticación fallida",
@@ -146,8 +151,10 @@
 				"La aplicación sigue el tema del dispositivo. Tema actual: %{theme}.",
 		},
 		alerts: {
+			applicationUserBlocked: "Cuenta bloqueada correctamente.",
 			applicationUserCreated: "Usuario de aplicación %{id} creado correctamente.",
 			applicationUserDeleted: "Usuario de aplicación %{id} eliminado correctamente.",
+			applicationUserUnblocked: "Cuenta desbloqueada correctamente.",
 			applicationUserUpdated: "Usuario de aplicación %{id} actualizado correctamente.",
 			confirmDeleteUser: "¿Eliminar %{id}?",
 			dailyReportReset: "Los cálculos del cierre diario se restablecieron a los valores predeterminados.",
@@ -166,6 +173,9 @@
 			address: "Dirección",
 			accessSection: "Información de acceso",
 			barberId: "ID del barbero",
+			blockAccount: "Cuenta bloqueada",
+			blockAccountDescriptionBlocked: "Sin acceso a la app por falta de pago.",
+			blockAccountDescriptionUnblocked: "Bloquea el acceso a toda la app por falta de pago.",
 			barberName: "Nombre completo del barbero *",
 			barberPhone: "Teléfono del barbero *",
 			barberProfileSection: "Perfil del barbero",

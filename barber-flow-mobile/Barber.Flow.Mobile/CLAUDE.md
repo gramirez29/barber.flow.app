@@ -49,16 +49,20 @@ RootNavigator (Stack, auth gate)
 ```
 `RootNavigator` restores the session from `expo-secure-store` on mount (via `authService.getStoredUser()`) and renders `null` until that resolves, to avoid a login-screen flash. There is no explicit logout call in the navigator — `authService.clearStoredUser()` (called from `SettingsScreen`) clears the Zustand auth store, and the tree re-renders to `Login` automatically because `user` becomes `null`.
 
+`RootNavigator` also gates on `user?.isBlocked` (payment-block feature) **before** the `LockScreen` check — a blocked account never sees the biometric prompt, it goes straight to `BlockedScreen` (`src/screens/BlockedScreen.tsx`). `isBlocked` is set from the login response, kept fresh by a 24h `setInterval` poll of `GET /api/users/me/status` plus an immediate re-check on every `AppState` foreground transition (piggybacked on the existing lock-screen re-arm listener), and updated instantly by `apiClient.ts` whenever any request comes back `403 { code: "ACCOUNT_BLOCKED" }` (see Services layer below) — the poll is just the backstop for a session with zero API activity.
+
 Note: a `BarberShopSelectorScreen` and `barberShopService` (`/api/barbershops/*`) exist in `src/screens` / `src/services` for multi-shop support, alongside a `clientHistoryService`; these are newer additions not yet reflected in `application-docs/FRONTEND_ARCHITECTURE.md` — check the actual source when working in those areas rather than trusting that doc for anything shop/history-related.
 
 ### State: Zustand stores vs. React Context
-- `store/auth.store.ts` — auth user, **no persistence** (session restore happens once in `RootNavigator` via SecureStore, not via Zustand `persist`).
+- `store/auth.store.ts` — auth user, **no persistence** (session restore happens once in `RootNavigator` via SecureStore, not via Zustand `persist`). `setBlocked(isBlocked)` (payment-block feature) is a narrow update like `updateTokens` — unlike `setUser`, it deliberately does **not** re-arm admin safe mode, since it's not a re-authentication.
 - `features/appointments/appointment.store.ts` — appointments, **persisted** via `zustand/middleware/persist` + AsyncStorage. `fetchAppointmentsByDateRange` merges fetched results with out-of-range appointments already in the store (rather than replacing the whole array) so navigating months doesn't drop previously-loaded data. Selectors `getAppointmentsByDate` / `getCompletedAppointmentsByDate` are synchronous, local-only filters — they don't hit the network.
 - React Context (`context/`) is used instead of Zustand for `LanguageContext`, `ThemeContext`, `NotificationContext`, `DialogContext` — state that many components need but doesn't require Zustand's render-optimization, or that has provider-mount-time setup logic.
 - `NotificationContext` derives its list from `notificationService`, which is **entirely local**: it has no backend calls and computes notifications (next-day summaries, "client hasn't been in N+ days") from the appointments already in the Zustand store, persisting the result to AsyncStorage.
 
 ### Services layer
 Everything in `src/services/` goes through `apiFetch` in `services/apis/apiClient.ts`, which attaches the JWT from `useAuthStore` (or SecureStore), auto-serializes `options.json`, and forces logout on a `401`. There is no refresh-token flow — a 401 always ends the session.
+
+`apiFetch` also special-cases `403 { code: "ACCOUNT_BLOCKED" }`: it calls `useAuthStore.getState().setBlocked(true)` and throws `AccountBlockedError` (mirrors `SessionExpiredError`'s shape) — callers can treat it as already-handled, `RootNavigator` picks up the store change and swaps to `BlockedScreen` on its next render without any explicit navigation call from inside `apiFetch`.
 
 Backend responses aren't guaranteed to be consistently cased; services normalize with `response.id ?? response.Id` (and similarly for other fields) rather than assuming camelCase.
 

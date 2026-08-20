@@ -6,16 +6,24 @@ import { ForgotPasswordScreen } from "../screens/ForgotPasswordScreen";
 import { OtpVerificationScreen } from "../screens/OtpVerificationScreen";
 import { ResetPasswordScreen } from "../screens/ResetPasswordScreen";
 import { LockScreen } from "../screens/LockScreen";
+import { BlockedScreen } from "../screens/BlockedScreen";
 import { DrawerNavigator } from "./DrawerNavigator";
 import { useAuthStore } from "../store/auth.store";
 import { authService } from "../services/authService";
+import { settingsService } from "../services/settingsService";
 import { isBiometricLockAvailable } from "../utils/biometricAuth";
 
 const Stack = createNativeStackNavigator();
 
+// Backstop de propagación para una sesión que queda completamente inactiva (sin ninguna
+// request) durante mucho tiempo — el enforcement real e inmediato pasa por el 403
+// ACCOUNT_BLOCKED que apiClient intercepta en cualquier llamada a la API.
+const BLOCKED_STATUS_POLL_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
 export const RootNavigator = () => {
 	const user = useAuthStore((s) => s.user);
 	const setUser = useAuthStore((s) => s.setUser);
+	const setBlocked = useAuthStore((s) => s.setBlocked);
 	const [isAuthReady, setIsAuthReady] = useState(false);
 	const [isLocked, setIsLocked] = useState(false);
 	const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -61,14 +69,45 @@ export const RootNavigator = () => {
 			if (cameToForeground && user && biometricAvailable) {
 				setIsLocked(true);
 			}
+			// Backstop de propagación: revisa el estado de bloqueo cada vez que la app
+			// vuelve a foreground, cubriendo el caso típico de mobile (app resumida tras
+			// haber estado en background) sin depender solo del poll diario.
+			if (cameToForeground && user) {
+				void settingsService
+					.getMyStatus()
+					.then((status) => setBlocked(status.isBlocked))
+					.catch(() => {
+						// Si falla (p. ej. por estar bloqueado), apiClient ya se encarga de
+						// actualizar el store vía el manejo del 403 ACCOUNT_BLOCKED.
+					});
+			}
 			appStateRef.current = nextState;
 		});
 
 		return () => subscription.remove();
-	}, [user, biometricAvailable]);
+	}, [user, biometricAvailable, setBlocked]);
+
+	useEffect(() => {
+		if (!user) return;
+
+		const interval = setInterval(() => {
+			void settingsService
+				.getMyStatus()
+				.then((status) => setBlocked(status.isBlocked))
+				.catch(() => {
+					// Ver comentario equivalente arriba.
+				});
+		}, BLOCKED_STATUS_POLL_INTERVAL_MS);
+
+		return () => clearInterval(interval);
+	}, [user, setBlocked]);
 
 	if (!isAuthReady) {
 		return null;
+	}
+
+	if (user?.isBlocked) {
+		return <BlockedScreen />;
 	}
 
 	if (user && isLocked) {

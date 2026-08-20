@@ -61,6 +61,11 @@
 		promptMessage: "Unlock Barber Flow",
 		authFailed: "We couldn't verify your identity. Try again.",
 	},
+	blocked: {
+		title: "Account blocked",
+		subtitle:
+			"Access to this account was suspended due to non-payment. Contact the administrator to settle your account and regain access.",
+	},
 	login: {
 		appointments: "Appointments",
 		authFailed: "Authentication failed",
@@ -146,8 +151,10 @@
 				"The app follows your device theme. Current theme: %{theme}.",
 		},
 		alerts: {
+			applicationUserBlocked: "Account blocked successfully.",
 			applicationUserCreated: "Application user %{id} created successfully.",
 			applicationUserDeleted: "Application user %{id} removed successfully.",
+			applicationUserUnblocked: "Account unblocked successfully.",
 			applicationUserUpdated: "Application user %{id} updated successfully.",
 			confirmDeleteUser: "Remove %{id}?",
 			dailyReportReset: "Daily report calculations were reset to defaults.",
@@ -166,6 +173,9 @@
 			address: "Address",
 			accessSection: "Access information",
 			barberId: "Barber ID",
+			blockAccount: "Account blocked",
+			blockAccountDescriptionBlocked: "No app access due to non-payment.",
+			blockAccountDescriptionUnblocked: "Blocks app access due to non-payment.",
 			barberName: "Barber full name *",
 			barberPhone: "Barber phone *",
 			barberProfileSection: "Barber profile",

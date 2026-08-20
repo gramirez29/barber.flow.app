@@ -8,7 +8,7 @@ import {
 	View,
 } from "react-native";
 import { AvatarPicker } from "../AvatarPicker";
-import { HelperText, TextInput } from "react-native-paper";
+import { HelperText, Switch, TextInput } from "react-native-paper";
 import { useTranslation } from "../../context/LanguageContext";
 import type { ApplicationUserSettingsForm, BarberApiResponse } from "../../types/settings";
 import type {
@@ -35,8 +35,11 @@ interface ManageApplicationUsersFormProps {
 	onSearchQueryChange: (value: string) => void;
 	onSelectResult: (result: BarberApiResponse) => void;
 	onSubmit: () => void;
+	onToggleBlocked: () => void;
 	searchQuery: string;
 	searchResults: BarberApiResponse[];
+	selectedIsBlocked: boolean;
+	selectedUserId: string | null;
 	touched: ApplicationUserFormTouched;
 	values: ApplicationUserSettingsForm;
 }
@@ -54,8 +57,11 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
 	onSearchQueryChange,
 	onSelectResult,
 	onSubmit,
+	onToggleBlocked,
 	searchQuery,
 	searchResults,
+	selectedIsBlocked,
+	selectedUserId,
 	touched,
 	values,
 }) => {
@@ -309,6 +315,30 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
 					</HelperText>
 				</View>
 
+				{mode === "edit" && selectedUserId && values.userName.trim().toLowerCase() !== "admin" ? (
+					<View
+						style={[
+							styles.blockRow,
+							{ borderColor: selectedIsBlocked ? theme.colors.error : theme.colors.border },
+						]}
+					>
+						<View style={styles.blockRowText}>
+							<Text style={styles.blockRowTitle}>{translateText("settings.manageUsersForm.blockAccount")}</Text>
+							<Text style={styles.blockRowSubtitle}>
+								{selectedIsBlocked
+									? translateText("settings.manageUsersForm.blockAccountDescriptionBlocked")
+									: translateText("settings.manageUsersForm.blockAccountDescriptionUnblocked")}
+							</Text>
+						</View>
+						<Switch
+							value={selectedIsBlocked}
+							onValueChange={onToggleBlocked}
+							disabled={loading}
+							color={theme.colors.error}
+						/>
+					</View>
+				) : null}
+
 				<View style={styles.photoCard}>
 					<Text style={styles.photoTitle}>{translateText("settings.manageUsersForm.photoTitle")}</Text>
 					<AvatarPicker
@@ -504,6 +534,31 @@ const createStyles = (theme: AppTheme) =>
 		},
 		formGroupUltraCompact: {
 			marginBottom: 2,
+		},
+		blockRow: {
+			alignItems: "center",
+			backgroundColor: theme.colors.surfaceElevated,
+			borderRadius: 12,
+			borderWidth: 1,
+			flexDirection: "row",
+			justifyContent: "space-between",
+			marginTop: 8,
+			paddingHorizontal: 14,
+			paddingVertical: 10,
+		},
+		blockRowText: {
+			flex: 1,
+			paddingRight: 12,
+		},
+		blockRowTitle: {
+			color: theme.colors.textPrimary,
+			fontSize: 14,
+			fontWeight: "600",
+		},
+		blockRowSubtitle: {
+			color: theme.colors.textSecondary,
+			fontSize: 12,
+			marginTop: 2,
 		},
 		photoCard: {
 			backgroundColor: theme.colors.surfaceElevated,

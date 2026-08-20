@@ -64,9 +64,10 @@ public sealed class MongoDbClientRepository : IClientRepository
         int? page = null,
         int? pageSize = null,
         string? shopId = null,
+        string? createdBy = null,
         CancellationToken cancellation = default)
     {
-        var filter = BuildSearchFilter(query, shopId);
+        var filter = BuildSearchFilter(query, shopId, createdBy);
         // CreatedAt alone isn't a stable sort key: clients created in the same millisecond
         // (e.g. bulk-created in a loop) tie, and Mongo doesn't guarantee tie order is
         // preserved across separate Skip/Limit queries - Id breaks ties deterministically
@@ -89,7 +90,7 @@ public sealed class MongoDbClientRepository : IClientRepository
         return await findCursor.ToListAsync(cancellation);
     }
 
-    private static FilterDefinition<Client> BuildSearchFilter(string? query, string? shopId)
+    private static FilterDefinition<Client> BuildSearchFilter(string? query, string? shopId, string? createdBy)
     {
         var filters = new List<FilterDefinition<Client>>();
 
@@ -106,6 +107,11 @@ public sealed class MongoDbClientRepository : IClientRepository
         if (!string.IsNullOrWhiteSpace(shopId))
         {
             filters.Add(Builders<Client>.Filter.Eq(c => c.ShopId, shopId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(createdBy))
+        {
+            filters.Add(Builders<Client>.Filter.Eq(c => c.CreatedBy, createdBy));
         }
 
         return filters.Count > 0 ? Builders<Client>.Filter.And(filters) : Builders<Client>.Filter.Empty;

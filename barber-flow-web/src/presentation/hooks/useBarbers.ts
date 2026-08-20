@@ -3,6 +3,7 @@ import { Barber } from '@domain/entities/Barber';
 import { CreateBarberRequest, UpdateBarberRequest } from '@application/dtos/requests';
 import { useNotification } from '@presentation/context/NotificationContext';
 import { BarberApi } from '@infrastructure/api/BarberApi';
+import { UsersApi } from '@infrastructure/api/UsersApi';
 import { AxiosHttpClient } from '@infrastructure/http/AxiosHttpClient';
 import { getErrorMessage } from '@shared/utils/errorUtils';
 
@@ -15,6 +16,7 @@ export function useBarbers() {
   const { showNotification } = useNotification();
 
   const barberApi = useMemo(() => new BarberApi(new AxiosHttpClient()), []);
+  const usersApi = useMemo(() => new UsersApi(new AxiosHttpClient()), []);
 
   const searchBarbers = useCallback(
     async (query?: string) => {
@@ -97,6 +99,23 @@ export function useBarbers() {
     return barberApi.getNextId();
   }, [barberApi]);
 
+  const setBlocked = useCallback(
+    async (userId: string, isBlocked: boolean) => {
+      try {
+        await usersApi.setBlocked(userId, isBlocked);
+        showNotification(
+          isBlocked ? 'Cuenta bloqueada correctamente' : 'Cuenta desbloqueada correctamente',
+          'success'
+        );
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al actualizar el estado de bloqueo');
+        showNotification(message, 'error');
+        throw error;
+      }
+    },
+    [usersApi, showNotification]
+  );
+
   return {
     barbers,
     isLoadingBarbers,
@@ -107,5 +126,6 @@ export function useBarbers() {
     updateBarber,
     deleteBarber,
     getNextBarberId,
+    setBlocked,
   };
 }

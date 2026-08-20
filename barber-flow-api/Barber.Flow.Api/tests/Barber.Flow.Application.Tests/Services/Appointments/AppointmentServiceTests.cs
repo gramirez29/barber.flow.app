@@ -118,7 +118,7 @@ public class AppointmentServiceTests
     public async Task FindAsync_PropagatesAllFilterArgumentsToRepository()
     {
         var expected = new List<Appointments> { new() { Id = "APT-0001" } };
-        _repo.Setup(r => r.FindAsync("2026-01-01", "2026-01-31", "completed", "Juan", 2, 10, null, It.IsAny<CancellationToken>()))
+        _repo.Setup(r => r.FindAsync("2026-01-01", "2026-01-31", "completed", "Juan", 2, 10, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateSut().FindAsync("2026-01-01", "2026-01-31", "completed", "Juan", 2, 10);
