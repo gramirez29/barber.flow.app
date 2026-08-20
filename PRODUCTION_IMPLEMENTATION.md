@@ -369,8 +369,22 @@ Checklist completo verificado tras todos los fixes:
 ## 9. Pendientes (no bloquean lo anterior, quedan anotados para retomar)
 
 1. ~~**`www.haircutsflowcr.com`**~~ — **resuelto**, ver §7.7–7.8 (`www` es el dominio canónico, apex redirige hacia él).
-2. **Verificación del dominio en Resend**: para que `noreply@haircutsflowcr.com` pueda enviar emails reales (flujo de "olvidé mi contraseña" en producción), hay que verificar el dominio `haircutsflowcr.com` en el dashboard de Resend, lo que implica agregar los registros DNS que Resend pida en Cloudflare.
+2. ~~**Verificación del dominio en Resend**~~ — **resuelto** (2026-08-18). El dominio configurado en Resend no era ni siquiera el correcto: la cuenta solo tenía `barberflowcr.app` (dominio suelto, sin relación con el proyecto, nunca verificado — probablemente un remanente de pruebas), y `haircutsflowcr.com` no estaba dado de alta en absoluto, pese a que `Resend__FromEmail` en Railway producción ya apuntaba a `noreply@haircutsflowcr.com`. Como el plan gratuito de Resend permite un solo dominio, se eliminó `barberflowcr.app` y se agregó `haircutsflowcr.com` (región North Virginia/us-east-1, Sending habilitado, Receiving deshabilitado — el proyecto solo envía OTP). El one-click "Go to Cloudflare" de Resend no completó la integración automáticamente (abrió el dashboard de Cloudflare sin crear registros), así que los 4 registros se agregaron a mano en la zona `haircutsflowcr.com` de Cloudflare, con TTL Auto: TXT `resend._domainkey` (clave DKIM), MX `send` → `feedback-smtp.us-east-1.amazonses.com` (priority 10), TXT `send` → `v=spf1 include:amazonses.com ~all`, TXT `_dmarc` → `v=DMARC1; p=none;`. Verificado en Resend 15 minutos después: `Domain added` 9:08 AM → `DNS verified` 9:21 AM → `Domain verified` 9:23 AM. `noreply@haircutsflowcr.com` ya puede enviar emails reales de producción.
 3. **Contenido completo de la Landing Page** (Fase 2 del plan original, explícitamente pospuesta): hero con propuesta de valor + botón "Iniciar sesión", sección de features (Citas/Clientes/Reportes/Notificaciones), footer reusado, screenshots/mockups de la app (a capturar con datos ficticios, nunca clientes reales), sección "Contenido relevante" marcada como "En construcción". Sin sección de pricing (tema a discutir aparte). Todo el naming debe seguir usando "HairCutsFlow"/"HCFlow", nunca "Barber Flow".
+
+---
+
+## 9.1 Rebranding del email de recuperación de contraseña (2026-08-18)
+
+El template HTML del email de OTP (`AuthService.cs`, `GetEmailTemplate`) todavía decía "Barber Flow" en el asunto, el header y el footer, y el footer tenía un copyright hardcodeado a `© 2024` sin link. Se actualizó (rama `features/email-branding-haircutsflow`, PR #65 → `develop`):
+- Asunto: `"Barber Flow - Código de recuperación de contraseña"` → `"HairCutsFlow CR - Código de recuperación de contraseña"`.
+- Header del email: `BARBER FLOW` → `HAIRCUTSFLOW CR`.
+- Footer: `© 2024 Barber Flow. Premium Grooming Experience.` → `© {DateTime.UtcNow.Year} HairCutsFlow CR. Premium Grooming Experience.` (año calculado en runtime, ya no hardcodeado) + link nuevo a `https://www.haircutsflowcr.com`.
+- Default de `Resend:FromName` en `appsettings.json` (`"Barber Flow"` → `"HairCutsFlow CR"`) y variable `Resend__FromName` actualizada en Railway en **ambos** environments (`develop` y `production`).
+
+**Bug encontrado al verificar en `develop` con un email real:** el correo seguía llegando desde `onboarding@resend.dev` (el remitente de fallback de Resend) en vez de `noreply@haircutsflowcr.com`, a pesar de que el dominio ya estaba verificado (§9.2). Causa: `Resend__FromEmail` nunca se había configurado como variable de Railway en el environment `develop` — solo se había seteado en `production` en su momento (§6.2), así que `develop` caía al default de `appsettings.json` (`"onboarding@resend.dev"`, pensado como fallback seguro para desarrollo local sin dominio verificado). Fix: se agregó `Resend__FromEmail = noreply@haircutsflowcr.com` también en el environment `develop`.
+
+**Verificación end-to-end:** tras el deploy del PR #65 (workflow "CI/CD - ASP.NET + Railway" en verde) y el redeploy por la variable nueva, se corrió el flujo completo de `/forgot-password` con un email real (`g.raba29@gmail.com`) apuntando el frontend local al backend de `develop` — el correo llegó desde `noreply@haircutsflowcr.com` con el asunto, header y footer nuevos (año dinámico + link), confirmado visualmente por el usuario.
 
 ---
 
@@ -379,7 +393,8 @@ Checklist completo verificado tras todos los fixes:
 ```
 Railway — proyecto "barber-flow-app-dev"
 ├── environment "develop"
-│   └── barber.flow.app (API)         → barberflowapp-develop.up.railway.app
+│   ├── barber.flow.app (API)          → barberflowapp-develop.up.railway.app
+│   └── barber-flow-web-develop (SPA)  → develop.haircutsflowcr.com (staging, detrás de Cloudflare Access)
 │
 └── environment "production"
     ├── barber.flow.app (API)         → api.haircutsflowcr.com
@@ -393,8 +408,64 @@ Railway — proyecto "barber-flow-app-dev"
 MongoDB Atlas — mismo cluster que dev ("Cluster0"), bases de datos lógicas separadas:
              "barber_flow" (production) / "barber_flow_dev" (develop) — ver §6.8
 Resend — mismo proveedor de email que dev, API key y remitente propios de producción
-Cloudflare — DNS de haircutsflowcr.com, todos los CNAME relevantes en modo DNS only
-             (sin proxy) para no interferir con el ruteo/TLS de Railway
+Cloudflare — DNS de haircutsflowcr.com. `www`/`app`/`api` en modo DNS only (sin proxy) para
+             no interferir con el ruteo/TLS de Railway; `develop` es la excepción — va
+             Proxied a propósito, porque necesita que Cloudflare Access intercepte el
+             tráfico (ver §11)
 ```
 
-Ramas y deploy: push a `main` → Railway (`dotnet-develop-api.yml`) despliega automáticamente el servicio API del environment `production`; el servicio `barber-flow-web` de producción está conectado directo a GitHub (integración nativa de Railway) sobre la rama `main`, sin pasar por GitHub Actions.
+Ramas y deploy: push a `main` → Railway (`dotnet-develop-api.yml`) despliega automáticamente el servicio API del environment `production`; el servicio `barber-flow-web` de producción está conectado directo a GitHub (integración nativa de Railway) sobre la rama `main`, sin pasar por GitHub Actions. Mismo patrón en `develop`: push a `develop` despliega el API vía `dotnet-develop-api.yml`, y `barber-flow-web-develop` está conectado directo a GitHub sobre la rama `develop`.
+
+---
+
+## 11. Ambiente de pruebas — `develop.haircutsflowcr.com` (2026-08-20)
+
+Objetivo: tener un ambiente accesible por navegador para probar cambios de `develop` antes de promoverlos a `main`, replicando la infraestructura de producción pero aislado (datos, dominio, acceso).
+
+### 11.1 Punto de partida
+
+El environment `develop` del proyecto Railway `barber-flow-app` ya tenía el API (`barber.flow.app`) desplegado y con su propia base (`barber_flow_dev`, ver §6.8), pero **nunca tuvo un servicio web** — no existía ningún frontend desplegado ahí, ni dominio público para probarlo visualmente.
+
+### 11.2 Servicio web en `develop`
+
+Se intentó reusar el servicio `barber-flow-web` existente (el de producción) agregándole configuración para el environment `develop` vía Railway MCP (`update-service` con `rootDirectory`/`dockerfilePath` scopeados a ese environment). La llamada reportó éxito, pero **no creó una instancia real** — `get-service-config` seguía devolviendo "no configuration in this environment", y el servicio ni siquiera aparecía como nodo en el canvas de Railway al cambiar a `develop`. Investigando se confirmó: Railway no expone ninguna vía (ni API ni dashboard, para un servicio que nunca tuvo un deploy previo en un environment) para "adjuntarle" un environment nuevo a un servicio existente — el dashboard tampoco muestra nodos vacíos para servicios sin deploys en el environment activo.
+
+**Fix:** en vez de reusar el servicio, se creó uno nuevo scopeado únicamente a `develop` (`create-deployment` con `environmentId` del environment `develop`), repo y rama `develop`. Como el nombre `barber-flow-web` ya estaba tomado a nivel de proyecto (los nombres de servicio son únicos por proyecto, no por environment), el servicio nuevo se llamó **`barber-flow-web-develop`**.
+
+Config aplicada (misma que producción, ver §6.3):
+- `rootDirectory: /barber-flow-web`, `dockerfilePath: Dockerfile`.
+- Variables de build: `VITE_API_BASE_URL=https://barberflowapp-develop.up.railway.app` (se reusa el dominio Railway del API, sin dominio custom nuevo — decisión deliberada para no gastar otro slot de dominio custom del plan Hobby), `VITE_APP_ENV=staging`, `VITE_API_TIMEOUT=30000`.
+- A diferencia de cuando se armó producción, **no hizo falta** override de `startCommand` ni ajuste de puerto en el dominio — ambos bugs (§6.4, §6.5) ya estaban corregidos en el `Dockerfile`/flujo desde ese trabajo anterior.
+
+### 11.3 CORS del API en `develop`
+
+Hallazgo: el environment `develop` del API **no tenía ninguna variable `Cors__AllowedOrigins__N` configurada** (a diferencia de producción, §6.2) — solo los defaults hardcodeados de `ApplicationExtensions.cs` (`localhost:3005`/`5173`). Sin este fix, el navegador hubiera bloqueado por CORS cualquier llamada desde el nuevo frontend. Se agregó `Cors__AllowedOrigins__0=https://develop.haircutsflowcr.com` sobre `barber.flow.app`/`develop`.
+
+### 11.4 DNS en Cloudflare
+
+Mismo patrón que producción (§7): dominio custom generado en Railway (`generate-domain`, target `kpyd5fw7.up.railway.app`), CNAME + TXT creados vía "One-click DNS Setup to Cloudflare".
+
+**Diferencia importante respecto a `www`/`app`/`api`:** este CNAME se dejó **Proxied** (nube naranja), no DNS only — al revés de los otros tres. Es intencional: `develop` necesita que Cloudflare Access intercepte el tráfico (§11.5), y Access solo puede hacerlo si el dominio está proxeado. La preocupación original (que el proxy rompe la emisión de certificados de Railway, documentada en §7.4) no aplicó acá porque Access opera como reverse-proxy — valida la sesión y recién después reenvía a Railway con el Host/SNI correcto.
+
+### 11.5 Cloudflare Access
+
+Se protegió `develop.haircutsflowcr.com` con una Access Application (Zero Trust → Access → Applications, self-hosted) con política de login por email (One-Time PIN) restringida a los emails autorizados — a diferencia de producción, este ambiente puede tener features a medio terminar y no debe ser público.
+
+**Decisión explícita:** no se protegió `app.haircutsflowcr.com` (producción) de la misma forma — Access exige autenticarse contra una lista fija de emails, incompatible con usuarios reales de negocio que no controla el desarrollador. El login propio de la app (usuario/contraseña contra el backend) sigue siendo la única puerta de entrada en producción.
+
+### 11.6 Landing page también en `develop`
+
+`Router.tsx` decidía mostrar la Landing Page comparando el hostname contra el string literal `'www.haircutsflowcr.com'` — con eso, `develop.haircutsflowcr.com` nunca iba a mostrarla, cayendo siempre al redirect de la app (login/dashboard). Como el plan es iterar el contenido completo de la Landing (pendiente #3 de §9) en este ambiente antes de promoverlo a producción, se cambió a una lista (`LANDING_HOSTNAMES`) que incluye ambos dominios (rama `feature/staging-landing-hostname`, PR #71 → `develop`).
+
+### 11.7 Verificación end-to-end
+
+- `curl` sin sesión contra `https://develop.haircutsflowcr.com/` → `302` con `Www-Authenticate: Cloudflare-Access`, redirige a `hair-cuts-flow-team.cloudflareaccess.com` — confirma que Access está interceptando correctamente el tráfico no autenticado.
+- Con sesión de Access ya autenticada (navegador real): la SPA carga completa, incluyendo el hero con imagen de fondo (un `404` transitorio visto en la primera verificación resultó ser una respuesta cacheada por Cloudflare de un momento anterior a que el deploy terminara de propagar — se confirmó con una consulta directa al origen de Railway, que devolvió `200`, y se resolvió solo tras un segundo request; no era un bug real).
+- Preflight CORS (`OPTIONS` desde `Origin: https://develop.haircutsflowcr.com` contra el API de `develop`) → `204` con `access-control-allow-origin: https://develop.haircutsflowcr.com` correcto.
+- Tras el merge del PR #71: `develop.haircutsflowcr.com/` muestra la Landing Page (antes redirigía a `/login`), confirmado visualmente por el usuario. `www.haircutsflowcr.com`/`app.haircutsflowcr.com` en producción sin cambios de comportamiento.
+
+### 11.8 Pendiente para retomar
+
+- El servicio quedó nombrado `barber-flow-web-develop` (no `barber-flow-web`) por la colisión de nombre a nivel de proyecto — cosmético, no afecta funcionalidad.
+- El link del footer del email de recuperación de contraseña (`AuthService.cs`, `GetEmailTemplate`) sigue hardcodeado a `https://www.haircutsflowcr.com` — un OTP disparado desde `develop` muestra ese link de producción en el footer. No bloquea el flujo (el código OTP no depende del link). No corregido en este trabajo.
+- No se protegió el dominio del API de `develop` (`barberflowapp-develop.up.railway.app`) con Access — queda abierto, aunque al no ser un dominio "lindo"/anunciado el riesgo es bajo. Evaluar si conviene sumarlo si en algún momento se expone más.
