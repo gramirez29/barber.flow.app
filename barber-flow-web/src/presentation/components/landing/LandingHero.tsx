@@ -9,7 +9,7 @@ export const LandingHero: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: { xs: '100vh', md: '92vh' },
+        minHeight: { xs: 'calc(100vh - 30px)', md: 'calc(92vh - 30px)' },
         width: '100%',
         backgroundImage: `url(${heroImage})`,
         backgroundSize: 'cover',
@@ -116,29 +116,6 @@ export const LandingHero: React.FC = () => {
             Citas, clientes, reportes y notificaciones en un único espacio profesional, pensado
             para barberías que quieren operar con confianza.
           </Typography>
-
-          <Button
-            component={RouterLink}
-            to="/login"
-            sx={{
-              height: 54,
-              px: 5,
-              borderRadius: '14px',
-              backgroundColor: appColors.accent,
-              color: appColors.onAccent,
-              fontSize: 15,
-              fontWeight: 800,
-              letterSpacing: '1.5px',
-              textTransform: 'uppercase',
-              boxShadow: `0 4px 10px 0 ${appColors.accent}66`,
-              '&:hover': {
-                backgroundColor: appColors.accentLight,
-                boxShadow: `0 4px 10px 0 ${appColors.accent}66`,
-              },
-            }}
-          >
-            Iniciar sesión
-          </Button>
         </Box>
       </Box>
     </Box>

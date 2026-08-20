@@ -1,5 +1,6 @@
-import React from 'react';
-import { Box, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, IconButton, Modal, Typography } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { appColors } from '@presentation/theme/appColors';
 import screenshotCitas from '@/assets/images/landing/screenshot-citas.jpg';
 import screenshotClientes from '@/assets/images/landing/screenshot-clientes.jpg';
@@ -13,6 +14,9 @@ const SCREENSHOTS = [
 ];
 
 export const LandingScreenshots: React.FC = () => {
+  const [openedSrc, setOpenedSrc] = useState<string | null>(null);
+  const openedScreenshot = SCREENSHOTS.find((s) => s.src === openedSrc);
+
   return (
     <Box
       sx={{
@@ -57,11 +61,23 @@ export const LandingScreenshots: React.FC = () => {
           {SCREENSHOTS.map(({ src, alt, title }) => (
             <Box key={title}>
               <Box
+                onClick={() => setOpenedSrc(src)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') setOpenedSrc(src);
+                }}
                 sx={{
                   borderRadius: '16px',
                   overflow: 'hidden',
                   border: `1px solid ${appColors.border}`,
                   boxShadow: '0 12px 28px rgba(0, 0, 0, 0.35)',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 16px 32px rgba(0, 0, 0, 0.45)',
+                  },
                 }}
               >
                 <Box component="img" src={src} alt={alt} sx={{ width: '100%', display: 'block' }} />
@@ -81,6 +97,55 @@ export const LandingScreenshots: React.FC = () => {
           ))}
         </Box>
       </Box>
+
+      <Modal
+        open={openedSrc !== null}
+        onClose={() => setOpenedSrc(null)}
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            maxWidth: { xs: '90vw', sm: '85vw', md: '75vw' },
+            maxHeight: { xs: '80vh', sm: '85vh' },
+            outline: 'none',
+          }}
+        >
+          <IconButton
+            onClick={() => setOpenedSrc(null)}
+            aria-label="Cerrar"
+            sx={{
+              position: 'absolute',
+              top: { xs: 8, sm: -44 },
+              right: { xs: 8, sm: 0 },
+              backgroundColor: appColors.surfaceElevated,
+              border: `1px solid ${appColors.border}`,
+              color: appColors.textPrimary,
+              zIndex: 1,
+              '&:hover': { backgroundColor: appColors.surface },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+          {openedScreenshot && (
+            <Box
+              component="img"
+              src={openedScreenshot.src}
+              alt={openedScreenshot.alt}
+              sx={{
+                display: 'block',
+                width: 'auto',
+                height: 'auto',
+                maxWidth: { xs: '90vw', sm: '85vw', md: '75vw' },
+                maxHeight: { xs: '80vh', sm: '85vh' },
+                borderRadius: '12px',
+                border: `1px solid ${appColors.border}`,
+                boxShadow: '0 24px 48px rgba(0, 0, 0, 0.5)',
+              }}
+            />
+          )}
+        </Box>
+      </Modal>
     </Box>
   );
 };
