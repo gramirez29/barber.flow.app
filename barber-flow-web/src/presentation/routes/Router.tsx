@@ -37,9 +37,9 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
 // The apex domain redirects to www at the DNS/Cloudflare level (see PRODUCTION_IMPLEMENTATION.md
 // §7.6), so www is the only production hostname that ever actually reaches this app. The staging
-// domain is included too so the landing page content can be previewed/iterated on before promoting
-// to production.
-const LANDING_HOSTNAMES = ['www.haircutsflowcr.com', 'develop.haircutsflowcr.com'];
+// domain and localhost are included too so the landing page content can be previewed/iterated on
+// locally and in develop before promoting to production.
+const LANDING_HOSTNAMES = ['www.haircutsflowcr.com', 'develop.haircutsflowcr.com', 'localhost'];
 
 export const Router: React.FC = () => {
   const { isAuthenticated, user } = useAuth();

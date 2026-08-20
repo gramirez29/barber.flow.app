@@ -31,13 +31,15 @@ export const LandingHero: React.FC = () => {
         <Box
           sx={{
             display: 'flex',
+            flexWrap: 'nowrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            px: { xs: 2.5, sm: 4 },
+            gap: 1,
+            px: { xs: 2, sm: 4 },
             py: 2.5,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
             <Box
               sx={{
                 width: 36,
@@ -53,7 +55,13 @@ export const LandingHero: React.FC = () => {
               <ContentCutIcon sx={{ fontSize: 18, color: appColors.onAccent }} />
             </Box>
             <Typography
-              sx={{ color: appColors.accent, fontSize: 15, fontWeight: 800, letterSpacing: '2.5px' }}
+              sx={{
+                color: appColors.accent,
+                fontSize: { xs: 13, sm: 15 },
+                fontWeight: 800,
+                letterSpacing: { xs: '1.5px', sm: '2.5px' },
+                whiteSpace: 'nowrap',
+              }}
             >
               HAIRCUTSFLOW
             </Typography>
@@ -64,11 +72,17 @@ export const LandingHero: React.FC = () => {
             to="/login"
             sx={{
               height: 42,
-              px: 3,
+              px: { xs: 2, sm: 3 },
+              flexShrink: 0,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
               borderRadius: '999px',
               backgroundColor: appColors.accent,
               color: appColors.onAccent,
-              fontSize: 13,
+              fontSize: { xs: 12, sm: 13 },
               fontWeight: 800,
               letterSpacing: '1px',
               textTransform: 'uppercase',
