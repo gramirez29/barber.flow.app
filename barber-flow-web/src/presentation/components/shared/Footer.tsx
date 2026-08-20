@@ -69,7 +69,7 @@ export const Footer: React.FC = () => {
               <ContentCutIcon sx={{ fontSize: 13, color: appColors.onAccent }} />
             </Box>
             <Typography sx={{ color: appColors.accent, fontSize: 12, fontWeight: 800, letterSpacing: '1.5px' }}>
-              BARBER FLOW
+              HAIRCUTSFLOW
             </Typography>
           </Box>
 
@@ -99,7 +99,7 @@ export const Footer: React.FC = () => {
           }}
         >
           <Typography sx={{ fontSize: 11, color: appColors.textSecondary }}>
-            © {year} Barber Flow. Todos los derechos reservados.
+            © {year} HairCutsFlow. Todos los derechos reservados.
           </Typography>
           <Typography sx={{ fontSize: 11, color: appColors.textSecondary }}>
             Desarrollado por {DEVELOPER_NAME}
