@@ -49,6 +49,57 @@ public class AuthService(
         return true;
     }
 
+    public async Task SendWelcomeEmailAsync(string email, string barberName, string userName, string temporaryPassword, CancellationToken cancellationToken = default)
+    {
+        var subject = "Bienvenido a HairCutsFlow CR - Tu cuenta ha sido creada";
+        var body = GetWelcomeEmailTemplate(barberName, userName, temporaryPassword);
+
+        try
+        {
+            await emailService.SendEmailAsync(email, subject, body, true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send welcome email to {Email}", email);
+        }
+    }
+
+    private string GetWelcomeEmailTemplate(string barberName, string userName, string temporaryPassword)
+    {
+        return $@"
+            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; background-color: #1A1A1A; color: white;'>
+                <div style='text-align: center; margin-bottom: 20px;'>
+                    <h1 style='color: #C9A84C;'>HairCutsFlow CR</h1>
+                </div>
+                <h2>Hola {barberName},</h2>
+                <p>Se creó tu cuenta en HairCutsFlow, la plataforma para gestionar tu barbería: citas, clientes, reportes y notificaciones en un único espacio.</p>
+                <p>Estas son tus credenciales de acceso iniciales:</p>
+                <div style='text-align: center; margin: 30px 0;'>
+                    <table style='margin: 0 auto; text-align: left;'>
+                        <tr>
+                            <td style='padding: 8px 16px; color: #aaa;'>Usuario:</td>
+                            <td style='padding: 8px 16px; font-weight: bold; color: white;'>{userName}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 8px 16px; color: #aaa;'>Contraseña temporal:</td>
+                            <td style='padding: 8px 16px;'><span style='font-size: 18px; font-weight: bold; letter-spacing: 2px; background-color: #C9A84C; color: #1A1A1A; padding: 6px 14px; border-radius: 5px;'>{temporaryPassword}</span></td>
+                        </tr>
+                    </table>
+                </div>
+                <p>Puedes usa la contraseña que te proporcionamos pero por seguridad, te recomendamos cambiar esta contraseña temporal por una propia lo antes posible.</p>
+                <div style='text-align: center; margin: 30px 0;'>
+                    <a href='https://app.haircutsflowcr.com/forgot-password' style='display: inline-block; background-color: #C9A84C; color: #1A1A1A; font-weight: bold; text-decoration: none; padding: 12px 28px; border-radius: 6px;'>Cambiar mi contraseña</a>
+                </div>
+                <p>Ese enlace te llevará al flujo de recuperación de contraseña, donde recibirás un código de verificación en este mismo correo para completar el cambio.</p>
+                <p>Si no esperabas este correo, contactá al administrador de tu barbería.</p>
+                <hr style='border: 0; border-top: 1px solid #C9A84C; margin: 20px 0;'>
+                <p style='font-size: 12px; color: #aaa; text-align: center;'>
+                    © {DateTime.UtcNow.Year} HairCutsFlow CR. Premium Grooming Experience.<br>
+                    <a href='https://www.haircutsflowcr.com' style='color: #C9A84C; text-decoration: none;'>www.haircutsflowcr.com</a>
+                </p>
+            </div>";
+    }
+
     private string GetEmailTemplate(string userName, string otp)
     {
         return $@"

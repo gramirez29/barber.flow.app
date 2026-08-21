@@ -1,5 +1,6 @@
 using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.DTOs.Responses;
+using Barber.Flow.Application.Services.Auth;
 using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Application.Services.Users;
 using Barber.Flow.Domain.Interfaces;
@@ -57,6 +58,7 @@ public static class BarbersApi
         IBarberService barberService,
         IUserService userService,
         IUserRepository userRepository,
+        IAuthService authService,
         IValidator<BarberRequest> validator,
         HttpContext httpContext,
         CancellationToken cancellationToken = default)
@@ -89,8 +91,8 @@ public static class BarbersApi
             BarberShopName = request.BarberShopName,
             BarberShopPhone = request.BarberShopPhone,
             PhotoUrl = request.PhotoUrl,
-            Settings = request.Settings != null 
-                ? new BarberSettings(request.Settings.CommissionPercentage, request.Settings.FixedDailyExpense) 
+            Settings = request.Settings != null
+                ? new BarberSettings(request.Settings.CommissionPercentage, request.Settings.FixedDailyExpense)
                 : null,
             CreatedBy = userId ?? string.Empty,
             UpdatedBy = userId ?? string.Empty
@@ -109,6 +111,13 @@ public static class BarbersApi
                 Role = "Barber"
             };
             await userService.CreateAsync(newUser, cancellationToken);
+
+            await authService.SendWelcomeEmailAsync(
+                request.UserEmail,
+                request.BarberName,
+                request.UserName,
+                request.Password,
+                cancellationToken);
         }
 
         var dto = await MapAsync(created, userRepository, cancellationToken);
