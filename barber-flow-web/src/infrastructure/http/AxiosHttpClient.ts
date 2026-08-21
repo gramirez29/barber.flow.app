@@ -59,7 +59,12 @@ export class AxiosHttpClient implements HttpClient {
           }
         }
 
-        return Promise.reject(error.response?.data || error.message);
+        // Preserve a real Error (with the actual Axios failure reason, e.g. "Network Error" or
+        // a timeout message) when there's no response body to reject with instead - rejecting
+        // with a bare string here made every `catch` that checks `err instanceof Error` fall
+        // back to a generic, unhelpful message for connectivity failures, masking what actually
+        // went wrong.
+        return Promise.reject(error.response?.data || new Error(error.message));
       }
     );
   }
