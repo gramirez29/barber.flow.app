@@ -36,6 +36,7 @@ export const AppointmentsPage: React.FC = () => {
   const {
     appointments,
     isLoadingAppointments,
+    isSavingAppointment,
     fetchAppointmentsByDate,
     fetchAppointmentsByDateRange,
     createAppointment,
@@ -265,7 +266,7 @@ export const AppointmentsPage: React.FC = () => {
         onSubmit={handleFormSubmit}
         onMove={handleMove}
         onClose={handleCloseForm}
-        isLoading={isLoadingAppointments}
+        isLoading={isSavingAppointment}
       />
     </Box>
   );

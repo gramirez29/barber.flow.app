@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Dialog, DialogContent, Typography, InputAdornment } from '@mui/material';
+import { Box, Dialog, DialogContent, Typography, InputAdornment, CircularProgress, Stack } from '@mui/material';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
@@ -421,7 +421,16 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                   '&:hover': { backgroundColor: appColors.accentLight },
                 }}
               >
-                {isLoading ? 'Guardando...' : appointment ? 'Guardar cambios' : 'Guardar cita'}
+                {isLoading ? (
+                  <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+                    <CircularProgress size={18} sx={{ color: appColors.onAccent }} />
+                    <span>Guardando...</span>
+                  </Stack>
+                ) : appointment ? (
+                  'Guardar cambios'
+                ) : (
+                  'Guardar cita'
+                )}
               </Box>
               <Box
                 component="button"
@@ -525,7 +534,14 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 '&:hover': { backgroundColor: appColors.accentLight },
               }}
             >
-              {isMoving ? 'Moviendo...' : 'Mover cita'}
+              {isMoving ? (
+                <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+                  <CircularProgress size={18} sx={{ color: appColors.onAccent }} />
+                  <span>Moviendo...</span>
+                </Stack>
+              ) : (
+                'Mover cita'
+              )}
             </Box>
           </Box>
         )}
