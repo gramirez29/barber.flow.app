@@ -203,4 +203,31 @@ public class AuthServiceTests
         Assert.True(result);
         _passwordResetRepository.Verify(r => r.MarkAsUsedAsync(token.Id), Times.Once);
     }
+
+    [Fact]
+    public async Task SendWelcomeEmailAsync_SendsEmailWithCredentialsToGivenAddress()
+    {
+        await CreateSut().SendWelcomeEmailAsync("newbarber@example.com", "New Barber", "newbarber", "Temp1234!");
+
+        _emailService.Verify(
+            e => e.SendEmailAsync(
+                "newbarber@example.com",
+                It.Is<string>(s => s.Contains("Bienvenido")),
+                It.Is<string>(b => b.Contains("newbarber") && b.Contains("Temp1234!")),
+                true),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task SendWelcomeEmailAsync_EmailSendFails_DoesNotThrow()
+    {
+        _emailService
+            .Setup(e => e.SendEmailAsync("newbarber@example.com", It.IsAny<string>(), It.IsAny<string>(), true))
+            .ThrowsAsync(new InvalidOperationException("SMTP unavailable"));
+
+        var exception = await Record.ExceptionAsync(() =>
+            CreateSut().SendWelcomeEmailAsync("newbarber@example.com", "New Barber", "newbarber", "Temp1234!"));
+
+        Assert.Null(exception);
+    }
 }

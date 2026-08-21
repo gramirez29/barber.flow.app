@@ -64,7 +64,7 @@
 	blocked: {
 		title: "Cuenta está temporalmente bloqueada",
 		subtitle:
-			"El acceso a tu cuenta fue temporalmente suspendido ya que no has relizado el pago del servicio. Tus datos están protegidos. Realiza el pago correspondiente por el medio acordado y contacta al administrador para reactivar tu cuenta y recuperar el acceso.",
+			"El acceso a tu cuenta fue temporalmente suspendida ya que no has relizado el pago del servicio. Tus datos están protegidos. Realiza el pago correspondiente por el medio acordado y contacta al administrador para reactivar tu cuenta y recuperar el acceso.",
 	},
 	login: {
 		appointments: "Citas",
