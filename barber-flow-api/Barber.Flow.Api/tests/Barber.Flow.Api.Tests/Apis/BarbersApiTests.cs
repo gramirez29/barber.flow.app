@@ -76,6 +76,20 @@ public class BarbersApiTests : IClassFixture<ApiWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Create_WithEmailAlreadyUsedByAnotherAccount_ReturnsConflict()
+    {
+        // Seeded InMemoryUserRepository ships "admin" with email "g.raba29@gmail.com" - reusing
+        // it here reproduces the 2026-08-21 incident where a barber created with the admin's
+        // email caused password-reset lookups (by email) to silently reset the admin account.
+        var client = await CreateAuthenticatedClientAsync("admin", "password");
+        var request = BuildRequest() with { UserName = "duplicate-email-barber", UserEmail = "g.raba29@gmail.com", Password = "secret123" };
+
+        var response = await client.PostAsJsonAsync("/api/barbers/create", request);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Search_WithoutToken_ReturnsUnauthorized()
     {
         var client = _factory.CreateClient();
