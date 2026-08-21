@@ -5,6 +5,7 @@ import ContentCutIcon from '@mui/icons-material/ContentCut';
 import ArrowDownwardOutlinedIcon from '@mui/icons-material/ArrowDownwardOutlined';
 import { Link as RouterLink } from 'react-router-dom';
 import { appColors } from '@presentation/theme/appColors';
+import { getLoginHref } from './getLoginHref';
 import heroImage from '@/assets/images/barber-flow-background-image.jpg';
 
 const floatBounce = keyframes`
@@ -13,6 +14,9 @@ const floatBounce = keyframes`
 `;
 
 export const LandingHero: React.FC = () => {
+  const loginHref = getLoginHref();
+  const isExternalLogin = loginHref.startsWith('http');
+
   return (
     <Box
       sx={{
@@ -75,8 +79,8 @@ export const LandingHero: React.FC = () => {
           </Box>
 
           <Button
-            component={RouterLink}
-            to="/login"
+            component={isExternalLogin ? 'a' : RouterLink}
+            {...(isExternalLogin ? { href: loginHref } : { to: loginHref })}
             sx={{
               height: 42,
               px: { xs: 2, sm: 3 },
