@@ -2,8 +2,12 @@ import React from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { appColors } from '@presentation/theme/appColors';
+import { getLoginHref } from './getLoginHref';
 
 export const LandingFinalCta: React.FC = () => {
+  const loginHref = getLoginHref();
+  const isExternalLogin = loginHref.startsWith('http');
+
   return (
     <Box
       sx={{
@@ -33,8 +37,8 @@ export const LandingFinalCta: React.FC = () => {
           </Typography>
         </Box>
         <Button
-          component={RouterLink}
-          to="/login"
+          component={isExternalLogin ? 'a' : RouterLink}
+          {...(isExternalLogin ? { href: loginHref } : { to: loginHref })}
           sx={{
             flexShrink: 0,
             height: 48,
