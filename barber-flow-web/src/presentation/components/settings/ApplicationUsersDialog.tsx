@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Dialog, DialogContent, Typography, InputAdornment, CircularProgress, Switch } from '@mui/material';
+import { Box, Dialog, DialogContent, Typography, InputAdornment, CircularProgress, Switch, Stack } from '@mui/material';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
@@ -595,7 +595,16 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
                   '&:hover': { backgroundColor: appColors.accentLight },
                 }}
               >
-                {loading ? 'Guardando...' : mode === 'edit' ? 'Actualizar usuario' : 'Crear usuario'}
+                {loading ? (
+                  <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+                    <CircularProgress size={18} sx={{ color: appColors.onAccent }} />
+                    <span>Guardando...</span>
+                  </Stack>
+                ) : mode === 'edit' ? (
+                  'Actualizar usuario'
+                ) : (
+                  'Crear usuario'
+                )}
               </Box>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Box
