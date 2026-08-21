@@ -1,15 +1,22 @@
 import React from 'react';
 import { Box, Button, Typography } from '@mui/material';
+import { keyframes } from '@emotion/react';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
+import ArrowDownwardOutlinedIcon from '@mui/icons-material/ArrowDownwardOutlined';
 import { Link as RouterLink } from 'react-router-dom';
 import { appColors } from '@presentation/theme/appColors';
 import heroImage from '@/assets/images/barber-flow-background-image.jpg';
+
+const floatBounce = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+`;
 
 export const LandingHero: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: { xs: 'calc(100vh - 30px)', md: 'calc(92vh - 30px)' },
+        minHeight: { xs: 'calc(78vh - 30px)', sm: 'calc(85vh - 30px)', md: 'calc(92vh - 30px)' },
         width: '100%',
         backgroundImage: `url(${heroImage})`,
         backgroundSize: 'cover',
@@ -31,13 +38,15 @@ export const LandingHero: React.FC = () => {
         <Box
           sx={{
             display: 'flex',
+            flexWrap: 'nowrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            px: { xs: 2.5, sm: 4 },
+            gap: 1,
+            px: { xs: 2, sm: 4 },
             py: 2.5,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
             <Box
               sx={{
                 width: 36,
@@ -53,7 +62,13 @@ export const LandingHero: React.FC = () => {
               <ContentCutIcon sx={{ fontSize: 18, color: appColors.onAccent }} />
             </Box>
             <Typography
-              sx={{ color: appColors.accent, fontSize: 15, fontWeight: 800, letterSpacing: '2.5px' }}
+              sx={{
+                color: appColors.accent,
+                fontSize: { xs: 13, sm: 15 },
+                fontWeight: 800,
+                letterSpacing: { xs: '1.5px', sm: '2.5px' },
+                whiteSpace: 'nowrap',
+              }}
             >
               HAIRCUTSFLOW
             </Typography>
@@ -64,11 +79,17 @@ export const LandingHero: React.FC = () => {
             to="/login"
             sx={{
               height: 42,
-              px: 3,
+              px: { xs: 2, sm: 3 },
+              flexShrink: 0,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
               borderRadius: '999px',
               backgroundColor: appColors.accent,
               color: appColors.onAccent,
-              fontSize: 13,
+              fontSize: { xs: 12, sm: 13 },
               fontWeight: 800,
               letterSpacing: '1px',
               textTransform: 'uppercase',
@@ -116,6 +137,23 @@ export const LandingHero: React.FC = () => {
             Citas, clientes, reportes y notificaciones en un único espacio profesional, pensado
             para barberías que quieren operar con confianza.
           </Typography>
+
+          <Box
+            aria-hidden
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              border: `1px solid ${appColors.border}`,
+              backgroundColor: `${appColors.surface}80`,
+              animation: `${floatBounce} 2s ease-in-out infinite`,
+            }}
+          >
+            <ArrowDownwardOutlinedIcon sx={{ color: appColors.accent, fontSize: 32 }} />
+          </Box>
         </Box>
       </Box>
     </Box>
