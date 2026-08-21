@@ -2,6 +2,7 @@ using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
 using Barber.Flow.Domain.ValueObjects;
 using Barber.Flow.Infrastructure.Services.Auth;
+using System.Linq;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
@@ -201,11 +202,40 @@ public sealed class MongoDbBootstrapper : IHostedService
             new(
                 Builders<User>.IndexKeys.Ascending(u => u.UserName),
                 new CreateIndexOptions { Name = "idx_users_userName", Unique = true }),
-            new(
-                Builders<User>.IndexKeys.Ascending(u => u.Email),
-                new CreateIndexOptions { Name = "idx_users_email" }),
         };
         await users.Indexes.CreateManyAsync(userIndexes, cancellationToken);
+
+        // Email is looked up by the OTP password-recovery flow (AuthService), which assumes it
+        // resolves to exactly one account - two users sharing an email let a reset silently land
+        // on the wrong one (incident 2026-08-21: an admin-seeded account and a newly-created
+        // barber shared an email, and a password reset intended for the barber changed the
+        // admin's password instead). Created separately, and swallows a duplicate-key failure
+        // instead of crashing startup, because environments with pre-existing duplicate emails
+        // (from before this constraint existed) need to keep booting while those get cleaned up
+        // manually - BarbersApi.CreateBarberAsync is what actually prevents new duplicates.
+        try
+        {
+            // Drop the old non-unique "idx_users_email" first if present - Mongo rejects creating
+            // a differently-configured index over the same key pattern under a new name.
+            var existingNames = (await users.Indexes.List(cancellationToken).ToListAsync(cancellationToken))
+                .Select(i => i["name"].AsString);
+            if (existingNames.Contains("idx_users_email"))
+            {
+                await users.Indexes.DropOneAsync("idx_users_email", cancellationToken);
+            }
+
+            await users.Indexes.CreateOneAsync(
+                new CreateIndexModel<User>(
+                    Builders<User>.IndexKeys.Ascending(u => u.Email),
+                    new CreateIndexOptions { Name = "idx_users_email", Unique = true }),
+                cancellationToken: cancellationToken);
+        }
+        catch (MongoCommandException ex) when (ex.CodeName == "DuplicateKey" || ex.Code == 11000)
+        {
+            _logger.LogError(ex,
+                "Could not create a unique index on users.Email - duplicate emails already exist. " +
+                "Password recovery may resolve to the wrong account until these are cleaned up manually.");
+        }
     }
 
     /// <summary>

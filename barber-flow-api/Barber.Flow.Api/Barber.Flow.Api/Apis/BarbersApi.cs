@@ -80,6 +80,20 @@ public static class BarbersApi
             return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
         }
 
+        // A linked User account is only created below when a password is supplied - but that
+        // account's email must be unique (password recovery looks users up by email, and two
+        // accounts sharing one would let a reset silently land on the wrong account - see
+        // incident 2026-08-21). Check before creating anything, so a rejected duplicate never
+        // leaves an orphaned Barber with no linked User.
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            var existingUserWithEmail = await userRepository.GetByEmailAsync(request.UserEmail, cancellationToken);
+            if (existingUserWithEmail != null)
+            {
+                return TypedResults.Conflict(new { message = "Ya existe una cuenta con ese correo electrónico." });
+            }
+        }
+
         var barber = new Domain.Entities.Barber
         {
             UserName = request.UserName,
