@@ -8,6 +8,13 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
     private readonly IAppointmentRepository _repo = repo;
     private readonly IBarberRepository _barberRepo = barberRepo;
 
+    // The API and its clients only ever operate in Costa Rica (no DST), while the deployed
+    // container's OS clock runs in UTC. Comparing the submitted date/time against the server's
+    // local DateTime.Now made "today" appointments look like they were already in the past by
+    // up to 6 hours. Anchoring both sides to UTC via this fixed offset fixes that regardless of
+    // the host OS timezone.
+    private static readonly TimeSpan ShopUtcOffset = TimeSpan.FromHours(-6);
+
     public async Task<Domain.Entities.Appointments> CreateAsync(Domain.Entities.Appointments appointment, CancellationToken cancellationToken = default)
     {
         await EnsureScheduleIsValidAsync(appointment.Date, appointment.Time, excludeId: null, cancellationToken);
@@ -86,9 +93,10 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
                 "yyyy-MM-dd HH:mm",
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None,
-                out var scheduledAt))
+                out var scheduledAtLocal))
         {
-            if (scheduledAt <= DateTime.Now)
+            var scheduledAtUtc = new DateTimeOffset(scheduledAtLocal, ShopUtcOffset).UtcDateTime;
+            if (scheduledAtUtc <= DateTime.UtcNow)
             {
                 throw new AppointmentSchedulingException("La fecha y hora deben ser en el futuro.");
             }
