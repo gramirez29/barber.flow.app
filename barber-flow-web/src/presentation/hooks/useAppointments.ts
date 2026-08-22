@@ -37,6 +37,7 @@ export function useAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
+  const [isSavingAppointment, setIsSavingAppointment] = useState(false);
   const { showNotification } = useNotification();
 
   // Inyectar AppointmentApi
@@ -107,6 +108,7 @@ export function useAppointments() {
    */
   const createAppointment = useCallback(
     async (appointmentData: CreateAppointmentRequest) => {
+      setIsSavingAppointment(true);
       try {
         const newAppointment = await appointmentApi.create(appointmentData);
         setAppointments((prev) => [...prev, newAppointment]);
@@ -116,6 +118,8 @@ export function useAppointments() {
         const message = getErrorMessage(error, 'Error al crear cita');
         showNotification(message, 'error');
         throw error;
+      } finally {
+        setIsSavingAppointment(false);
       }
     },
     [appointmentApi, showNotification]
@@ -126,6 +130,7 @@ export function useAppointments() {
    */
   const updateAppointment = useCallback(
     async (appointmentId: string, updates: UpdateAppointmentRequest) => {
+      setIsSavingAppointment(true);
       try {
         const updated = await appointmentApi.update(appointmentId, updates);
         setAppointments((prev) =>
@@ -137,6 +142,8 @@ export function useAppointments() {
         const message = getErrorMessage(error, 'Error al actualizar cita');
         showNotification(message, 'error');
         throw error;
+      } finally {
+        setIsSavingAppointment(false);
       }
     },
     [appointmentApi, showNotification]
@@ -222,6 +229,7 @@ export function useAppointments() {
     appointments,
     selectedAppointment,
     isLoadingAppointments,
+    isSavingAppointment,
 
     // Actions
     fetchAppointmentsByDate,
