@@ -78,3 +78,11 @@ Worth checking before touching these areas — the doc has the full rationale:
 - `appointment.store.ts` persist config has no `version`/`migrate` — changing the `Appointment` type shape can break existing installs' AsyncStorage data silently.
 - `commissionPercentage`/`fixedDailyExpense` (used by `useDailyReport`) live only in AsyncStorage, not synced with the backend equivalent.
 - No refresh-token support in `apiClient.ts`; a `401` always forces logout, no retry.
+
+## Pendiente: portar a mobile 3 fixes/mejoras hechas solo en web (2026-08-21)
+
+Ver `barber-flow-web/CLAUDE.md` (sección Pendientes) para el detalle completo del lado web. Resumen para cuando se retome este trabajo desde mobile:
+
+1. **Verificar el fix de zona horaria de citas de "hoy"** (backend, `AppointmentService.EnsureScheduleIsValidAsync` en `barber-flow-api`): comparaba contra `DateTime.Now` del servidor (UTC en Railway) en vez de la hora de Costa Rica, rechazando casi cualquier cita de "hoy" aunque fuera horas en el futuro. Ya corregido — es 100% backend, mobile no necesita cambios de código, pero como pega contra el mismo API, conviene confirmar en la app real que crear una cita para hoy funciona (antes probablemente tenía el mismo síntoma).
+2. **Spinner + bloqueo de formulario al guardar cita**: `AppointmentFormScreen.tsx` no muestra feedback visual ni bloquea inputs mientras la creación/edición está en curso (mismo problema que tenía web en `AppointmentForm.tsx`/`useAppointments`, donde además había un bug real de mapeo a un flag de loading equivocado — revisar si `appointment.store.ts` tiene el mismo tipo de bug antes de asumir que ya funciona). Portar: estado de guardado dedicado + spinner en el botón de guardar, con inputs deshabilitados mientras dura la request.
+3. **Badge de estado en la lista de citas** (`CalendarScreen.tsx`): la agenda de mobile no muestra visualmente si una cita está Agendada/Confirmada/Completada/Cancelada sin abrirla. Web agregó un badge de color junto a la hora (scheduled `#3B82F6`, confirmed accent dorado, completed `#10B981`, cancelled rojo de error) en `AppointmentCard.tsx`. Portar el mismo badge (colores/labels) a las tarjetas de cita de `CalendarScreen.tsx`.
