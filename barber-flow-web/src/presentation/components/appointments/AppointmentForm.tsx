@@ -107,6 +107,8 @@ const Pill: React.FC<{ label: string; active: boolean; onClick: () => void; disa
       py: 0.875,
       mr: 1,
       mb: 1,
+      flexShrink: 0,
+      whiteSpace: 'nowrap',
       opacity: disabled ? 0.5 : 1,
       fontSize: 13,
       fontWeight: active ? 700 : 500,
@@ -273,7 +275,16 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               <Typography sx={{ fontSize: 12, fontWeight: 600, color: appColors.textSecondary, mb: 1 }}>
                 Estado de la cita
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'nowrap',
+                  overflowX: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  scrollbarWidth: 'none',
+                  '&::-webkit-scrollbar': { display: 'none' },
+                }}
+              >
                 {STATUS_OPTIONS.map((status) => (
                   <Pill
                     key={status}
