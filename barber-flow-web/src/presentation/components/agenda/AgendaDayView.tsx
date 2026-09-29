@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import {
   DndContext,
   DragEndEvent,
@@ -26,6 +26,9 @@ import { scrollbarSx } from '@presentation/theme/scrollbarSx';
 import { AgendaAddButton } from './AgendaAddButton';
 import { AgendaAppointmentBlock } from './AgendaAppointmentBlock';
 import { AgendaTimeGrid } from './AgendaTimeGrid';
+
+/** Alto del botón (46) + margen inferior (16) + holgura: por debajo de esto el botón no cabe entero. */
+const ADD_BUTTON_CLEARANCE_PX = 96;
 
 interface AgendaDayViewProps {
   date: Date;
@@ -55,7 +58,15 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
   onSelectAppointment,
   onMoveAppointment,
 }) => {
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  // El botón "Añadir" solo se muestra cuando cabe COMPLETO: un sticky se clava al borde superior de su
+  // contenedor, así que cuando la agenda apenas asoma por el pie de la pantalla quedaría asomado y cortado.
+  const [showAddButton, setShowAddButton] = useState(true);
+  const pageScrolledFor = useRef<string | null>(null);
+  const theme = useTheme();
+  // Pantallas grandes: la agenda va en una caja con scroll propio. Celular: altura completa y scrollea la página.
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const suppressClickUntil = useRef(0);
   const [pendingTimes, setPendingTimes] = useState<Record<string, string>>({});
   const [now, setNow] = useState(() => new Date());
@@ -87,26 +98,56 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
     return () => window.clearInterval(id);
   }, [showingToday]);
 
-  // Al cambiar de día (o llegar las citas), desplaza a la hora actual / primera cita.
+  useEffect(() => {
+    const update = () => {
+      const top = rootRef.current?.getBoundingClientRect().top;
+      if (top === undefined) return;
+      setShowAddButton(top < window.innerHeight - ADD_BUTTON_CLEARANCE_PX);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
   const dateKey = format(date, 'yyyy-MM-dd');
   const hasAppointments = appointments.length > 0;
   useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
+    const grid = gridRef.current;
+    if (!grid) return;
 
-    let anchor: number | null = null;
-    if (showingToday) {
-      anchor = new Date().getHours() * 60 + new Date().getMinutes();
-    } else if (hasAppointments) {
-      const first = Math.min(...appointments.map((a) => timeToMinutes(a.time)).filter((m) => !Number.isNaN(m)));
-      anchor = Number.isFinite(first) ? first : null;
+    if (isDesktop) {
+      // Caja con scroll propio: al cambiar de día (o llegar las citas) va a la hora actual / primera cita.
+      let anchor: number | null = null;
+      if (showingToday) {
+        anchor = new Date().getHours() * 60 + new Date().getMinutes();
+      } else if (hasAppointments) {
+        const first = Math.min(...appointments.map((a) => timeToMinutes(a.time)).filter((m) => !Number.isNaN(m)));
+        anchor = Number.isFinite(first) ? first : null;
+      }
+      grid.scrollTo({ top: anchor === null ? 0 : Math.max(0, minutesToOffset(anchor - 60, range)) });
+      return;
     }
 
-    const target = anchor === null ? 0 : Math.max(0, minutesToOffset(anchor - 60, range));
-    container.scrollTo({ top: target });
-    // Solo cuando cambia el día o aparecen las primeras citas; no en cada movimiento.
+    // Celular: se muestra TODO el horario y es la página la que se desplaza. Al entrar a "hoy", si la línea
+    // de "ahora" queda fuera de pantalla se lleva a la vista (una sola vez por día mostrado).
+    if (!showingToday || pageScrolledFor.current === dateKey) return;
+    pageScrolledFor.current = dateKey;
+
+    const current = new Date();
+    const nowMinutesLocal = current.getHours() * 60 + current.getMinutes();
+    const lineTop = grid.getBoundingClientRect().top + window.scrollY + 10 + minutesToOffset(nowMinutesLocal, range);
+    const viewportTop = window.scrollY + 80; // deja libre la barra superior
+    const viewportBottom = window.scrollY + window.innerHeight - 120; // deja libre el botón "Añadir"
+    if (lineTop < viewportTop || lineTop > viewportBottom) {
+      window.scrollTo({ top: Math.max(0, lineTop - window.innerHeight / 3) });
+    }
+    // Solo al cambiar de día / aparecer las primeras citas / cambiar de layout; no en cada movimiento.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateKey, hasAppointments]);
+  }, [dateKey, hasAppointments, isDesktop]);
 
   const handleDragStart = () => {
     suppressClickUntil.current = Number.MAX_SAFE_INTEGER;
@@ -150,7 +191,7 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
   const addLabel = `Añadir el ${format(date, "d MMM", { locale: es }).replace('.', '')}`;
 
   return (
-    <Box sx={{ position: 'relative', mt: 2 }}>
+    <Box ref={rootRef} sx={{ position: 'relative', mt: 2 }}>
       {!hasAppointments && (
         <Typography sx={{ fontSize: 13, color: appColors.textSecondary, mb: 1 }}>
           Todavía no hay reservas para este día. Toca una franja libre para agendar.
@@ -158,11 +199,12 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
       )}
 
       <Box
-        ref={scrollRef}
+        ref={gridRef}
         sx={{
-          maxHeight: { xs: '62vh', md: '68vh' },
-          overflowY: 'auto',
+          // Celular: altura completa (sin scroll interno). Escritorio: caja de 68vh con scroll propio.
+          maxHeight: { xs: 'none', md: '68vh' },
           overflowX: 'hidden',
+          overflowY: { xs: 'hidden', md: 'auto' },
           borderRadius: '14px',
           border: `1px solid ${appColors.border}`,
           backgroundColor: appColors.background,
@@ -195,7 +237,19 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
         </DndContext>
       </Box>
 
-      <AgendaAddButton label={addLabel} onClick={() => onAddAt()} />
+      {/* Pegado al borde inferior de la pantalla mientras se recorre la agenda. */}
+      {/* El wrapper mide 0px de alto: con alignItems flex-end el botón crece hacia ARRIBA desde el borde inferior. */}
+      <Box sx={{ position: 'sticky', bottom: 16, height: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 6 }}>
+        <Box
+          sx={{
+            opacity: showAddButton ? 1 : 0,
+            pointerEvents: showAddButton ? 'auto' : 'none',
+            transition: 'opacity 0.15s ease',
+          }}
+        >
+          <AgendaAddButton label={addLabel} onClick={() => onAddAt()} />
+        </Box>
+      </Box>
     </Box>
   );
 };

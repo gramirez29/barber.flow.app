@@ -9,17 +9,13 @@ interface AgendaAddButtonProps {
   onClick: () => void;
 }
 
-/** Pill dorada flotante al pie de la agenda (mismo estilo del botón "Nueva cita"). */
+/** Pill dorada de la agenda (mismo estilo del botón "Nueva cita"); quien la usa decide dónde flota. */
 export const AgendaAddButton: React.FC<AgendaAddButtonProps> = ({ label, onClick }) => (
   <Box
     component="button"
     type="button"
     onClick={onClick}
     sx={{
-      position: 'absolute',
-      left: '50%',
-      bottom: 14,
-      transform: 'translateX(-50%)',
       display: 'flex',
       alignItems: 'center',
       gap: 1.25,
@@ -36,7 +32,6 @@ export const AgendaAddButton: React.FC<AgendaAddButtonProps> = ({ label, onClick
       letterSpacing: '0.3px',
       whiteSpace: 'nowrap',
       boxShadow: `0 4px 12px ${appColors.accent}59`,
-      zIndex: 6,
       '&:hover': { backgroundColor: appColors.accentLight },
       '&:focus-visible': { outline: `2px solid ${appColors.textPrimary}`, outlineOffset: 2 },
     }}

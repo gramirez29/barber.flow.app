@@ -35,7 +35,7 @@ type ViewMode = CalendarViewMode;
 const toKey = (date: Date) => format(date, 'yyyy-MM-dd');
 
 export const AppointmentsPage: React.FC = () => {
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [visibleMonth, setVisibleMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [formOpen, setFormOpen] = useState(false);
