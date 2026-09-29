@@ -17,8 +17,10 @@ import {
 } from '@presentation/components/appointments';
 import type { CalendarViewMode } from '@presentation/components/appointments';
 import { useAppointments } from '@presentation/hooks/useAppointments';
+import { useBarbers } from '@presentation/hooks/useBarbers';
+import { useAuth } from '@presentation/context/AuthContext';
 import { CreateAppointmentFormData } from '@shared/validation/appointmentSchemas';
-import { Appointment } from '@domain/entities/Appointment';
+import { Appointment, RecurrenceFrequency } from '@domain/entities/Appointment';
 import { appColors } from '@presentation/theme/appColors';
 import heroImage from '@/assets/images/barber-flow-background-image.jpg';
 
@@ -40,9 +42,27 @@ export const AppointmentsPage: React.FC = () => {
     fetchAppointmentsByDate,
     fetchAppointmentsByDateRange,
     createAppointment,
+    createRecurringAppointments,
     updateAppointment,
     moveAppointment,
   } = useAppointments();
+  const { user } = useAuth();
+  const { getBarberByUserName } = useBarbers();
+  // Cantidad de citas por serie recurrente, definida por el admin en el barbero (0 = deshabilitado).
+  const [maxRecurringAppointments, setMaxRecurringAppointments] = useState(0);
+
+  // Se relee al abrir el formulario para reflejar cambios recientes del admin.
+  useEffect(() => {
+    if (!formOpen || !user?.userName) return;
+    let active = true;
+    void getBarberByUserName(user.userName).then((barber) => {
+      if (active) setMaxRecurringAppointments(barber?.settings?.maxRecurringAppointments ?? 0);
+    });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formOpen, user?.userName]);
 
   useEffect(() => {
     if (viewMode === 'month') {
@@ -118,6 +138,15 @@ export const AppointmentsPage: React.FC = () => {
     } else {
       await createAppointment(request);
     }
+    refreshCurrentRange();
+  };
+
+  const handleRecurringSubmit = async (data: CreateAppointmentFormData, frequency: RecurrenceFrequency) => {
+    const { price, paymentMethod, ...rest } = data;
+    await createRecurringAppointments(
+      { ...rest, servicePrice: price, paymentMethodUsed: paymentMethod },
+      frequency
+    );
     refreshCurrentRange();
   };
 
@@ -264,6 +293,8 @@ export const AppointmentsPage: React.FC = () => {
         defaultDate={toKey(selectedDate)}
         onSubmit={handleFormSubmit}
         onMove={handleMove}
+        maxRecurringAppointments={maxRecurringAppointments}
+        onSubmitRecurring={handleRecurringSubmit}
         onClose={handleCloseForm}
         isLoading={isSavingAppointment}
       />

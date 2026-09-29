@@ -28,7 +28,7 @@ public class AppointmentsApiTests : IClassFixture<ApiWebApplicationFactory>
     /// an authenticated client logged in as that new barber. Appointment ownership checks are
     /// keyed on the barber's own username (CreatedBy), not the shop they belong to.
     /// </summary>
-    private async Task<HttpClient> CreateBarberClientAsync(string userName)
+    private async Task<HttpClient> CreateBarberClientAsync(string userName, int? maxRecurring = null)
     {
         var adminClient = await CreateAuthenticatedClientAsync();
         var request = new BarberRequest(
@@ -42,7 +42,7 @@ public class AppointmentsApiTests : IClassFixture<ApiWebApplicationFactory>
             BarberShopPhone: null,
             PhotoUrl: null,
             Password: "password123",
-            Settings: null,
+            Settings: maxRecurring is null ? null : new BarberSettingsDto(40m, 0m, maxRecurring),
             ShopId: null
         );
         var response = await adminClient.PostAsJsonAsync("/api/barbers/create", request);
@@ -179,5 +179,79 @@ public class AppointmentsApiTests : IClassFixture<ApiWebApplicationFactory>
         var results = await searchResponse.Content.ReadFromJsonAsync<List<AppointmentResponse>>();
 
         Assert.DoesNotContain(results!, a => a.ClientName == "Search Owned By D");
+    }
+
+    private static RecurringAppointmentRequest RecurringRequest(string frequency, string date, string time = "10:00")
+        => new(frequency, new AppointmentRequest("Recurring Client", "9999-0007", null, date, time, "scheduled", null, "cash", "Corte", 5000m, null, null));
+
+    [Fact]
+    public async Task CreateRecurring_BarberWithoutSetting_ReturnsRecurrenceDisabled()
+    {
+        var barber = await CreateBarberClientAsync($"barberR0-{Guid.NewGuid():N}");
+
+        var response = await barber.PostAsJsonAsync("/api/appointments/create-recurring", RecurringRequest("weekly", "2032-01-06"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("RECURRENCE_DISABLED", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task CreateRecurring_BarberWithSetting_CreatesSeriesWithMonthEndClamping()
+    {
+        var barber = await CreateBarberClientAsync($"barberR1-{Guid.NewGuid():N}", maxRecurring: 3);
+
+        var response = await barber.PostAsJsonAsync("/api/appointments/create-recurring", RecurringRequest("monthly", "2032-01-31"));
+
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadFromJsonAsync<RecurringAppointmentResponse>();
+        Assert.Equal(3, body!.RequestedCount);
+        Assert.Empty(body.Conflicts);
+        Assert.Equal(new[] { "2032-01-31", "2032-02-29", "2032-03-31" }, body.Created.Select(a => a.Date));
+        Assert.All(body.Created, a => Assert.Equal(body.SeriesId, a.SeriesId));
+
+        var search = await barber.GetAsync("/api/appointments/search?date=2032-02-29");
+        var found = await search.Content.ReadFromJsonAsync<List<AppointmentResponse>>();
+        Assert.Contains(found!, a => a.SeriesId == body.SeriesId);
+    }
+
+    [Fact]
+    public async Task CreateRecurring_SameSlotsAgain_ReturnsSlotTaken()
+    {
+        var barber = await CreateBarberClientAsync($"barberR2-{Guid.NewGuid():N}", maxRecurring: 2);
+        var request = RecurringRequest("weekly", "2032-05-04");
+        (await barber.PostAsJsonAsync("/api/appointments/create-recurring", request)).EnsureSuccessStatusCode();
+
+        var second = await barber.PostAsJsonAsync("/api/appointments/create-recurring", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, second.StatusCode);
+        Assert.Contains("SLOT_TAKEN", await second.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task CreateRecurring_UnknownFrequency_ReturnsBadRequest()
+    {
+        var barber = await CreateBarberClientAsync($"barberR3-{Guid.NewGuid():N}", maxRecurring: 3);
+
+        var response = await barber.PostAsJsonAsync("/api/appointments/create-recurring", RecurringRequest("daily", "2032-06-01"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AdminUpdatingBarberWithoutSettings_KeepsMaxRecurringAppointments()
+    {
+        var userName = $"barberR4-{Guid.NewGuid():N}";
+        await CreateBarberClientAsync(userName, maxRecurring: 5);
+        var admin = await CreateAuthenticatedClientAsync();
+        var found = await admin.GetFromJsonAsync<List<BarberResponse>>($"/api/barbers/search?query={userName}");
+        var barber = Assert.Single(found!);
+        Assert.Equal(5, barber.Settings!.MaxRecurringAppointments);
+
+        var update = new BarberRequest(barber.UserName, barber.UserPhone, barber.UserEmail, "Renamed", barber.BarberPhone,
+            null, null, null, null, null, Settings: null, ShopId: null);
+        (await admin.PutAsJsonAsync($"/api/barbers/update/{barber.Id}", update)).EnsureSuccessStatusCode();
+
+        var after = await admin.GetFromJsonAsync<BarberResponse>($"/api/barbers/getById/{barber.Id}");
+        Assert.Equal(5, after!.Settings!.MaxRecurringAppointments);
     }
 }

@@ -22,6 +22,77 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
         return await _repo.CreateAsync(appointment, cancellationToken);
     }
 
+    /// <summary>Hard ceiling regardless of what is stored in the barber's settings.</summary>
+    public const int MaxRecurringAppointmentsLimit = 20;
+
+    public async Task<RecurringAppointmentsResult> CreateRecurringAsync(
+        Domain.Entities.Appointments template,
+        RecurrenceFrequency frequency,
+        CancellationToken cancellationToken = default)
+    {
+        var barber = string.IsNullOrWhiteSpace(template.CreatedBy)
+            ? null
+            : await _barberRepo.GetByUserNameAsync(template.CreatedBy, cancellationToken);
+        var count = Math.Min(barber?.Settings?.MaxRecurringAppointments ?? 0, MaxRecurringAppointmentsLimit);
+
+        if (count <= 0)
+        {
+            throw new AppointmentSchedulingException(
+                "Las citas recurrentes no están habilitadas para este usuario.",
+                AppointmentSchedulingException.RecurrenceDisabledCode);
+        }
+
+        var seriesId = Guid.NewGuid().ToString("N");
+        var created = new List<Domain.Entities.Appointments>();
+        var conflicts = new List<RecurrenceConflict>();
+
+        var dates = RecurrenceCalculator.GetDates(template.Date, frequency, count);
+        for (var i = 0; i < dates.Count; i++)
+        {
+            var date = dates[i];
+
+            // Only the first appointment keeps the status the caller chose (it may already have been
+            // attended); every later occurrence is a future booking, so it is always "scheduled".
+            var isFirst = i == 0;
+            var occurrence = new Domain.Entities.Appointments
+            {
+                ClientName = template.ClientName,
+                Phone = template.Phone,
+                ClientId = template.ClientId,
+                Date = date,
+                Time = template.Time,
+                Status = isFirst ? template.Status : "scheduled",
+                CompletedAt = isFirst ? template.CompletedAt : null,
+                PaymentMethodUsed = template.PaymentMethodUsed,
+                ServiceName = template.ServiceName,
+                ServicePrice = template.ServicePrice,
+                Notes = template.Notes,
+                ShopId = template.ShopId,
+                SeriesId = seriesId,
+                CreatedBy = template.CreatedBy,
+                UpdatedBy = template.UpdatedBy,
+            };
+
+            try
+            {
+                created.Add(await CreateAsync(occurrence, cancellationToken));
+            }
+            catch (AppointmentSchedulingException ex) when (ex.Code == AppointmentSchedulingException.SlotTakenCode)
+            {
+                conflicts.Add(new RecurrenceConflict(date, template.Time));
+            }
+        }
+
+        if (created.Count == 0)
+        {
+            throw new AppointmentSchedulingException(
+                "Todos los horarios de la serie ya están ocupados.",
+                AppointmentSchedulingException.SlotTakenCode);
+        }
+
+        return new RecurringAppointmentsResult(seriesId, count, created, conflicts);
+    }
+
     public async Task<Domain.Entities.Appointments?> UpdateAsync(string id, Domain.Entities.Appointments appointment, CancellationToken cancellationToken = default)
     {
         var existing = await _repo.GetByIdAsync(id, cancellationToken);

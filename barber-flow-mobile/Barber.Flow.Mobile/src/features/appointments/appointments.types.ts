@@ -47,4 +47,21 @@ export interface AppointmentDraft {
 export interface Appointment extends AppointmentDraft {
     id: string;
     status: AppointmentStatus;
+    seriesId?: string;
+}
+
+export type RecurrenceFrequency = "weekly" | "biweekly" | "monthly";
+
+export const RECURRENCE_FREQUENCY_OPTIONS: RecurrenceFrequency[] = ["weekly", "biweekly", "monthly"];
+
+export interface RecurrenceConflict {
+    date: string;
+    time: string;
+}
+
+export interface RecurringAppointmentsResult {
+    seriesId: string;
+    requestedCount: number;
+    created: Appointment[];
+    conflicts: RecurrenceConflict[];
 }

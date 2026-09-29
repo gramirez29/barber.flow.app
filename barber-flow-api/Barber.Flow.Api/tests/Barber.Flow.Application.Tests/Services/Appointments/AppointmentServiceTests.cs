@@ -265,6 +265,108 @@ public class AppointmentServiceTests
         Assert.Same(updated, result);
     }
 
+    private static Appointments RecurringTemplate() => new()
+    {
+        ClientName = "Juan", Phone = "8888-0000", Date = "2031-03-04", Time = "10:00",
+        Status = "confirmed", ServicePrice = 5000, CreatedBy = "barber1", UpdatedBy = "barber1",
+    };
+
+    private void SetupBarberWithMax(int? max)
+    {
+        var barber = new BarberEntity
+        {
+            UserName = "barber1",
+            ShopId = "SHOP-0001",
+            Settings = new Barber.Flow.Domain.ValueObjects.BarberSettings(40m, 0m, max),
+        };
+        _barberRepo.Setup(b => b.GetByUserNameAsync("barber1", It.IsAny<CancellationToken>())).ReturnsAsync(barber);
+        _repo.Setup(r => r.CreateAsync(It.IsAny<Appointments>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Appointments a, CancellationToken _) => a);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    public async Task CreateRecurringAsync_SettingUnsetOrZero_ThrowsRecurrenceDisabled(int? max)
+    {
+        SetupBarberWithMax(max);
+
+        var ex = await Assert.ThrowsAsync<AppointmentSchedulingException>(
+            () => CreateSut().CreateRecurringAsync(RecurringTemplate(), RecurrenceFrequency.Weekly));
+
+        Assert.Equal(AppointmentSchedulingException.RecurrenceDisabledCode, ex.Code);
+        _repo.Verify(r => r.CreateAsync(It.IsAny<Appointments>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateRecurringAsync_NoLinkedBarber_ThrowsRecurrenceDisabled()
+    {
+        _barberRepo.Setup(b => b.GetByUserNameAsync("barber1", It.IsAny<CancellationToken>())).ReturnsAsync((BarberEntity?)null);
+
+        var ex = await Assert.ThrowsAsync<AppointmentSchedulingException>(
+            () => CreateSut().CreateRecurringAsync(RecurringTemplate(), RecurrenceFrequency.Weekly));
+
+        Assert.Equal(AppointmentSchedulingException.RecurrenceDisabledCode, ex.Code);
+    }
+
+    [Fact]
+    public async Task CreateRecurringAsync_CreatesSettingCountSharingSeriesId_FirstKeepsStatusRestScheduled()
+    {
+        SetupBarberWithMax(4);
+
+        var result = await CreateSut().CreateRecurringAsync(RecurringTemplate(), RecurrenceFrequency.Weekly);
+
+        Assert.Equal(4, result.RequestedCount);
+        Assert.Equal(4, result.Created.Count);
+        Assert.Empty(result.Conflicts);
+        Assert.Equal(new[] { "2031-03-04", "2031-03-11", "2031-03-18", "2031-03-25" }, result.Created.Select(a => a.Date));
+        Assert.Equal("confirmed", result.Created[0].Status);
+        Assert.All(result.Created.Skip(1), a => Assert.Equal("scheduled", a.Status));
+        Assert.All(result.Created, a =>
+        {
+            Assert.Equal(result.SeriesId, a.SeriesId);
+            Assert.Equal("10:00", a.Time);
+            Assert.Equal("barber1", a.CreatedBy);
+            Assert.Equal("SHOP-0001", a.ShopId);
+        });
+    }
+
+    [Fact]
+    public async Task CreateRecurringAsync_SettingAboveHardLimit_IsClampedToTwenty()
+    {
+        SetupBarberWithMax(50);
+
+        var result = await CreateSut().CreateRecurringAsync(RecurringTemplate(), RecurrenceFrequency.Weekly);
+
+        Assert.Equal(AppointmentService.MaxRecurringAppointmentsLimit, result.RequestedCount);
+        Assert.Equal(20, result.Created.Count);
+    }
+
+    [Fact]
+    public async Task CreateRecurringAsync_SomeSlotsTaken_CreatesFreeOnesAndReportsConflicts()
+    {
+        SetupBarberWithMax(3);
+        _repo.Setup(r => r.HasConflictAsync("2031-03-11", "10:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await CreateSut().CreateRecurringAsync(RecurringTemplate(), RecurrenceFrequency.Weekly);
+
+        Assert.Equal(new[] { "2031-03-04", "2031-03-18" }, result.Created.Select(a => a.Date));
+        var conflict = Assert.Single(result.Conflicts);
+        Assert.Equal(new RecurrenceConflict("2031-03-11", "10:00"), conflict);
+    }
+
+    [Fact]
+    public async Task CreateRecurringAsync_AllSlotsTaken_ThrowsSlotTaken()
+    {
+        SetupBarberWithMax(2);
+        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string>(), "10:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var ex = await Assert.ThrowsAsync<AppointmentSchedulingException>(
+            () => CreateSut().CreateRecurringAsync(RecurringTemplate(), RecurrenceFrequency.Weekly));
+
+        Assert.Equal(AppointmentSchedulingException.SlotTakenCode, ex.Code);
+    }
+
     [Fact]
     public async Task GetNextIdAsync_DelegatesToRepositoryAndReturnsItsResult()
     {

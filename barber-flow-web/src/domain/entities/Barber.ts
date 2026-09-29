@@ -1,6 +1,8 @@
 export interface BarberSettings {
   commissionPercentage: number;
   fixedDailyExpense: number;
+  /** 0..20. 0 o ausente = citas recurrentes deshabilitadas. Solo la modifica el admin. */
+  maxRecurringAppointments?: number;
 }
 
 export interface Barber {

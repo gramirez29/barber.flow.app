@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { Box, Dialog, DialogContent, Typography, InputAdornment, CircularProgress, Stack } from '@mui/material';
+import {
+  Box,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  FormControlLabel,
+  TextField,
+  Typography,
+  InputAdornment,
+  CircularProgress,
+  Stack,
+} from '@mui/material';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
@@ -13,7 +24,12 @@ import {
   isPastAppointmentDateTime,
   CreateAppointmentFormData,
 } from '@shared/validation/appointmentSchemas';
-import { Appointment, AppointmentStatus, AppointmentPaymentMethod } from '@domain/entities/Appointment';
+import {
+  Appointment,
+  AppointmentStatus,
+  AppointmentPaymentMethod,
+  RecurrenceFrequency,
+} from '@domain/entities/Appointment';
 import { APPOINTMENT_CONSTANTS } from '@shared/constants/appointments';
 import { appColors } from '@presentation/theme/appColors';
 import { scrollbarSx } from '@presentation/theme/scrollbarSx';
@@ -26,11 +42,20 @@ interface AppointmentFormProps {
   defaultDate?: string;
   onSubmit: (data: CreateAppointmentFormData) => Promise<void>;
   onMove?: (appointmentId: string, newDate: string, newTime: string) => Promise<void>;
+  /** Cantidad de citas por serie según el setting del barbero (0/undefined = recurrencia deshabilitada). */
+  maxRecurringAppointments?: number;
+  onSubmitRecurring?: (data: CreateAppointmentFormData, frequency: RecurrenceFrequency) => Promise<void>;
   onClose: () => void;
   isLoading?: boolean;
 }
 
 const MOVABLE_STATUSES: AppointmentStatus[] = ['scheduled', 'confirmed'];
+
+const FREQUENCY_OPTIONS: { value: RecurrenceFrequency; label: string; plural: string }[] = [
+  { value: 'weekly', label: 'Semanal', plural: 'semanales' },
+  { value: 'biweekly', label: 'Quincenal', plural: 'quincenales' },
+  { value: 'monthly', label: 'Mensual', plural: 'mensuales' },
+];
 
 const STATUS_OPTIONS: AppointmentStatus[] = ['scheduled', 'confirmed', 'completed', 'cancelled'];
 const PAYMENT_OPTIONS: AppointmentPaymentMethod[] = ['cash', 'sinpeMovil', 'transfer'];
@@ -96,10 +121,18 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   defaultDate,
   onSubmit,
   onMove,
+  maxRecurringAppointments = 0,
+  onSubmitRecurring,
   onClose,
   isLoading = false,
 }) => {
   const { confirm } = useConfirmDialog();
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<RecurrenceFrequency>('weekly');
+
+  // Solo al crear, y solo si el admin habilitó la recurrencia para este barbero (setting > 0).
+  const canRecur = !appointment && maxRecurringAppointments > 0 && Boolean(onSubmitRecurring);
+  const frequencyPlural = FREQUENCY_OPTIONS.find((o) => o.value === frequency)?.plural ?? '';
   const [moveDate, setMoveDate] = useState(appointment?.date ?? '');
   const [moveTime, setMoveTime] = useState(appointment?.time ?? '');
   const [isMoving, setIsMoving] = useState(false);
@@ -181,7 +214,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     }
 
     try {
-      await onSubmit(form.values);
+      if (canRecur && isRecurring && onSubmitRecurring) {
+        await onSubmitRecurring(form.values, frequency);
+      } else {
+        await onSubmit(form.values);
+      }
       form.reset();
       onClose();
     } catch {
@@ -417,6 +454,61 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               disabled={isLoading}
               sx={inputSx}
             />
+
+            {/* Cita recurrente (solo al crear y si el setting del barbero es > 0) */}
+            {canRecur && (
+              <Box
+                sx={{
+                  backgroundColor: appColors.surfaceElevated,
+                  borderRadius: '14px',
+                  border: `1px solid ${isRecurring ? appColors.accent : appColors.border}`,
+                  px: 2,
+                  py: 1,
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isRecurring}
+                      onChange={(e) => setIsRecurring(e.target.checked)}
+                      disabled={isLoading}
+                      sx={{ color: appColors.textSecondary, '&.Mui-checked': { color: appColors.accent } }}
+                    />
+                  }
+                  label="Cita recurrente"
+                  sx={{ '& .MuiFormControlLabel-label': { color: appColors.textPrimary, fontWeight: 600, fontSize: 14 } }}
+                />
+
+                {isRecurring && (
+                  <Box sx={{ pt: 1.5, pb: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <TextField
+                      id="recurrenceFrequency"
+                      select
+                      label="Periodicidad"
+                      value={frequency}
+                      onChange={(e) => setFrequency(e.target.value as RecurrenceFrequency)}
+                      disabled={isLoading}
+                      SelectProps={{ native: true }}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        ...inputSx,
+                        '& select option': { backgroundColor: appColors.surfaceElevated, color: appColors.textPrimary },
+                      }}
+                    >
+                      {FREQUENCY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </TextField>
+                    <Typography sx={{ fontSize: 13, color: appColors.textSecondary, lineHeight: 1.5 }}>
+                      Va a crear {maxRecurringAppointments} citas recurrentes {frequencyPlural} para el cliente
+                      seleccionado.
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
 
             {/* Acciones */}
             <Box sx={{ display: 'flex', gap: 1.25, mt: 1 }}>

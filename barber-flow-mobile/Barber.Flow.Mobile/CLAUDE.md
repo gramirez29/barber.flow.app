@@ -82,6 +82,13 @@ Worth checking before touching these areas — the doc has the full rationale:
 ## Citas con fecha/hora pasada (2026-09)
 Se quitó la validación "la cita debe ser futura" de `useAppointmentForm.ts` (`isFutureDateTime` → `isPastDateTime` en `utils/formatUtil.ts`, ya no es un error). `AppointmentFormScreen.handleSubmit` ahora pide confirmación (`showAlert` con botones, llaves `appointments.alerts.pastDateTime*`) si la fecha+hora es pasada, y solo cuando es creación o cambió la fecha/hora (no molesta al completar una cita vieja). El choque exacto sigue bloqueando desde el backend (`400 { code: "SLOT_TAKEN" }`, se muestra con el `catch` de `handleSubmit`). **No hay `expo-updates`**: este cambio solo llega a los usuarios con un build nuevo (`build:testing`/`build:prod`).
 
+## Citas recurrentes (2026-09)
+Paridad con web; reglas y contrato en `barber-flow-api/Barber.Flow.Api/claude.md` (sección "Citas recurrentes"). **Requiere un build nuevo** (sin `expo-updates`).
+- `AppointmentFormScreen` lee el tope del barbero logueado con `settingsService.getMaxRecurringAppointments(userName)` (0 ante cualquier error) y pasa `recurrence` a `components/calendar/AppointmentForm`, que muestra el checkbox "Cita recurrente" **solo al crear y solo si el tope > 0**. Al marcarlo aparece la periodicidad (**chips** Semanal/Quincenal/Mensual en vez del `<select>` de web) y el mensaje "Va a crear N citas recurrentes …".
+- Guardado: `appointment.store.addRecurringAppointments` → `appointmentService.createRecurring` (`POST /create-recurring`; la cantidad no se envía). Al terminar se muestra un diálogo con lo creado y las fechas sin espacio (`appointments.alerts.recurringCreated|recurringPartial`).
+- **Admin** (`ManageApplicationUsersForm`, campo "Citas por serie recurrente", 0..20, oculto para `admin`): `ApplicationUserSettingsForm.maxRecurringAppointments` (texto) + `existingCommissionPercentage/existingFixedDailyExpense` (copia de lo guardado del barbero). **Cambio de comportamiento:** `settingsService.updateApplicationUser` ya no manda la comisión/gasto del AsyncStorage local del admin (eso pisaba la comisión de cualquier barbero editado); reenvía los valores guardados del barbero y solo cae al AsyncStorage si se desconocen. `createApplicationUser` sigue usando los valores locales como iniciales.
+- `tsc --noEmit` limpio; `npm run lint` con los mismos 4 warnings preexistentes. No se probó en dispositivo/emulador.
+
 ## Pendiente: portar a mobile 3 fixes/mejoras hechas solo en web (2026-08-21)
 
 Ver `barber-flow-web/CLAUDE.md` (sección Pendientes) para el detalle completo del lado web. Resumen para cuando se retome este trabajo desde mobile:

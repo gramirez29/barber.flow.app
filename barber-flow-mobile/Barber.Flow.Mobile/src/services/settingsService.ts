@@ -4,6 +4,7 @@ import type {
 	ApplicationUserSettingsForm,
 	BarberApiRequest,
 	BarberApiResponse,
+	BarberSettingsPayload,
 	Language,
 	LanguageSource,
 	ReportCalculationSettings,
@@ -14,9 +15,15 @@ import { DEFAULT_REPORT_CALCULATION_SETTINGS } from "../types/settings";
 
 const SETTINGS_PREFERENCES_KEY = "barber-flow-settings-preferences";
 
+const parseMaxRecurring = (value?: string): number | undefined => {
+	if (value === undefined || value.trim() === "") return undefined;
+	const parsed = Number(value);
+	return Number.isInteger(parsed) && parsed >= 0 && parsed <= 20 ? parsed : undefined;
+};
+
 const mapBarberRequest = (
 	values: ApplicationUserSettingsForm,
-	reportCalculations?: ReportCalculationSettings,
+	settings?: BarberSettingsPayload,
 ): BarberApiRequest => ({
 	UserName: values.userName.trim(),
 	UserPhone: values.userPhone || values.barberPhone,
@@ -28,22 +35,20 @@ const mapBarberRequest = (
 	Address: values.address?.trim() || undefined,
 	Password: values.password?.trim() || undefined,
 	PhotoUrl: values.profilePhotoUrl || undefined,
-	Settings: reportCalculations ? {
-		commissionPercentage: reportCalculations.commissionPercentage,
-		fixedDailyExpense: reportCalculations.fixedDailyExpense,
-	} : undefined,
+	Settings: settings,
 });
 
 const mapBarberResponse = (response: Record<string, unknown>): BarberApiResponse => {
 	// Extract settings from response if available
 	const settingsData = response.settings ?? response.Settings;
-	let settings: ReportCalculationSettings | undefined;
+	let settings: BarberSettingsPayload | undefined;
 	
 	if (settingsData && typeof settingsData === 'object') {
 		const settingsObj = settingsData as Record<string, unknown>;
 		settings = {
 			commissionPercentage: (settingsObj.commissionPercentage ?? settingsObj.CommissionPercentage) as number ?? DEFAULT_REPORT_CALCULATION_SETTINGS.commissionPercentage,
 			fixedDailyExpense: (settingsObj.fixedDailyExpense ?? settingsObj.FixedDailyExpense) as number ?? DEFAULT_REPORT_CALCULATION_SETTINGS.fixedDailyExpense,
+			maxRecurringAppointments: ((settingsObj.maxRecurringAppointments ?? settingsObj.MaxRecurringAppointments) as number | undefined) ?? 0,
 		};
 	}
 
@@ -83,9 +88,10 @@ export const settingsService = {
 	createApplicationUser: async (values: ApplicationUserSettingsForm) => {
 		// Get current settings from AsyncStorage to include in the barber creation
 		const reportCalculations = await settingsService.getReportCalculationSettings();
-		
+		const maxRecurringAppointments = parseMaxRecurring(values.maxRecurringAppointments);
+
 		const response = await apiFetch("/api/barbers/create", {
-			json: mapBarberRequest(values, reportCalculations),
+			json: mapBarberRequest(values, { ...reportCalculations, maxRecurringAppointments }),
 			method: "POST",
 		});
 
@@ -226,15 +232,36 @@ export const settingsService = {
 		barberId: string,
 		values: ApplicationUserSettingsForm,
 	) => {
-		// Get current settings from AsyncStorage to include in the update
-		const reportCalculations = await settingsService.getReportCalculationSettings();
-		
+		// The barber's OWN stored commission/expense must be re-sent as-is (the API replaces the whole
+		// settings block). Falling back to the admin's local AsyncStorage values would overwrite another
+		// barber's commission with the admin's, so that is only used when the stored ones are unknown.
+		const localCalculations = await settingsService.getReportCalculationSettings();
+		const maxRecurringAppointments = parseMaxRecurring(values.maxRecurringAppointments);
+
 		const response = await apiFetch(`/api/barbers/update/${barberId}`, {
-			json: mapBarberRequest(values, reportCalculations),
+			json: mapBarberRequest(values, {
+				commissionPercentage: values.existingCommissionPercentage ?? localCalculations.commissionPercentage,
+				fixedDailyExpense: values.existingFixedDailyExpense ?? localCalculations.fixedDailyExpense,
+				maxRecurringAppointments,
+			}),
 			method: "PUT",
 		});
 
 		return mapBarberResponse(response);
+	},
+
+	/**
+	 * Max appointments per recurring series the admin allowed for the given user (0 = feature off).
+	 * Any failure resolves to 0 so the checkbox simply stays hidden.
+	 */
+	getMaxRecurringAppointments: async (userName: string): Promise<number> => {
+		try {
+			const results = await settingsService.findApplicationUsers(userName);
+			const match = results.find((b) => b.userName.toLowerCase() === userName.toLowerCase());
+			return match?.settings?.maxRecurringAppointments ?? 0;
+		} catch {
+			return 0;
+		}
 	},
 
 	setApplicationUserBlocked: async (userId: string, isBlocked: boolean): Promise<void> => {

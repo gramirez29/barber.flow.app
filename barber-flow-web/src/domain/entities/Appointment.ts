@@ -13,6 +13,7 @@ export interface Appointment {
   paymentMethodUsed?: AppointmentPaymentMethod;
   notes?: string;
   shopId?: string;
+  seriesId?: string;
 }
 
 export interface CreateAppointmentRequest {
@@ -28,4 +29,18 @@ export interface CreateAppointmentRequest {
 export interface UpdateAppointmentRequest extends CreateAppointmentRequest {
   status?: AppointmentStatus;
   paymentMethodUsed?: AppointmentPaymentMethod;
+}
+
+export type RecurrenceFrequency = 'weekly' | 'biweekly' | 'monthly';
+
+export interface RecurrenceConflict {
+  date: string;
+  time: string;
+}
+
+export interface RecurringAppointmentsResult {
+  seriesId: string;
+  requestedCount: number;
+  created: Appointment[];
+  conflicts: RecurrenceConflict[];
 }

@@ -18,7 +18,8 @@ export type ApplicationUserFormErrors = Partial<
 		| "shopName"
 		| "shopPhone"
 		| "address"
-		| "password",
+		| "password"
+		| "maxRecurringAppointments",
 		string
 	>
 >;
@@ -33,6 +34,7 @@ export const createEmptyApplicationUserForm = (
 	address: "",
 	barberId,
 	barberName: "",
+	maxRecurringAppointments: "0",
 	barberPhone: "",
 	password: "",
 	profilePhotoUrl: "",
@@ -49,6 +51,9 @@ export const mapBarberResponseToForm = (
 	address: response.address ?? "",
 	barberId: response.id,
 	barberName: response.barberName,
+	existingCommissionPercentage: response.settings?.commissionPercentage,
+	existingFixedDailyExpense: response.settings?.fixedDailyExpense,
+	maxRecurringAppointments: String(response.settings?.maxRecurringAppointments ?? 0),
 	barberPhone: response.barberPhone,
 	password: "",
 	profilePhotoUrl: response.photoUrl ?? "",
@@ -120,6 +125,14 @@ export const validateApplicationUserField = (
 			: undefined;
 	}
 
+	if (key === "maxRecurringAppointments") {
+		const text = String(value ?? "").trim();
+		const parsed = Number(text);
+		return text === "" || !Number.isInteger(parsed) || parsed < 0 || parsed > 20
+			? "validation.maxRecurringAppointmentsRange"
+			: undefined;
+	}
+
 	if (key === "password") {
 		if (mode === "edit" && !String(value ?? "").trim()) {
 			return undefined;
@@ -144,6 +157,7 @@ export const buildApplicationUserErrors = (
 	address: validateApplicationUserField("address", values.address, mode),
 	barberName: validateApplicationUserField("barberName", values.barberName, mode),
 	barberPhone: validateApplicationUserField("barberPhone", values.barberPhone, mode),
+	maxRecurringAppointments: validateApplicationUserField("maxRecurringAppointments", values.maxRecurringAppointments, mode),
 	password: validateApplicationUserField("password", values.password, mode),
 	shopName: validateApplicationUserField("shopName", values.shopName, mode),
 	shopPhone: validateApplicationUserField("shopPhone", values.shopPhone, mode),
@@ -224,6 +238,7 @@ export const useApplicationUsersForm = () => {
 			address: true,
 			barberName: true,
 			barberPhone: true,
+			maxRecurringAppointments: true,
 			password: true,
 			shopName: true,
 			shopPhone: true,
@@ -242,6 +257,7 @@ export const useApplicationUsersForm = () => {
 		!validateApplicationUserField("shopName", values.shopName, mode) &&
 		!validateApplicationUserField("shopPhone", values.shopPhone, mode) &&
 		!validateApplicationUserField("address", values.address, mode) &&
+		!validateApplicationUserField("maxRecurringAppointments", values.maxRecurringAppointments, mode) &&
 		!validateApplicationUserField("password", values.password, mode);
 
 	return {
