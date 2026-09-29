@@ -10,6 +10,8 @@ interface ClientCardProps {
   client: Client;
   onClick?: (client: Client) => void;
   onDelete?: (client: Client) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
 const getInitials = (firstName: string, lastName: string) => {
@@ -18,7 +20,7 @@ const getInitials = (firstName: string, lastName: string) => {
   return `${first}${last}`.toUpperCase() || 'CL';
 };
 
-export const ClientCard: React.FC<ClientCardProps> = ({ client, onClick, onDelete }) => {
+export const ClientCard: React.FC<ClientCardProps> = ({ client, onClick, onDelete, isFirst, isLast }) => {
   const navigate = useNavigate();
   const fullName = `${client.firstName} ${client.lastName}`.trim();
 
@@ -29,16 +31,33 @@ export const ClientCard: React.FC<ClientCardProps> = ({ client, onClick, onDelet
         display: 'flex',
         alignItems: 'center',
         gap: 2,
-        borderRadius: '16px',
-        border: `1px solid ${appColors.border}`,
-        backgroundColor: appColors.surfaceElevated,
+        backgroundColor: appColors.surface,
+        borderLeft: `1px solid ${appColors.border}`,
+        borderRight: `1px solid ${appColors.border}`,
+        borderTop: isFirst ? `1px solid ${appColors.border}` : 'none',
+        borderBottom: isLast ? `1px solid ${appColors.border}` : 'none',
+        position: 'relative',
+        // Divisor con margen izquierdo (padding 16 + avatar 46 + gap 16), igual que mobile
+        '&::after': isLast
+          ? undefined
+          : {
+              content: '""',
+              position: 'absolute',
+              left: 78,
+              right: 0,
+              bottom: 0,
+              height: '1px',
+              backgroundColor: appColors.border,
+            },
+        borderTopLeftRadius: isFirst ? '16px' : 0,
+        borderTopRightRadius: isFirst ? '16px' : 0,
+        borderBottomLeftRadius: isLast ? '16px' : 0,
+        borderBottomRightRadius: isLast ? '16px' : 0,
         px: 2,
         py: 1.5,
-        mb: 1.25,
         cursor: onClick ? 'pointer' : 'default',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
-        transition: 'opacity 0.15s ease',
-        '&:hover': onClick ? { opacity: 0.85 } : undefined,
+        transition: 'background-color 0.15s ease',
+        '&:hover': onClick ? { backgroundColor: 'rgba(255, 255, 255, 0.04)' } : undefined,
       }}
     >
       <Box
@@ -70,7 +89,7 @@ export const ClientCard: React.FC<ClientCardProps> = ({ client, onClick, onDelet
           {client.phone}
         </Typography>
         <Typography noWrap sx={{ fontSize: 12, color: appColors.textSecondary, opacity: 0.75 }}>
-          {client.email || 'Sin email'}
+          {client.email || 'Sin correo registrado'}
         </Typography>
       </Box>
 

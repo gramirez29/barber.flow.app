@@ -46,7 +46,22 @@
     "email": "Email",
     "address": "Address",
     "birthday": "Birthday",
-    "paymentMethod": "Payment Method"
+    "paymentMethod": "Payment Method",
+    "list": {
+      "listTitle": "Client directory",
+      "title": "Clients workspace",
+      "subtitle": "Review clients, open a record to edit it, or create a new one from the floating action menu.",
+      "searchPlaceholder": "Search by name, phone, or email",
+      "helper": "Tap any client to update the information already registered in the system.",
+      "pageSize": "Per page:",
+      "page": "Page {{current}} of {{total}}",
+      "prevPage": "Previous page",
+      "nextPage": "Next page",
+      "totalCount": "{{count}} clients",
+      "noEmail": "No email registered",
+      "emptyTitle": "No clients to show",
+      "emptyBody": "Create your first client or refine your search to see matching records here."
+    }
   },
   "reports": {
     "title": "Reports",

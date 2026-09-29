@@ -49,7 +49,6 @@ export function useClients() {
       try {
         const data = await clientApi.search(query);
         setClients(data);
-        showNotification('Búsqueda de clientes completada', 'success');
       } catch (error) {
         const message = getErrorMessage(error, 'Error en búsqueda de clientes');
         showNotification(message, 'error');

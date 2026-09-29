@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Box } from '@mui/material';
+import { Box, Fab } from '@mui/material';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import {
   ClientForm,
   ClientCard,
   ClientsSummaryCard,
   ClientsEmptyState,
+  ClientsPagination,
 } from '@presentation/components/clients';
 import { useClients } from '@presentation/hooks/useClients';
+import { useClientPagination } from '@presentation/hooks/useClientPagination';
 import { CreateClientFormData } from '@shared/validation/clientSchemas';
 import { Client } from '@domain/entities/Client';
 import { useConfirmDialog } from '@presentation/context/ConfirmDialogContext';
@@ -20,6 +23,8 @@ export const ClientsPage: React.FC = () => {
 
   const { clients, isLoadingClients, searchClients, createClient, updateClient, deleteClient } = useClients();
   const { confirm } = useConfirmDialog();
+  const { page, pageSize, totalPages, pageItems, setPage, setPageSize, resetPage } =
+    useClientPagination(clients);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -29,6 +34,11 @@ export const ClientsPage: React.FC = () => {
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    resetPage();
+  };
 
   const handleOpenCreateForm = () => {
     setEditingClient(null);
@@ -82,30 +92,47 @@ export const ClientsPage: React.FC = () => {
       <Box sx={{ maxWidth: 720, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
         <ClientsSummaryCard
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           totalCount={clients.length}
           isLoading={isLoadingClients}
-          onNewClient={handleOpenCreateForm}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
         />
 
-        <Box
-          sx={{
-            backgroundColor: appColors.surface,
-            borderRadius: '20px',
-            border: `1px solid ${appColors.border}`,
-            p: 2.5,
-            boxShadow: '0 4px 12px rgba(201, 168, 76, 0.08)',
-          }}
-        >
-          {clients.length === 0 ? (
-            <ClientsEmptyState loading={isLoadingClients} />
-          ) : (
-            clients.map((client) => (
-              <ClientCard key={client.id} client={client} onClick={handleSelectClient} onDelete={handleDelete} />
-            ))
-          )}
-        </Box>
+        {clients.length === 0 ? (
+          <ClientsEmptyState loading={isLoadingClients} />
+        ) : (
+          <Box>
+            {pageItems.map((client, index) => (
+              <ClientCard
+                key={client.id}
+                client={client}
+                onClick={handleSelectClient}
+                onDelete={handleDelete}
+                isFirst={index === 0}
+                isLast={index === pageItems.length - 1}
+              />
+            ))}
+          </Box>
+        )}
+
+        {!isLoadingClients && <ClientsPagination page={page} totalPages={totalPages} onPageChange={setPage} />}
       </Box>
+
+      <Fab
+        aria-label="Nuevo cliente"
+        onClick={handleOpenCreateForm}
+        sx={{
+          position: 'fixed',
+          right: 24,
+          bottom: 24,
+          backgroundColor: appColors.accent,
+          color: appColors.onAccent,
+          '&:hover': { backgroundColor: appColors.accentLight },
+        }}
+      >
+        <PersonAddIcon />
+      </Fab>
 
       <ClientForm
         key={editingClient?.id ?? 'new'}
