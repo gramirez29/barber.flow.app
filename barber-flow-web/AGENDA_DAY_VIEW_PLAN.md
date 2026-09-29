@@ -122,6 +122,7 @@ src/presentation/hooks/useAgendaDrag.ts             drag & drop (dnd-kit) + regl
 - Actualización optimista con mapa `pendingTimes`: la cita se ve en la hora nueva (atenuada) mientras corre el `PATCH`; al terminar (éxito o error) se limpia y se muestra lo que dicen los datos, así que un rechazo (`SLOT_TAKEN`) la devuelve a su lugar.
 - Hora pasada: `useConfirmDialog` ("Hora ya pasada"); si se cancela, la cita vuelve.
 - El bloque mide 1 spot (D1). Citas en el mismo rango de 30 min se reparten en carriles (nombre truncado con "…" en pantallas angostas).
+- **Altura completa (2026-09-29):** la agenda ya no tiene scroll interno; muestra todo el horario (8–20) y es la **página** la que se desplaza. Al entrar a "hoy", si la línea de "ahora" queda fuera de pantalla, la página se desplaza para dejarla a ~1/3 de la altura; el botón "Añadir el {fecha}" es `position: sticky` al borde inferior de la pantalla mientras se recorre la agenda.
 - Verificado en navegador local (barbero de prueba): flag apagado = vista actual intacta; encendido = agenda; spot vacío y botón abren el formulario (con/sin hora); buscador de cliente precarga nombre/teléfono/pago; cita creada aparece en su spot con cliente + servicio; arrastrar a otro spot persiste (confirmado con la API); soltar en hora pasada pide confirmación y cancelar revierte; soltar en un horario ocupado muestra la advertencia y revierte; tocar un bloque abre "Editar cita"; layout correcto a ~390 px. **No probado:** arrastre con touch real (presión larga) en un celular.
 
 ## 8. Futuro (no incluido, decidido posponer)
