@@ -7,6 +7,7 @@ import { NotificationProvider } from '@presentation/context/NotificationContext'
 import { AdminAccessProvider } from '@presentation/context/AdminAccessContext';
 import { ConfirmDialogProvider } from '@presentation/context/ConfirmDialogContext';
 import { NotificationInboxProvider } from '@presentation/context/NotificationInboxContext';
+import { FeatureFlagsProvider } from '@presentation/context/FeatureFlagsContext';
 
 function App() {
   return (
@@ -17,8 +18,10 @@ function App() {
             <NotificationInboxProvider>
               <NotificationProvider>
                 <ConfirmDialogProvider>
-                  <CssBaseline />
-                  <Router />
+                  <FeatureFlagsProvider>
+                    <CssBaseline />
+                    <Router />
+                  </FeatureFlagsProvider>
                 </ConfirmDialogProvider>
               </NotificationProvider>
             </NotificationInboxProvider>
