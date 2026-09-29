@@ -78,7 +78,7 @@ public static class AppointmentsApi
         }
         catch (AppointmentSchedulingException ex)
         {
-            return TypedResults.BadRequest(new { message = ex.Message });
+            return TypedResults.BadRequest(new { message = ex.Message, code = ex.Code });
         }
     }
 
@@ -121,7 +121,7 @@ public static class AppointmentsApi
         }
         catch (AppointmentSchedulingException ex)
         {
-            return TypedResults.BadRequest(new { message = ex.Message });
+            return TypedResults.BadRequest(new { message = ex.Message, code = ex.Code });
         }
     }
 
@@ -147,7 +147,7 @@ public static class AppointmentsApi
         }
         catch (AppointmentSchedulingException ex)
         {
-            return TypedResults.BadRequest(new { message = ex.Message });
+            return TypedResults.BadRequest(new { message = ex.Message, code = ex.Code });
         }
     }
 

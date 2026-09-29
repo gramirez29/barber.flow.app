@@ -26,9 +26,9 @@ export const validateRequiredField = (field?: string) => {
     return undefined;
 }
 
-/// Combines a "yyyy-MM-dd" date and "HH:mm" time and checks the result is strictly after now.
-/// Comparing only the date (without the time) always rejects "today", since it parses to midnight.
-export const isFutureDateTime = (date: string, time: string) => {
+/// Combines a "yyyy-MM-dd" date and "HH:mm" time and checks the result is now or earlier.
+/// Not a validation error: logging walk-ins after the fact is legitimate, so the UI only asks to confirm.
+export const isPastDateTime = (date: string, time: string) => {
     const combined = new Date(`${date}T${time}`);
-    return !Number.isNaN(combined.getTime()) && combined > new Date();
+    return !Number.isNaN(combined.getTime()) && combined <= new Date();
 }

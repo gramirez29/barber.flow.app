@@ -12,3 +12,15 @@ export function getErrorMessage(error: unknown, fallback: string): string {
   }
   return fallback;
 }
+
+/**
+ * El backend responde 400 { message, code } cuando ya existe otra cita en la misma
+ * fecha y hora (code = "SLOT_TAKEN"). AxiosHttpClient rechaza con ese body tal cual.
+ */
+export function isSlotTakenError(error: unknown): boolean {
+  return (
+    !!error &&
+    typeof error === 'object' &&
+    (error as { code?: unknown }).code === 'SLOT_TAKEN'
+  );
+}

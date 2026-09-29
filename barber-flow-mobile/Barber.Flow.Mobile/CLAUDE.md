@@ -79,6 +79,9 @@ Worth checking before touching these areas — the doc has the full rationale:
 - `commissionPercentage`/`fixedDailyExpense` (used by `useDailyReport`) live only in AsyncStorage, not synced with the backend equivalent.
 - No refresh-token support in `apiClient.ts`; a `401` always forces logout, no retry.
 
+## Citas con fecha/hora pasada (2026-09)
+Se quitó la validación "la cita debe ser futura" de `useAppointmentForm.ts` (`isFutureDateTime` → `isPastDateTime` en `utils/formatUtil.ts`, ya no es un error). `AppointmentFormScreen.handleSubmit` ahora pide confirmación (`showAlert` con botones, llaves `appointments.alerts.pastDateTime*`) si la fecha+hora es pasada, y solo cuando es creación o cambió la fecha/hora (no molesta al completar una cita vieja). El choque exacto sigue bloqueando desde el backend (`400 { code: "SLOT_TAKEN" }`, se muestra con el `catch` de `handleSubmit`). **No hay `expo-updates`**: este cambio solo llega a los usuarios con un build nuevo (`build:testing`/`build:prod`).
+
 ## Pendiente: portar a mobile 3 fixes/mejoras hechas solo en web (2026-08-21)
 
 Ver `barber-flow-web/CLAUDE.md` (sección Pendientes) para el detalle completo del lado web. Resumen para cuando se retome este trabajo desde mobile:
