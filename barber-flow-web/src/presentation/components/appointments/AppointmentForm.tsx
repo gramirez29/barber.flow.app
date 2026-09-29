@@ -10,7 +10,7 @@ import { useForm } from '@presentation/hooks/useForm';
 import {
   createAppointmentSchema,
   updateAppointmentSchema,
-  isFutureAppointmentDateTime,
+  isPastAppointmentDateTime,
   CreateAppointmentFormData,
 } from '@shared/validation/appointmentSchemas';
 import { Appointment, AppointmentStatus, AppointmentPaymentMethod } from '@domain/entities/Appointment';
@@ -105,14 +105,16 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const [isMoving, setIsMoving] = useState(false);
 
   const canMove = Boolean(appointment?.id) && MOVABLE_STATUSES.includes(appointment!.status);
-  const isMoveDateTimeValid = !moveDate || !moveTime || isFutureAppointmentDateTime(moveDate, moveTime);
 
   const handleMove = async () => {
-    if (!appointment?.id || !onMove || !isMoveDateTimeValid) return;
+    if (!appointment?.id || !onMove) return;
 
+    const isPast = isPastAppointmentDateTime(moveDate, moveTime);
     const confirmed = await confirm({
       title: 'Mover cita',
-      message: '¿Seguro que querés mover esta cita a la nueva fecha y hora?',
+      message: isPast
+        ? 'La nueva fecha y hora ya pasaron. ¿Mover la cita de todos modos?'
+        : '¿Seguro que querés mover esta cita a la nueva fecha y hora?',
       confirmText: 'Mover',
       cancelText: 'Cancelar',
     });
@@ -160,6 +162,23 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
     const isValid = await form.validate();
     if (!isValid) return;
+
+    // Registrar citas pasadas es válido (clientes atendidos que se olvidaron de anotar),
+    // pero se pide confirmación para evitar errores de fecha. Al editar solo se pregunta
+    // si la fecha u hora cambiaron, para no molestar al marcar como completada una cita vieja.
+    const scheduleChanged =
+      !appointment ||
+      appointment.date !== form.values.date ||
+      appointment.time !== form.values.time;
+    if (scheduleChanged && form.values.date && form.values.time && isPastAppointmentDateTime(form.values.date, form.values.time)) {
+      const confirmedPast = await confirm({
+        title: 'Hora ya pasada',
+        message: 'La fecha y hora seleccionadas ya pasaron. ¿Registrar la cita de todos modos?',
+        confirmText: 'Registrar',
+        cancelText: 'Revisar',
+      });
+      if (!confirmedPast) return;
+    }
 
     try {
       await onSubmit(form.values);
@@ -508,17 +527,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               />
             </Box>
 
-            {!isMoveDateTimeValid && (
-              <Typography sx={{ fontSize: 12, color: appColors.error, mb: 2, mt: -1 }}>
-                La fecha y hora deben ser en el futuro
-              </Typography>
-            )}
-
             <Box
               component="button"
               type="button"
               onClick={handleMove}
-              disabled={isMoving || !moveDate || !moveTime || !isMoveDateTimeValid}
+              disabled={isMoving || !moveDate || !moveTime}
               sx={{
                 width: '100%',
                 border: 'none',

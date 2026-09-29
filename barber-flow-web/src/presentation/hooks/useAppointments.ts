@@ -4,7 +4,7 @@ import { CreateAppointmentRequest, UpdateAppointmentRequest } from '@application
 import { useNotification } from '@presentation/context/NotificationContext';
 import { AppointmentApi } from '@infrastructure/api/AppointmentApi';
 import { AxiosHttpClient } from '@infrastructure/http/AxiosHttpClient';
-import { getErrorMessage } from '@shared/utils/errorUtils';
+import { getErrorMessage, isSlotTakenError } from '@shared/utils/errorUtils';
 
 /**
  * useAppointments: Hook para manejo de citas
@@ -116,7 +116,11 @@ export function useAppointments() {
         return newAppointment;
       } catch (error) {
         const message = getErrorMessage(error, 'Error al crear cita');
-        showNotification(message, 'error');
+        if (isSlotTakenError(error)) {
+          showNotification(message, 'warning', 6000);
+        } else {
+          showNotification(message, 'error');
+        }
         throw error;
       } finally {
         setIsSavingAppointment(false);
@@ -140,7 +144,11 @@ export function useAppointments() {
         return updated;
       } catch (error) {
         const message = getErrorMessage(error, 'Error al actualizar cita');
-        showNotification(message, 'error');
+        if (isSlotTakenError(error)) {
+          showNotification(message, 'warning', 6000);
+        } else {
+          showNotification(message, 'error');
+        }
         throw error;
       } finally {
         setIsSavingAppointment(false);
@@ -181,7 +189,11 @@ export function useAppointments() {
         return updated;
       } catch (error) {
         const message = getErrorMessage(error, 'Error al mover cita');
-        showNotification(message, 'error');
+        if (isSlotTakenError(error)) {
+          showNotification(message, 'warning', 6000);
+        } else {
+          showNotification(message, 'error');
+        }
         throw error;
       }
     },

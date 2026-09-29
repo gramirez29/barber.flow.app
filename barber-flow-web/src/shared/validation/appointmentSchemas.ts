@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
 /**
- * Combina date ("yyyy-MM-dd") + time ("HH:mm") y valida que el resultado
- * sea estrictamente posterior al momento actual. Comparar solo `date` (sin
- * hora) siempre rechaza "hoy", ya que se parsea a medianoche.
+ * Combina date ("yyyy-MM-dd") + time ("HH:mm") y devuelve true si el resultado
+ * es igual o anterior al momento actual. No es un error de validación: registrar
+ * clientes atendidos que se olvidaron es legítimo, así que la UI solo pide confirmación.
  */
-export const isFutureAppointmentDateTime = (date: string, time: string): boolean => {
+export const isPastAppointmentDateTime = (date: string, time: string): boolean => {
   const combined = new Date(`${date}T${time}`);
-  return !Number.isNaN(combined.getTime()) && combined > new Date();
+  return !Number.isNaN(combined.getTime()) && combined <= new Date();
 };
 
 const appointmentObjectSchema = z.object({
@@ -59,10 +59,7 @@ const appointmentObjectSchema = z.object({
 });
 
 // Create Appointment Schema
-export const createAppointmentSchema = appointmentObjectSchema.refine(
-  (data) => isFutureAppointmentDateTime(data.date, data.time),
-  { message: 'La fecha y hora deben ser en el futuro', path: ['date'] }
-);
+export const createAppointmentSchema = appointmentObjectSchema;
 
 export type CreateAppointmentFormData = z.infer<typeof appointmentObjectSchema>;
 
@@ -90,18 +87,13 @@ export const searchAppointmentsSchema = z.object({
 export type SearchAppointmentsFormData = z.infer<typeof searchAppointmentsSchema>;
 
 // Move Appointment Schema
-export const moveAppointmentSchema = z
-  .object({
-    appointmentId: z.string().min(1, 'ID de cita requerido'),
-    newDate: z.string().min(1, 'La nueva fecha es requerida'),
-    newTime: z
-      .string()
-      .min(1, 'La nueva hora es requerida')
-      .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato de hora inválido (HH:mm)'),
-  })
-  .refine((data) => isFutureAppointmentDateTime(data.newDate, data.newTime), {
-    message: 'La fecha y hora deben ser en el futuro',
-    path: ['newDate'],
-  });
+export const moveAppointmentSchema = z.object({
+  appointmentId: z.string().min(1, 'ID de cita requerido'),
+  newDate: z.string().min(1, 'La nueva fecha es requerida'),
+  newTime: z
+    .string()
+    .min(1, 'La nueva hora es requerida')
+    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato de hora inválido (HH:mm)'),
+});
 
 export type MoveAppointmentFormData = z.infer<typeof moveAppointmentSchema>;

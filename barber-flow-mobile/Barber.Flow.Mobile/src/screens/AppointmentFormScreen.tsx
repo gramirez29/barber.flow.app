@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getErrorMessage } from "../utils/errors";
+import { isPastDateTime } from "../utils/formatUtil";
 import { Platform, Pressable, StyleSheet } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -285,6 +286,30 @@ const handleSubmit = async () => {
 			return;
 		}
 
+		// Logging past appointments is legitimate (walk-ins recorded after the fact), so we
+		// only ask for confirmation. When editing, only ask if the date/time actually changed.
+		const scheduleChanged =
+			params.mode !== "edit" ||
+			!editingAppointment ||
+			editingAppointment.date !== normalizedDraft.date ||
+			editingAppointment.time !== normalizedDraft.time;
+
+		if (scheduleChanged && isPastDateTime(normalizedDraft.date, normalizedDraft.time)) {
+			showAlert(
+				translateText("appointments.alerts.pastDateTimeTitle"),
+				translateText("appointments.alerts.pastDateTimeMessage"),
+				[
+					{ text: translateText("appointments.alerts.pastDateTimeConfirm"), onPress: () => void saveAppointment(normalizedDraft) },
+					{ text: translateText("appointments.alerts.pastDateTimeReview"), style: "cancel" },
+				],
+			);
+			return;
+		}
+
+		await saveAppointment(normalizedDraft);
+	};
+
+	const saveAppointment = async (normalizedDraft: NonNullable<ReturnType<typeof submit>>) => {
 		setIsSaving(true);
 		try {
 			if (params.mode === "edit" && params.appointmentId) {
