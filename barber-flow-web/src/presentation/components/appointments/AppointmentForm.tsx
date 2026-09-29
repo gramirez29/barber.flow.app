@@ -34,12 +34,15 @@ import { APPOINTMENT_CONSTANTS } from '@shared/constants/appointments';
 import { appColors } from '@presentation/theme/appColors';
 import { scrollbarSx } from '@presentation/theme/scrollbarSx';
 import { useConfirmDialog } from '@presentation/context/ConfirmDialogContext';
+import type { AppointmentPrefill } from '@shared/utils/appointmentPrefill';
 
 interface AppointmentFormProps {
   open: boolean;
   title: string;
   appointment?: Appointment | null;
   defaultDate?: string;
+  /** Cliente con el que se precarga el formulario de una cita nueva (viene de la lista de clientes). */
+  prefill?: AppointmentPrefill | null;
   onSubmit: (data: CreateAppointmentFormData) => Promise<void>;
   onMove?: (appointmentId: string, newDate: string, newTime: string) => Promise<void>;
   /** Cantidad de citas por serie según el setting del barbero (0/undefined = recurrencia deshabilitada). */
@@ -104,6 +107,8 @@ const Pill: React.FC<{ label: string; active: boolean; onClick: () => void; disa
       py: 0.875,
       mr: 1,
       mb: 1,
+      flexShrink: 0,
+      whiteSpace: 'nowrap',
       opacity: disabled ? 0.5 : 1,
       fontSize: 13,
       fontWeight: active ? 700 : 500,
@@ -119,6 +124,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   title,
   appointment,
   defaultDate,
+  prefill,
   onSubmit,
   onMove,
   maxRecurringAppointments = 0,
@@ -176,14 +182,14 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         status: appointment.status,
       }
     : {
-        clientName: '',
-        phone: '',
+        clientName: prefill?.clientName ?? '',
+        phone: prefill?.phone ?? '',
         date: defaultDate || '',
         time: '',
         serviceName: '',
         price: undefined,
         notes: '',
-        paymentMethod: APPOINTMENT_CONSTANTS.DEFAULT_PAYMENT_METHOD,
+        paymentMethod: prefill?.paymentMethod ?? APPOINTMENT_CONSTANTS.DEFAULT_PAYMENT_METHOD,
         status: 'scheduled',
       };
 
@@ -269,7 +275,16 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               <Typography sx={{ fontSize: 12, fontWeight: 600, color: appColors.textSecondary, mb: 1 }}>
                 Estado de la cita
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'nowrap',
+                  overflowX: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  scrollbarWidth: 'none',
+                  '&::-webkit-scrollbar': { display: 'none' },
+                }}
+              >
                 {STATUS_OPTIONS.map((status) => (
                   <Pill
                     key={status}
@@ -332,7 +347,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               }}
             />
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
               {/* Fecha */}
               <FormTextField
                 id="date"
@@ -345,7 +360,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 isTouched={form.touched.has('date')}
                 disabled={isLoading}
                 InputLabelProps={{ shrink: true }}
-                sx={{ ...inputSx, flex: 1 }}
+                sx={{ ...inputSx, flex: { xs: '0 0 auto', sm: 1 } }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -367,7 +382,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 isTouched={form.touched.has('time')}
                 disabled={isLoading}
                 InputLabelProps={{ shrink: true }}
-                sx={{ ...inputSx, flex: 1 }}
+                sx={{ ...inputSx, flex: { xs: '0 0 auto', sm: 1 } }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -596,7 +611,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               Mueve esta cita a otro día u hora.
             </Typography>
 
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
               <FormTextField
                 id="moveDate"
                 label="Nueva fecha"
@@ -605,7 +620,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 onChange={(e) => setMoveDate(e.target.value)}
                 disabled={isMoving}
                 InputLabelProps={{ shrink: true }}
-                sx={{ ...inputSx, flex: 1 }}
+                sx={{ ...inputSx, flex: { xs: '0 0 auto', sm: 1 } }}
               />
               <FormTextField
                 id="moveTime"
@@ -615,7 +630,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 onChange={(e) => setMoveTime(e.target.value)}
                 disabled={isMoving}
                 InputLabelProps={{ shrink: true }}
-                sx={{ ...inputSx, flex: 1 }}
+                sx={{ ...inputSx, flex: { xs: '0 0 auto', sm: 1 } }}
               />
             </Box>
 
