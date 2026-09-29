@@ -76,7 +76,6 @@ export const ClientsPage: React.FC = () => {
         backgroundImage: `linear-gradient(${appColors.overlay}, ${appColors.overlay}), url(${heroImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'top',
-        backgroundAttachment: 'fixed',
         p: { xs: 2, sm: 3 },
       }}
     >
