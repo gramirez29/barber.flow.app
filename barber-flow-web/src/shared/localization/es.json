@@ -46,7 +46,22 @@
     "email": "Correo",
     "address": "Dirección",
     "birthday": "Cumpleaños",
-    "paymentMethod": "Método de Pago"
+    "paymentMethod": "Método de Pago",
+    "list": {
+      "listTitle": "Directorio de clientes",
+      "title": "Espacio de clientes",
+      "subtitle": "Revisa clientes, abre un registro para editarlo o crea uno nuevo desde el menú flotante.",
+      "searchPlaceholder": "Buscar por nombre, teléfono o correo",
+      "helper": "Toca cualquier cliente para actualizar la información registrada en el sistema.",
+      "pageSize": "Por página:",
+      "page": "Página {{current}} de {{total}}",
+      "prevPage": "Página anterior",
+      "nextPage": "Página siguiente",
+      "totalCount": "{{count}} clientes",
+      "noEmail": "Sin correo registrado",
+      "emptyTitle": "No hay clientes para mostrar",
+      "emptyBody": "Crea tu primer cliente o ajusta la búsqueda para ver coincidencias aquí."
+    }
   },
   "reports": {
     "title": "Reportes",

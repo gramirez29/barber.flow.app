@@ -2,13 +2,15 @@ import React from 'react';
 import { Box, Typography, InputBase } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { appColors } from '@presentation/theme/appColors';
+import { CLIENT_PAGE_SIZE_OPTIONS, ClientPageSize } from '@presentation/hooks/useClientPagination';
 
 interface ClientsSummaryCardProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   totalCount: number;
   isLoading?: boolean;
-  onNewClient: () => void;
+  pageSize: ClientPageSize;
+  onPageSizeChange: (size: ClientPageSize) => void;
 }
 
 export const ClientsSummaryCard: React.FC<ClientsSummaryCardProps> = ({
@@ -16,7 +18,8 @@ export const ClientsSummaryCard: React.FC<ClientsSummaryCardProps> = ({
   onSearchChange,
   totalCount,
   isLoading = false,
-  onNewClient,
+  pageSize,
+  onPageSizeChange,
 }) => {
   return (
     <Box
@@ -28,61 +31,24 @@ export const ClientsSummaryCard: React.FC<ClientsSummaryCardProps> = ({
         boxShadow: '0 4px 12px rgba(201, 168, 76, 0.08)',
       }}
     >
-      <Box
+      <Typography
         sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: 2,
-          flexWrap: 'wrap',
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: '1px',
+          textTransform: 'uppercase',
+          color: appColors.accent,
+          mb: 1,
         }}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Typography
-            sx={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '1.2px',
-              textTransform: 'uppercase',
-              color: appColors.accent,
-            }}
-          >
-            Clientes
-          </Typography>
-          <Typography sx={{ fontSize: 26, fontWeight: 700, color: appColors.textPrimary }}>
-            Base de clientes
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: appColors.textSecondary }}>
-            {totalCount} {totalCount === 1 ? 'cliente registrado' : 'clientes registrados'}
-          </Typography>
-        </Box>
-
-        <Box
-          component="button"
-          onClick={onNewClient}
-          disabled={isLoading}
-          sx={{
-            border: 'none',
-            cursor: 'pointer',
-            backgroundColor: appColors.accent,
-            borderRadius: '14px',
-            height: 44,
-            px: 2.25,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: `0 4px 8px ${appColors.accent}59`,
-            color: appColors.onAccent,
-            fontWeight: 800,
-            fontSize: 14,
-            letterSpacing: '0.3px',
-            opacity: isLoading ? 0.6 : 1,
-            '&:hover': { backgroundColor: appColors.accentLight },
-          }}
-        >
-          Nuevo Cliente
-        </Box>
-      </Box>
+        Directorio de clientes
+      </Typography>
+      <Typography sx={{ fontSize: 28, fontWeight: 700, color: appColors.textPrimary, mb: 1 }}>
+        Espacio de clientes
+      </Typography>
+      <Typography sx={{ fontSize: 14, lineHeight: 1.5, color: appColors.textSecondary }}>
+        Revisa clientes, abre un registro para editarlo o crea uno nuevo desde el menú flotante.
+      </Typography>
 
       <Box
         sx={{
@@ -95,11 +61,12 @@ export const ClientsSummaryCard: React.FC<ClientsSummaryCardProps> = ({
           px: 1.5,
         }}
       >
-        <SearchIcon sx={{ color: appColors.textSecondary, fontSize: 20, mr: 1 }} />
+        <SearchIcon sx={{ color: appColors.textSecondary, fontSize: 18, mr: 1 }} />
         <InputBase
-          placeholder="Buscar por nombre, teléfono o email..."
+          placeholder="Buscar por nombre, teléfono o correo"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
+          inputProps={{ autoCapitalize: 'none', autoCorrect: 'off', 'aria-label': 'Buscar clientes' }}
           sx={{
             flex: 1,
             py: 1.25,
@@ -108,6 +75,57 @@ export const ClientsSummaryCard: React.FC<ClientsSummaryCardProps> = ({
             '& input::placeholder': { color: appColors.textSecondary, opacity: 1 },
           }}
         />
+      </Box>
+
+      <Typography sx={{ fontSize: 13, lineHeight: 1.5, color: appColors.textSecondary, mt: 1.5 }}>
+        Toca cualquier cliente para actualizar la información registrada en el sistema.
+      </Typography>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 1.75 }}>
+        <Typography
+          sx={{
+            fontSize: 12,
+            fontWeight: 600,
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+            color: appColors.textSecondary,
+          }}
+        >
+          Por página:
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 0.75 }}>
+          {CLIENT_PAGE_SIZE_OPTIONS.map((size) => {
+            const active = pageSize === size;
+            return (
+              <Box
+                key={size}
+                component="button"
+                type="button"
+                onClick={() => onPageSizeChange(size)}
+                aria-pressed={active}
+                sx={{
+                  cursor: 'pointer',
+                  font: 'inherit',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  px: 1.5,
+                  py: '5px',
+                  borderRadius: '8px',
+                  border: `1px solid ${active ? appColors.accent : appColors.border}`,
+                  backgroundColor: active ? `${appColors.accent}1f` : 'transparent',
+                  color: active ? appColors.accent : appColors.textSecondary,
+                }}
+              >
+                {size}
+              </Box>
+            );
+          })}
+        </Box>
+        {!isLoading && totalCount > 0 && (
+          <Typography sx={{ fontSize: 12, color: appColors.textSecondary, ml: 'auto', opacity: 0.75 }}>
+            {totalCount} {totalCount === 1 ? 'cliente' : 'clientes'}
+          </Typography>
+        )}
       </Box>
     </Box>
   );

@@ -3,3 +3,4 @@ export { ClientAppointmentHistory } from './ClientAppointmentHistory';
 export { ClientCard } from './ClientCard';
 export { ClientsSummaryCard } from './ClientsSummaryCard';
 export { ClientsEmptyState } from './ClientsEmptyState';
+export { ClientsPagination } from './ClientsPagination';
