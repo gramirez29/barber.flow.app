@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography, CircularProgress } from '@mui/material';
 import {
   startOfMonth,
@@ -17,9 +18,12 @@ import {
 } from '@presentation/components/appointments';
 import type { CalendarViewMode } from '@presentation/components/appointments';
 import { useAppointments } from '@presentation/hooks/useAppointments';
+import { useBarbers } from '@presentation/hooks/useBarbers';
+import { useAuth } from '@presentation/context/AuthContext';
 import { CreateAppointmentFormData } from '@shared/validation/appointmentSchemas';
-import { Appointment } from '@domain/entities/Appointment';
+import { Appointment, RecurrenceFrequency } from '@domain/entities/Appointment';
 import { appColors } from '@presentation/theme/appColors';
+import type { AppointmentPrefill } from '@shared/utils/appointmentPrefill';
 import heroImage from '@/assets/images/barber-flow-background-image.jpg';
 
 type ViewMode = CalendarViewMode;
@@ -32,6 +36,25 @@ export const AppointmentsPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [formOpen, setFormOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [prefill, setPrefill] = useState<AppointmentPrefill | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Llegar desde el ícono de cita de la lista de clientes abre el formulario de cita nueva ya
+  // precargado con el cliente, en el día de hoy (mismo comportamiento que mobile).
+  useEffect(() => {
+    const incoming = (location.state as { prefill?: AppointmentPrefill } | null)?.prefill;
+    if (!incoming) return;
+    setPrefill(incoming);
+    setEditingAppointment(null);
+    setSelectedDate(new Date());
+    setVisibleMonth(new Date());
+    setViewMode('day');
+    setFormOpen(true);
+    // Limpia el state para que un refresh o "atrás" no reabra el formulario.
+    navigate(location.pathname, { replace: true, state: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const {
     appointments,
@@ -40,9 +63,27 @@ export const AppointmentsPage: React.FC = () => {
     fetchAppointmentsByDate,
     fetchAppointmentsByDateRange,
     createAppointment,
+    createRecurringAppointments,
     updateAppointment,
     moveAppointment,
   } = useAppointments();
+  const { user } = useAuth();
+  const { getBarberByUserName } = useBarbers();
+  // Cantidad de citas por serie recurrente, definida por el admin en el barbero (0 = deshabilitado).
+  const [maxRecurringAppointments, setMaxRecurringAppointments] = useState(0);
+
+  // Se relee al abrir el formulario para reflejar cambios recientes del admin.
+  useEffect(() => {
+    if (!formOpen || !user?.userName) return;
+    let active = true;
+    void getBarberByUserName(user.userName).then((barber) => {
+      if (active) setMaxRecurringAppointments(barber?.settings?.maxRecurringAppointments ?? 0);
+    });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formOpen, user?.userName]);
 
   useEffect(() => {
     if (viewMode === 'month') {
@@ -76,6 +117,7 @@ export const AppointmentsPage: React.FC = () => {
 
   const handleOpenCreateForm = () => {
     setEditingAppointment(null);
+    setPrefill(null);
     setFormOpen(true);
   };
 
@@ -87,6 +129,7 @@ export const AppointmentsPage: React.FC = () => {
   const handleCloseForm = () => {
     setFormOpen(false);
     setEditingAppointment(null);
+    setPrefill(null);
   };
 
   const refreshCurrentRange = () => {
@@ -118,6 +161,15 @@ export const AppointmentsPage: React.FC = () => {
     } else {
       await createAppointment(request);
     }
+    refreshCurrentRange();
+  };
+
+  const handleRecurringSubmit = async (data: CreateAppointmentFormData, frequency: RecurrenceFrequency) => {
+    const { price, paymentMethod, ...rest } = data;
+    await createRecurringAppointments(
+      { ...rest, servicePrice: price, paymentMethodUsed: paymentMethod },
+      frequency
+    );
     refreshCurrentRange();
   };
 
@@ -257,13 +309,16 @@ export const AppointmentsPage: React.FC = () => {
       </Box>
 
       <AppointmentForm
-        key={editingAppointment?.id ?? `new-${toKey(selectedDate)}`}
+        key={editingAppointment?.id ?? `new-${toKey(selectedDate)}-${prefill?.phone ?? ''}`}
         open={formOpen}
         title={editingAppointment ? editingAppointment.clientName : 'Agendar cita'}
         appointment={editingAppointment}
         defaultDate={toKey(selectedDate)}
+        prefill={prefill}
         onSubmit={handleFormSubmit}
         onMove={handleMove}
+        maxRecurringAppointments={maxRecurringAppointments}
+        onSubmitRecurring={handleRecurringSubmit}
         onClose={handleCloseForm}
         isLoading={isSavingAppointment}
       />

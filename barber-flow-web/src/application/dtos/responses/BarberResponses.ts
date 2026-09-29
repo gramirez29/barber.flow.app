@@ -1,6 +1,7 @@
 export interface BarberSettingsResponse {
   commissionPercentage: number;
   fixedDailyExpense: number;
+  maxRecurringAppointments?: number;
 }
 
 export interface BarberResponse {

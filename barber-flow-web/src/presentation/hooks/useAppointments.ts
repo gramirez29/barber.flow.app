@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Appointment } from '@domain/entities/Appointment';
+import { Appointment, RecurrenceFrequency, RecurringAppointmentsResult } from '@domain/entities/Appointment';
 import { CreateAppointmentRequest, UpdateAppointmentRequest } from '@application/dtos/requests';
 import { useNotification } from '@presentation/context/NotificationContext';
 import { AppointmentApi } from '@infrastructure/api/AppointmentApi';
@@ -116,6 +116,46 @@ export function useAppointments() {
         return newAppointment;
       } catch (error) {
         const message = getErrorMessage(error, 'Error al crear cita');
+        if (isSlotTakenError(error)) {
+          showNotification(message, 'warning', 6000);
+        } else {
+          showNotification(message, 'error');
+        }
+        throw error;
+      } finally {
+        setIsSavingAppointment(false);
+      }
+    },
+    [appointmentApi, showNotification]
+  );
+
+  /**
+   * Crear una serie de citas recurrentes. La cantidad la define el backend (setting del barbero).
+   * Crea los horarios libres y avisa de las fechas que chocaron con otra cita.
+   */
+  const createRecurringAppointments = useCallback(
+    async (
+      appointmentData: UpdateAppointmentRequest,
+      frequency: RecurrenceFrequency
+    ): Promise<RecurringAppointmentsResult> => {
+      setIsSavingAppointment(true);
+      try {
+        const result = await appointmentApi.createRecurring(appointmentData, frequency);
+        setAppointments((prev) => [...prev, ...result.created]);
+
+        if (result.conflicts.length > 0) {
+          const skipped = result.conflicts.map((c) => c.date.split('-').reverse().join('/')).join(', ');
+          showNotification(
+            `Se crearon ${result.created.length} de ${result.requestedCount} citas. Sin espacio en: ${skipped}.`,
+            'warning',
+            8000
+          );
+        } else {
+          showNotification(`Se crearon ${result.created.length} citas recurrentes correctamente`, 'success');
+        }
+        return result;
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al crear citas recurrentes');
         if (isSlotTakenError(error)) {
           showNotification(message, 'warning', 6000);
         } else {
@@ -248,6 +288,7 @@ export function useAppointments() {
     fetchAppointmentsByDateRange,
     searchAppointments,
     createAppointment,
+    createRecurringAppointments,
     updateAppointment,
     deleteAppointment,
     moveAppointment,

@@ -40,6 +40,10 @@ public static class AppointmentsApi
             .WithName(nameof(DeleteAppointmentAsync))
             .WithTags(AppointmentTag);
 
+        api.MapPost("/create-recurring", CreateRecurringAppointmentsAsync)
+            .WithName(nameof(CreateRecurringAppointmentsAsync))
+            .WithTags(AppointmentTag);
+
         api.MapGet("/nextAppointmentId", NextAppointmentIdAsync)
             .WithName(nameof(NextAppointmentIdAsync))
             .WithTags(AppointmentTag);
@@ -75,6 +79,52 @@ public static class AppointmentsApi
         {
             var created = await appointmentService.CreateAsync(appointment, cancellationToken);
             return TypedResults.Ok(Map(created));
+        }
+        catch (AppointmentSchedulingException ex)
+        {
+            return TypedResults.BadRequest(new { message = ex.Message, code = ex.Code });
+        }
+    }
+
+    private static async Task<IResult> CreateRecurringAppointmentsAsync(
+        RecurringAppointmentRequest request,
+        IAppointmentService appointmentService,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
+    {
+        if (!RecurrenceCalculator.TryParseFrequency(request.Frequency, out var frequency))
+        {
+            return TypedResults.BadRequest(new { message = "La periodicidad debe ser weekly, biweekly o monthly." });
+        }
+
+        var userId = httpContext.User.GetUserName() ?? string.Empty;
+        var first = request.Appointment;
+
+        var template = new Domain.Entities.Appointments
+        {
+            ClientName = first.ClientName,
+            Phone = first.Phone,
+            ClientId = first.ClientId,
+            Date = first.Date,
+            Time = first.Time,
+            Status = first.Status,
+            CompletedAt = first.CompletedAt,
+            PaymentMethodUsed = first.PaymentMethodUsed,
+            ServiceName = first.ServiceName,
+            ServicePrice = first.ServicePrice,
+            Notes = first.Notes,
+            CreatedBy = userId,
+            UpdatedBy = userId
+        };
+
+        try
+        {
+            var result = await appointmentService.CreateRecurringAsync(template, frequency, cancellationToken);
+            return TypedResults.Ok(new RecurringAppointmentResponse(
+                result.SeriesId,
+                result.RequestedCount,
+                result.Created.Select(Map),
+                result.Conflicts.Select(c => new RecurrenceConflictDto(c.Date, c.Time))));
         }
         catch (AppointmentSchedulingException ex)
         {
@@ -243,6 +293,7 @@ public static class AppointmentsApi
         a.CreatedAt,
         a.UpdatedAt,
         a.CreatedBy,
-        a.UpdatedBy
+        a.UpdatedBy,
+        a.SeriesId
     );
 }

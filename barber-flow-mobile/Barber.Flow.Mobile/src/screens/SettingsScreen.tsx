@@ -169,7 +169,8 @@ export const SettingsScreen = () => {
 			nextErrors.barberPhone ||
 			nextErrors.shopName ||
 			nextErrors.shopPhone ||
-			nextErrors.address
+			nextErrors.address ||
+			nextErrors.maxRecurringAppointments
 		) {
 			showAlert(
 				translateText("common.save"),

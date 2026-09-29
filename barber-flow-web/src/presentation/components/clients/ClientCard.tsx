@@ -5,6 +5,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useNavigate } from 'react-router-dom';
 import { Client } from '@domain/entities/Client';
 import { appColors } from '@presentation/theme/appColors';
+import { buildAppointmentPrefill } from '@shared/utils/appointmentPrefill';
 
 interface ClientCardProps {
   client: Client;
@@ -97,7 +98,7 @@ export const ClientCard: React.FC<ClientCardProps> = ({ client, onClick, onDelet
         aria-label={`Agendar cita para ${fullName}`}
         onClick={(e) => {
           e.stopPropagation();
-          navigate('/appointments');
+          navigate('/appointments', { state: { prefill: buildAppointmentPrefill(client) } });
         }}
         sx={{ color: appColors.accent }}
       >

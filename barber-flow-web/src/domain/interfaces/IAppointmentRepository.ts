@@ -1,10 +1,20 @@
-import { Appointment, CreateAppointmentRequest, UpdateAppointmentRequest } from '../entities';
+import {
+  Appointment,
+  CreateAppointmentRequest,
+  UpdateAppointmentRequest,
+  RecurrenceFrequency,
+  RecurringAppointmentsResult,
+} from '../entities';
 
 export interface IAppointmentRepository {
   getByDate(date: string): Promise<Appointment[]>;
   getByDateRange(startDate: string, endDate: string): Promise<Appointment[]>;
   getById(id: string): Promise<Appointment>;
   create(request: CreateAppointmentRequest): Promise<Appointment>;
+  createRecurring(
+    request: UpdateAppointmentRequest,
+    frequency: RecurrenceFrequency
+  ): Promise<RecurringAppointmentsResult>;
   update(id: string, request: UpdateAppointmentRequest): Promise<Appointment>;
   move(id: string, newDate: string, newTime: string): Promise<Appointment>;
   delete(id: string): Promise<void>;

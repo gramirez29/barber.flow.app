@@ -106,7 +106,7 @@ public static class BarbersApi
             BarberShopPhone = request.BarberShopPhone,
             PhotoUrl = request.PhotoUrl,
             Settings = request.Settings != null
-                ? new BarberSettings(request.Settings.CommissionPercentage, request.Settings.FixedDailyExpense)
+                ? new BarberSettings(request.Settings.CommissionPercentage, request.Settings.FixedDailyExpense, request.Settings.MaxRecurringAppointments)
                 : null,
             CreatedBy = userId ?? string.Empty,
             UpdatedBy = userId ?? string.Empty
@@ -177,7 +177,7 @@ public static class BarbersApi
             BarberShopPhone = request.BarberShopPhone,
             PhotoUrl = request.PhotoUrl,
             Settings = request.Settings != null
-                ? new BarberSettings(request.Settings.CommissionPercentage, request.Settings.FixedDailyExpense)
+                ? new BarberSettings(request.Settings.CommissionPercentage, request.Settings.FixedDailyExpense, request.Settings.MaxRecurringAppointments)
                 : null,
             UpdatedBy = userId ?? string.Empty
         };
@@ -253,7 +253,7 @@ public static class BarbersApi
             b.BarberShopPhone,
             b.PhotoUrl,
             b.Settings != null
-                ? new BarberSettingsDto(b.Settings.CommissionPercentage, b.Settings.FixedDailyExpense)
+                ? new BarberSettingsDto(b.Settings.CommissionPercentage, b.Settings.FixedDailyExpense, b.Settings.MaxRecurringAppointments ?? 0)
                 : null,
             b.ShopId,
             b.CreatedAt,

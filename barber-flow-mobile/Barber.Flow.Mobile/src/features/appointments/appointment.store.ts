@@ -1,7 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { Appointment, AppointmentDraft } from "./appointments.types";
+import {
+	Appointment,
+	AppointmentDraft,
+	RecurrenceFrequency,
+	RecurringAppointmentsResult,
+} from "./appointments.types";
 import {
 	appointmentService,
 	type AppointmentSearchParams,
@@ -16,6 +21,10 @@ interface AppointmentState {
 	fetchAppointmentsByDateRange: (startDate: string, endDate: string, status?: string) => Promise<void>;
 	clearError: () => void;
 	addAppointment: (appointment: AppointmentDraft) => Promise<Appointment>;
+	addRecurringAppointments: (
+		appointment: AppointmentDraft,
+		frequency: RecurrenceFrequency,
+	) => Promise<RecurringAppointmentsResult>;
 	getCompletedAppointmentsByDate: (date: string) => Appointment[];
 	moveAppointment: (id: string, newDate: string) => Promise<void>;
 	updateAppointment: (id: string, appointment: AppointmentDraft) => Promise<void>;
@@ -98,6 +107,14 @@ export const useAppointmentStore = create<AppointmentState>()(
 					appointments: sortAppointments([...state.appointments, created]),
 				}));
 				return created;
+			},
+
+			addRecurringAppointments: async (draft, frequency) => {
+				const result = await appointmentService.createRecurring(draft, frequency);
+				set((state) => ({
+					appointments: sortAppointments([...state.appointments, ...result.created]),
+				}));
+				return result;
 			},
 
 			moveAppointment: async (id, newDate) => {

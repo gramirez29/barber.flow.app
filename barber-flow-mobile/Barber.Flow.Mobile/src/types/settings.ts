@@ -11,6 +11,12 @@ export interface ReportCalculationSettings {
 	fixedDailyExpense: number;
 }
 
+/** Settings block of a Barber as exchanged with the API. */
+export interface BarberSettingsPayload extends ReportCalculationSettings {
+	/** 0..20. 0 / undefined = recurring appointments disabled. Only the admin can set it. */
+	maxRecurringAppointments?: number;
+}
+
 export const DEFAULT_REPORT_CALCULATION_SETTINGS: ReportCalculationSettings = {
 	commissionPercentage: 40,
 	fixedDailyExpense: 0,
@@ -36,6 +42,11 @@ export interface ApplicationUserSettingsForm {
 	address?: string;
 	password?: string;
 	profilePhotoUrl?: string;
+	/** Text-input value ("0".."20"). 0 = recurring appointments disabled for this barber. */
+	maxRecurringAppointments?: string;
+	/** Read-only copy of the barber's stored settings, so an admin edit never overwrites them. */
+	existingCommissionPercentage?: number;
+	existingFixedDailyExpense?: number;
 }
 
 export interface BarberApiRequest {
@@ -49,7 +60,7 @@ export interface BarberApiRequest {
 	Address?: string;
 	Password?: string;
 	PhotoUrl?: string;
-	Settings?: ReportCalculationSettings;
+	Settings?: BarberSettingsPayload;
 }
 
 export interface BarberApiResponse {
@@ -63,7 +74,7 @@ export interface BarberApiResponse {
 	shopPhone?: string;
 	address?: string;
 	photoUrl?: string;
-	settings?: ReportCalculationSettings;
+	settings?: BarberSettingsPayload;
 	createdAt?: string;
 	updatedAt?: string;
 	userId?: string;

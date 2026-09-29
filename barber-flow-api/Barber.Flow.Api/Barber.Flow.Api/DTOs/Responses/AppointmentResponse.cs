@@ -17,5 +17,6 @@ public record AppointmentResponse(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     string CreatedBy,
-    string UpdatedBy
+    string UpdatedBy,
+    string? SeriesId = null
 );

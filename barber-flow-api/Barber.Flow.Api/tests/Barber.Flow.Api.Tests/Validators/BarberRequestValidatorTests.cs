@@ -80,6 +80,31 @@ public class BarberRequestValidatorTests
         Assert.Contains(result.Errors, e => e.PropertyName == "Settings.FixedDailyExpense");
     }
 
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(21)]
+    public void Validate_MaxRecurringAppointmentsOutOfRange_HasError(int max)
+    {
+        var request = BuildValidRequest(new BarberSettingsDto(40m, 0m, max));
+
+        var result = _validator.Validate(request);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == "Settings.MaxRecurringAppointments");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(12)]
+    [InlineData(20)]
+    public void Validate_MaxRecurringAppointmentsInRangeOrOmitted_IsValid(int? max)
+    {
+        var request = BuildValidRequest(new BarberSettingsDto(40m, 0m, max));
+
+        Assert.True(_validator.Validate(request).IsValid);
+    }
+
     [Fact]
     public void Validate_NoSettingsProvided_DoesNotValidateSettingsFields()
     {

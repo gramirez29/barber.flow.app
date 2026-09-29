@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { Box, Dialog, DialogContent, Typography, InputAdornment, CircularProgress, Stack } from '@mui/material';
+import {
+  Box,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  FormControlLabel,
+  TextField,
+  Typography,
+  InputAdornment,
+  CircularProgress,
+  Stack,
+} from '@mui/material';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
@@ -13,24 +24,41 @@ import {
   isPastAppointmentDateTime,
   CreateAppointmentFormData,
 } from '@shared/validation/appointmentSchemas';
-import { Appointment, AppointmentStatus, AppointmentPaymentMethod } from '@domain/entities/Appointment';
+import {
+  Appointment,
+  AppointmentStatus,
+  AppointmentPaymentMethod,
+  RecurrenceFrequency,
+} from '@domain/entities/Appointment';
 import { APPOINTMENT_CONSTANTS } from '@shared/constants/appointments';
 import { appColors } from '@presentation/theme/appColors';
 import { scrollbarSx } from '@presentation/theme/scrollbarSx';
 import { useConfirmDialog } from '@presentation/context/ConfirmDialogContext';
+import type { AppointmentPrefill } from '@shared/utils/appointmentPrefill';
 
 interface AppointmentFormProps {
   open: boolean;
   title: string;
   appointment?: Appointment | null;
   defaultDate?: string;
+  /** Cliente con el que se precarga el formulario de una cita nueva (viene de la lista de clientes). */
+  prefill?: AppointmentPrefill | null;
   onSubmit: (data: CreateAppointmentFormData) => Promise<void>;
   onMove?: (appointmentId: string, newDate: string, newTime: string) => Promise<void>;
+  /** Cantidad de citas por serie según el setting del barbero (0/undefined = recurrencia deshabilitada). */
+  maxRecurringAppointments?: number;
+  onSubmitRecurring?: (data: CreateAppointmentFormData, frequency: RecurrenceFrequency) => Promise<void>;
   onClose: () => void;
   isLoading?: boolean;
 }
 
 const MOVABLE_STATUSES: AppointmentStatus[] = ['scheduled', 'confirmed'];
+
+const FREQUENCY_OPTIONS: { value: RecurrenceFrequency; label: string; plural: string }[] = [
+  { value: 'weekly', label: 'Semanal', plural: 'semanales' },
+  { value: 'biweekly', label: 'Quincenal', plural: 'quincenales' },
+  { value: 'monthly', label: 'Mensual', plural: 'mensuales' },
+];
 
 const STATUS_OPTIONS: AppointmentStatus[] = ['scheduled', 'confirmed', 'completed', 'cancelled'];
 const PAYMENT_OPTIONS: AppointmentPaymentMethod[] = ['cash', 'sinpeMovil', 'transfer'];
@@ -79,6 +107,8 @@ const Pill: React.FC<{ label: string; active: boolean; onClick: () => void; disa
       py: 0.875,
       mr: 1,
       mb: 1,
+      flexShrink: 0,
+      whiteSpace: 'nowrap',
       opacity: disabled ? 0.5 : 1,
       fontSize: 13,
       fontWeight: active ? 700 : 500,
@@ -94,12 +124,21 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   title,
   appointment,
   defaultDate,
+  prefill,
   onSubmit,
   onMove,
+  maxRecurringAppointments = 0,
+  onSubmitRecurring,
   onClose,
   isLoading = false,
 }) => {
   const { confirm } = useConfirmDialog();
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<RecurrenceFrequency>('weekly');
+
+  // Solo al crear, y solo si el admin habilitó la recurrencia para este barbero (setting > 0).
+  const canRecur = !appointment && maxRecurringAppointments > 0 && Boolean(onSubmitRecurring);
+  const frequencyPlural = FREQUENCY_OPTIONS.find((o) => o.value === frequency)?.plural ?? '';
   const [moveDate, setMoveDate] = useState(appointment?.date ?? '');
   const [moveTime, setMoveTime] = useState(appointment?.time ?? '');
   const [isMoving, setIsMoving] = useState(false);
@@ -143,14 +182,14 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         status: appointment.status,
       }
     : {
-        clientName: '',
-        phone: '',
+        clientName: prefill?.clientName ?? '',
+        phone: prefill?.phone ?? '',
         date: defaultDate || '',
         time: '',
         serviceName: '',
         price: undefined,
         notes: '',
-        paymentMethod: APPOINTMENT_CONSTANTS.DEFAULT_PAYMENT_METHOD,
+        paymentMethod: prefill?.paymentMethod ?? APPOINTMENT_CONSTANTS.DEFAULT_PAYMENT_METHOD,
         status: 'scheduled',
       };
 
@@ -181,7 +220,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     }
 
     try {
-      await onSubmit(form.values);
+      if (canRecur && isRecurring && onSubmitRecurring) {
+        await onSubmitRecurring(form.values, frequency);
+      } else {
+        await onSubmit(form.values);
+      }
       form.reset();
       onClose();
     } catch {
@@ -232,7 +275,16 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               <Typography sx={{ fontSize: 12, fontWeight: 600, color: appColors.textSecondary, mb: 1 }}>
                 Estado de la cita
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'nowrap',
+                  overflowX: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  scrollbarWidth: 'none',
+                  '&::-webkit-scrollbar': { display: 'none' },
+                }}
+              >
                 {STATUS_OPTIONS.map((status) => (
                   <Pill
                     key={status}
@@ -295,7 +347,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               }}
             />
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
               {/* Fecha */}
               <FormTextField
                 id="date"
@@ -308,7 +360,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 isTouched={form.touched.has('date')}
                 disabled={isLoading}
                 InputLabelProps={{ shrink: true }}
-                sx={{ ...inputSx, flex: 1 }}
+                sx={{ ...inputSx, flex: { xs: '0 0 auto', sm: 1 } }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -330,7 +382,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 isTouched={form.touched.has('time')}
                 disabled={isLoading}
                 InputLabelProps={{ shrink: true }}
-                sx={{ ...inputSx, flex: 1 }}
+                sx={{ ...inputSx, flex: { xs: '0 0 auto', sm: 1 } }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -418,6 +470,61 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               sx={inputSx}
             />
 
+            {/* Cita recurrente (solo al crear y si el setting del barbero es > 0) */}
+            {canRecur && (
+              <Box
+                sx={{
+                  backgroundColor: appColors.surfaceElevated,
+                  borderRadius: '14px',
+                  border: `1px solid ${isRecurring ? appColors.accent : appColors.border}`,
+                  px: 2,
+                  py: 1,
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isRecurring}
+                      onChange={(e) => setIsRecurring(e.target.checked)}
+                      disabled={isLoading}
+                      sx={{ color: appColors.textSecondary, '&.Mui-checked': { color: appColors.accent } }}
+                    />
+                  }
+                  label="Cita recurrente"
+                  sx={{ '& .MuiFormControlLabel-label': { color: appColors.textPrimary, fontWeight: 600, fontSize: 14 } }}
+                />
+
+                {isRecurring && (
+                  <Box sx={{ pt: 1.5, pb: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <TextField
+                      id="recurrenceFrequency"
+                      select
+                      label="Periodicidad"
+                      value={frequency}
+                      onChange={(e) => setFrequency(e.target.value as RecurrenceFrequency)}
+                      disabled={isLoading}
+                      SelectProps={{ native: true }}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        ...inputSx,
+                        '& select option': { backgroundColor: appColors.surfaceElevated, color: appColors.textPrimary },
+                      }}
+                    >
+                      {FREQUENCY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </TextField>
+                    <Typography sx={{ fontSize: 13, color: appColors.textSecondary, lineHeight: 1.5 }}>
+                      Va a crear {maxRecurringAppointments} citas recurrentes {frequencyPlural} para el cliente
+                      seleccionado.
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+
             {/* Acciones */}
             <Box sx={{ display: 'flex', gap: 1.25, mt: 1 }}>
               <Box
@@ -504,7 +611,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               Mueve esta cita a otro día u hora.
             </Typography>
 
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
               <FormTextField
                 id="moveDate"
                 label="Nueva fecha"
@@ -513,7 +620,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 onChange={(e) => setMoveDate(e.target.value)}
                 disabled={isMoving}
                 InputLabelProps={{ shrink: true }}
-                sx={{ ...inputSx, flex: 1 }}
+                sx={{ ...inputSx, flex: { xs: '0 0 auto', sm: 1 } }}
               />
               <FormTextField
                 id="moveTime"
@@ -523,7 +630,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 onChange={(e) => setMoveTime(e.target.value)}
                 disabled={isMoving}
                 InputLabelProps={{ shrink: true }}
-                sx={{ ...inputSx, flex: 1 }}
+                sx={{ ...inputSx, flex: { xs: '0 0 auto', sm: 1 } }}
               />
             </Box>
 
