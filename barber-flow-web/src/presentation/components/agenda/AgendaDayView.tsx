@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import {
   DndContext,
   DragEndEvent,
@@ -19,8 +19,10 @@ import {
   isAgendaMovable,
   layoutLanes,
   minutesToOffset,
+  timeToMinutes,
 } from '@shared/utils/agendaLayout';
 import { appColors } from '@presentation/theme/appColors';
+import { scrollbarSx } from '@presentation/theme/scrollbarSx';
 import { AgendaAddButton } from './AgendaAddButton';
 import { AgendaAppointmentBlock } from './AgendaAppointmentBlock';
 import { AgendaTimeGrid } from './AgendaTimeGrid';
@@ -54,6 +56,10 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
   onMoveAppointment,
 }) => {
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const pageScrolledFor = useRef<string | null>(null);
+  const theme = useTheme();
+  // Pantallas grandes: la agenda va en una caja con scroll propio. Celular: altura completa y scrollea la página.
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const suppressClickUntil = useRef(0);
   const [pendingTimes, setPendingTimes] = useState<Record<string, string>>({});
   const [now, setNow] = useState(() => new Date());
@@ -85,13 +91,29 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
     return () => window.clearInterval(id);
   }, [showingToday]);
 
-  // La agenda muestra TODO el horario (sin scroll interno): es la página la que se desplaza.
-  // Al entrar a "hoy", si la línea de "ahora" queda fuera de pantalla, se lleva a la vista.
   const dateKey = format(date, 'yyyy-MM-dd');
   const hasAppointments = appointments.length > 0;
   useEffect(() => {
     const grid = gridRef.current;
-    if (!grid || !showingToday) return;
+    if (!grid) return;
+
+    if (isDesktop) {
+      // Caja con scroll propio: al cambiar de día (o llegar las citas) va a la hora actual / primera cita.
+      let anchor: number | null = null;
+      if (showingToday) {
+        anchor = new Date().getHours() * 60 + new Date().getMinutes();
+      } else if (hasAppointments) {
+        const first = Math.min(...appointments.map((a) => timeToMinutes(a.time)).filter((m) => !Number.isNaN(m)));
+        anchor = Number.isFinite(first) ? first : null;
+      }
+      grid.scrollTo({ top: anchor === null ? 0 : Math.max(0, minutesToOffset(anchor - 60, range)) });
+      return;
+    }
+
+    // Celular: se muestra TODO el horario y es la página la que se desplaza. Al entrar a "hoy", si la línea
+    // de "ahora" queda fuera de pantalla se lleva a la vista (una sola vez por día mostrado).
+    if (!showingToday || pageScrolledFor.current === dateKey) return;
+    pageScrolledFor.current = dateKey;
 
     const current = new Date();
     const nowMinutesLocal = current.getHours() * 60 + current.getMinutes();
@@ -101,9 +123,9 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
     if (lineTop < viewportTop || lineTop > viewportBottom) {
       window.scrollTo({ top: Math.max(0, lineTop - window.innerHeight / 3) });
     }
-    // Solo al mostrar un día "hoy"; no en cada movimiento de citas.
+    // Solo al cambiar de día / aparecer las primeras citas / cambiar de layout; no en cada movimiento.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateKey, showingToday]);
+  }, [dateKey, hasAppointments, isDesktop]);
 
   const handleDragStart = () => {
     suppressClickUntil.current = Number.MAX_SAFE_INTEGER;
@@ -157,10 +179,14 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
       <Box
         ref={gridRef}
         sx={{
-          overflow: 'hidden',
+          // Celular: altura completa (sin scroll interno). Escritorio: caja de 68vh con scroll propio.
+          maxHeight: { xs: 'none', md: '68vh' },
+          overflowX: 'hidden',
+          overflowY: { xs: 'hidden', md: 'auto' },
           borderRadius: '14px',
           border: `1px solid ${appColors.border}`,
           backgroundColor: appColors.background,
+          ...scrollbarSx,
         }}
       >
         <DndContext

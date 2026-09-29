@@ -205,7 +205,8 @@ Plan completo, decisiones y notas de implementación en **`AGENDA_DAY_VIEW_PLAN.
 - **Web primero; mobile no se toca** hasta que el usuario confirme que la web funciona.
 - Solo **componentes/hooks nuevos** (`components/agenda/`, `FeatureFlagsContext`, `agendaLayout.ts`); cambios en archivos existentes solo aditivos. **Backend sin cambios** en las fases 1–2 (usa `search` y `PATCH move` tal cual); cualquier cambio futuro será aditivo y retrocompatible.
 - Horario 8–20 como constante; setting por barbería (campos nullable en `BarberShop`) queda como fase opcional.
-- **Altura completa:** la agenda no tiene scroll interno; se ve todo el horario y se desplaza la página (el botón "Añadir" queda pegado abajo con `position: sticky`; al entrar a hoy la página lleva la línea de "ahora" a la vista).
+- **Altura responsive:** en celular se ve todo el horario sin scroll interno (scrollea la página; al entrar a hoy la línea de "ahora" se lleva a la vista); en pantallas grandes (md+) va en una caja de 68vh con scroll propio. El botón "Añadir" queda pegado abajo (`position: sticky`).
+- **Selector de vistas de Citas:** orden **Día · Semana · Mes**, y **Día** es la vista por defecto al abrir Citas (antes Mes), con el flag apagado o encendido.
 - **Cómo activarla:** Configuración → Preferencias → "Vista de agenda por horas (beta)" (por dispositivo). En Citas → Día se ve la agenda; con el flag apagado, la lista de siempre. Con el flag encendido el formulario de cita nueva también muestra el buscador de cliente.
 - **Código:** `presentation/components/agenda/` (`AgendaDayView`, `AgendaTimeGrid`, `AgendaAppointmentBlock`, `AgendaAddButton`, `ClientAutocomplete`), `presentation/context/FeatureFlagsContext.tsx`, lógica pura + tests en `shared/utils/agendaLayout(.test).ts`, constantes en `shared/constants/agenda.ts`. Dependencia nueva: `@dnd-kit/core`.
 
