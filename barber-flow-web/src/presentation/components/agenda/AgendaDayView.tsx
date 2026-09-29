@@ -27,6 +27,9 @@ import { AgendaAddButton } from './AgendaAddButton';
 import { AgendaAppointmentBlock } from './AgendaAppointmentBlock';
 import { AgendaTimeGrid } from './AgendaTimeGrid';
 
+/** Alto del botón (46) + margen inferior (16) + holgura: por debajo de esto el botón no cabe entero. */
+const ADD_BUTTON_CLEARANCE_PX = 96;
+
 interface AgendaDayViewProps {
   date: Date;
   /** Citas del día mostrado. */
@@ -55,7 +58,11 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
   onSelectAppointment,
   onMoveAppointment,
 }) => {
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const gridRef = useRef<HTMLDivElement | null>(null);
+  // El botón "Añadir" solo se muestra cuando cabe COMPLETO: un sticky se clava al borde superior de su
+  // contenedor, así que cuando la agenda apenas asoma por el pie de la pantalla quedaría asomado y cortado.
+  const [showAddButton, setShowAddButton] = useState(true);
   const pageScrolledFor = useRef<string | null>(null);
   const theme = useTheme();
   // Pantallas grandes: la agenda va en una caja con scroll propio. Celular: altura completa y scrollea la página.
@@ -90,6 +97,21 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
     const id = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(id);
   }, [showingToday]);
+
+  useEffect(() => {
+    const update = () => {
+      const top = rootRef.current?.getBoundingClientRect().top;
+      if (top === undefined) return;
+      setShowAddButton(top < window.innerHeight - ADD_BUTTON_CLEARANCE_PX);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
 
   const dateKey = format(date, 'yyyy-MM-dd');
   const hasAppointments = appointments.length > 0;
@@ -169,7 +191,7 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
   const addLabel = `Añadir el ${format(date, "d MMM", { locale: es }).replace('.', '')}`;
 
   return (
-    <Box sx={{ position: 'relative', mt: 2 }}>
+    <Box ref={rootRef} sx={{ position: 'relative', mt: 2 }}>
       {!hasAppointments && (
         <Typography sx={{ fontSize: 13, color: appColors.textSecondary, mb: 1 }}>
           Todavía no hay reservas para este día. Toca una franja libre para agendar.
@@ -216,8 +238,15 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
       </Box>
 
       {/* Pegado al borde inferior de la pantalla mientras se recorre la agenda. */}
-      <Box sx={{ position: 'sticky', bottom: 16, height: 0, display: 'flex', justifyContent: 'center', zIndex: 6 }}>
-        <Box sx={{ transform: 'translateY(-100%)' }}>
+      {/* El wrapper mide 0px de alto: con alignItems flex-end el botón crece hacia ARRIBA desde el borde inferior. */}
+      <Box sx={{ position: 'sticky', bottom: 16, height: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 6 }}>
+        <Box
+          sx={{
+            opacity: showAddButton ? 1 : 0,
+            pointerEvents: showAddButton ? 'auto' : 'none',
+            transition: 'opacity 0.15s ease',
+          }}
+        >
           <AgendaAddButton label={addLabel} onClick={() => onAddAt()} />
         </Box>
       </Box>
