@@ -65,3 +65,10 @@ body,
   height: 100%;
   width: 100%;
 }
+
+/* Evita que arrastrar el dedo hacia abajo estando arriba del todo recargue la página
+   (pull-to-refresh) en celulares y en la app instalada; el scroll normal no cambia. */
+html,
+body {
+  overscroll-behavior-y: none;
+}
