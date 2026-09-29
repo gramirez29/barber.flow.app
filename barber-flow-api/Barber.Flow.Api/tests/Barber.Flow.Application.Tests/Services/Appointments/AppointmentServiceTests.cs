@@ -154,15 +154,17 @@ public class AppointmentServiceTests
     }
 
     [Fact]
-    public async Task MoveAsync_PastDateTime_ThrowsAppointmentSchedulingException()
+    public async Task MoveAsync_PastDateTime_IsAllowed()
     {
         var existing = new Appointments { Id = "APT-0001", Date = "2020-01-01", Time = "09:00" };
+        var moved = new Appointments { Id = "APT-0001", Date = "2020-01-02", Time = "09:00" };
         _repo.Setup(r => r.GetByIdAsync("APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _repo.Setup(r => r.HasConflictAsync("2020-01-02", "09:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repo.Setup(r => r.MoveAsync("APT-0001", "2020-01-02", "09:00", It.IsAny<CancellationToken>())).ReturnsAsync(moved);
 
-        await Assert.ThrowsAsync<AppointmentSchedulingException>(
-            () => CreateSut().MoveAsync("APT-0001", "2020-01-02", "09:00"));
+        var result = await CreateSut().MoveAsync("APT-0001", "2020-01-02", "09:00");
 
-        _repo.Verify(r => r.MoveAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Same(moved, result);
     }
 
     [Fact]
@@ -173,8 +175,10 @@ public class AppointmentServiceTests
         _repo.Setup(r => r.GetByIdAsync("APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
         _repo.Setup(r => r.HasConflictAsync(futureDate, "10:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        await Assert.ThrowsAsync<AppointmentSchedulingException>(
+        var ex = await Assert.ThrowsAsync<AppointmentSchedulingException>(
             () => CreateSut().MoveAsync("APT-0001", futureDate, "10:00"));
+
+        Assert.Equal(AppointmentSchedulingException.SlotTakenCode, ex.Code);
 
         _repo.Verify(r => r.MoveAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -195,13 +199,27 @@ public class AppointmentServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_PastDateTime_ThrowsAppointmentSchedulingException()
+    public async Task CreateAsync_PastDateTime_IsAllowed()
     {
         var appointment = new Appointments { ClientName = "Juan", Date = "2020-01-01", Time = "09:00" };
+        _repo.Setup(r => r.HasConflictAsync("2020-01-01", "09:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repo.Setup(r => r.CreateAsync(appointment, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
-        await Assert.ThrowsAsync<AppointmentSchedulingException>(() => CreateSut().CreateAsync(appointment));
+        var result = await CreateSut().CreateAsync(appointment);
 
-        _repo.Verify(r => r.CreateAsync(It.IsAny<Appointments>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Same(appointment, result);
+    }
+
+    [Fact]
+    public async Task CreateAsync_FarFutureDateTime_IsAllowed()
+    {
+        var appointment = new Appointments { ClientName = "Juan", Date = "2099-06-15", Time = "10:00" };
+        _repo.Setup(r => r.HasConflictAsync("2099-06-15", "10:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repo.Setup(r => r.CreateAsync(appointment, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+
+        var result = await CreateSut().CreateAsync(appointment);
+
+        Assert.Same(appointment, result);
     }
 
     [Fact]
@@ -211,8 +229,9 @@ public class AppointmentServiceTests
         var appointment = new Appointments { ClientName = "Juan", Date = futureDate, Time = "09:00" };
         _repo.Setup(r => r.HasConflictAsync(futureDate, "09:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        await Assert.ThrowsAsync<AppointmentSchedulingException>(() => CreateSut().CreateAsync(appointment));
+        var ex = await Assert.ThrowsAsync<AppointmentSchedulingException>(() => CreateSut().CreateAsync(appointment));
 
+        Assert.Equal(AppointmentSchedulingException.SlotTakenCode, ex.Code);
         _repo.Verify(r => r.CreateAsync(It.IsAny<Appointments>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -232,15 +251,18 @@ public class AppointmentServiceTests
     }
 
     [Fact]
-    public async Task UpdateAsync_DateChangedToPast_ThrowsAppointmentSchedulingException()
+    public async Task UpdateAsync_DateChangedToPast_IsAllowed()
     {
         var appointment = new Appointments { ClientName = "Juan", Date = "2020-01-01", Time = "09:00" };
         var existing = new Appointments { Id = "APT-0001", Date = "2020-01-02", Time = "09:00" };
+        var updated = new Appointments { Id = "APT-0001", Date = "2020-01-01", Time = "09:00" };
         _repo.Setup(r => r.GetByIdAsync("APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _repo.Setup(r => r.HasConflictAsync("2020-01-01", "09:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repo.Setup(r => r.UpdateAsync("APT-0001", It.IsAny<Appointments>(), It.IsAny<CancellationToken>())).ReturnsAsync(updated);
 
-        await Assert.ThrowsAsync<AppointmentSchedulingException>(() => CreateSut().UpdateAsync("APT-0001", appointment));
+        var result = await CreateSut().UpdateAsync("APT-0001", appointment);
 
-        _repo.Verify(r => r.UpdateAsync(It.IsAny<string>(), It.IsAny<Appointments>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Same(updated, result);
     }
 
     [Fact]

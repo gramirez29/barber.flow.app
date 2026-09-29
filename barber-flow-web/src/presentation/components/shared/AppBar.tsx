@@ -21,7 +21,7 @@ export const AppBar: React.FC<AppBarProps> = ({ onMenuClick, title = 'Barber Flo
 
   return (
     <MuiAppBar
-      position="static"
+      position="sticky"
       elevation={0}
       sx={{
         backgroundColor: appColors.surface,

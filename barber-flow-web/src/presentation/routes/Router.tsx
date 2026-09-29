@@ -26,7 +26,7 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
       <SidebarDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <AppBar onMenuClick={() => setDrawerOpen(true)} />
-        <Box component="main" sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {children}
           <Footer />
         </Box>

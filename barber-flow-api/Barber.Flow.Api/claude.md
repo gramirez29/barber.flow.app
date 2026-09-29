@@ -60,6 +60,9 @@ When working on features, reference the following existing structures in the wor
 4. HTTP Responses: Ensure that controllers in Barber.Flow.Api return clean action types (ActionResult<T>) with corresponding status codes (Ok, BadRequest, NotFound, CreatedAtAction).
 5. API Contract Alignment: Ensure that endpoints built in the .NET backend directly mirror the expected payloads and structures declared in the frontend's 'types/' and 'services/' directory.
 
+## Regla de agenda de citas (2026-09)
+`AppointmentService` ya **no** rechaza citas en el pasado ni limita el futuro (walk-ins registrados tarde, citas recurrentes). La única regla es no tener dos citas activas en la misma fecha+hora exacta (`HasConflictAsync`, ignora `cancelled`); si choca, `AppointmentSchedulingException` con `Code = "SLOT_TAKEN"` → `400 { message, code }`. Los clientes piden confirmación al usuario cuando la hora ya pasó.
+
 ## Short-Term Development Roadmap (Pending)
 1. [x] Configure the initial MongoDB dependency injection pipeline in Program.cs and bind appsettings.json.
 2. [x] Audit existing domain models (User.cs, Client.cs, Appointments.cs) to ensure alignment with MongoDB NoSQL structures.

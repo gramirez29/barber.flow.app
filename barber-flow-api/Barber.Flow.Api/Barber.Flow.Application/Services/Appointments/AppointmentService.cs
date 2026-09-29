@@ -1,4 +1,3 @@
-using System.Globalization;
 using Barber.Flow.Domain.Interfaces;
 
 namespace Barber.Flow.Application.Services.Appointments;
@@ -8,16 +7,9 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
     private readonly IAppointmentRepository _repo = repo;
     private readonly IBarberRepository _barberRepo = barberRepo;
 
-    // The API and its clients only ever operate in Costa Rica (no DST), while the deployed
-    // container's OS clock runs in UTC. Comparing the submitted date/time against the server's
-    // local DateTime.Now made "today" appointments look like they were already in the past by
-    // up to 6 hours. Anchoring both sides to UTC via this fixed offset fixes that regardless of
-    // the host OS timezone.
-    private static readonly TimeSpan ShopUtcOffset = TimeSpan.FromHours(-6);
-
     public async Task<Domain.Entities.Appointments> CreateAsync(Domain.Entities.Appointments appointment, CancellationToken cancellationToken = default)
     {
-        await EnsureScheduleIsValidAsync(appointment.Date, appointment.Time, excludeId: null, cancellationToken);
+        await EnsureSlotIsFreeAsync(appointment.Date, appointment.Time, excludeId: null, cancellationToken);
 
         // ShopId identifies the tenant an appointment belongs to; it's derived from the
         // creating barber's own shop unless the caller already supplied one explicitly.
@@ -42,7 +34,7 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
         // fields (e.g. marking a past appointment as completed) is never blocked.
         if (existing.Date != appointment.Date || existing.Time != appointment.Time)
         {
-            await EnsureScheduleIsValidAsync(appointment.Date, appointment.Time, id, cancellationToken);
+            await EnsureSlotIsFreeAsync(appointment.Date, appointment.Time, id, cancellationToken);
         }
 
         // ShopId is set at creation time and must not be reassigned by whoever edits the appointment later.
@@ -78,7 +70,7 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
         }
 
         var effectiveTime = string.IsNullOrWhiteSpace(newTime) ? existing.Time : newTime;
-        await EnsureScheduleIsValidAsync(newDate, effectiveTime, id, cancellationToken);
+        await EnsureSlotIsFreeAsync(newDate, effectiveTime, id, cancellationToken);
 
         return await _repo.MoveAsync(id, newDate, newTime, cancellationToken);
     }
@@ -86,25 +78,16 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
     public Task<string> GetNextIdAsync(CancellationToken cancellationToken = default)
         => _repo.GetNextIdAsync(cancellationToken);
 
-    private async Task EnsureScheduleIsValidAsync(string date, string time, string? excludeId, CancellationToken cancellationToken)
+    // Past and far-future dates are intentionally allowed: barbers log walk-ins after the fact
+    // and book recurring clients weeks ahead. The only scheduling rule is "no two active
+    // appointments in the exact same date + time slot" (cancelled ones don't count).
+    private async Task EnsureSlotIsFreeAsync(string date, string time, string? excludeId, CancellationToken cancellationToken)
     {
-        if (DateTime.TryParseExact(
-                $"{date} {time}",
-                "yyyy-MM-dd HH:mm",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out var scheduledAtLocal))
-        {
-            var scheduledAtUtc = new DateTimeOffset(scheduledAtLocal, ShopUtcOffset).UtcDateTime;
-            if (scheduledAtUtc <= DateTime.UtcNow)
-            {
-                throw new AppointmentSchedulingException("La fecha y hora deben ser en el futuro.");
-            }
-        }
-
         if (await _repo.HasConflictAsync(date, time, excludeId, cancellationToken))
         {
-            throw new AppointmentSchedulingException("Ya existe una cita agendada en esa fecha y hora.");
+            throw new AppointmentSchedulingException(
+                $"Ya existe una cita agendada el {date} a las {time}.",
+                AppointmentSchedulingException.SlotTakenCode);
         }
     }
 }
