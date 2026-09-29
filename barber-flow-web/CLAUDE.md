@@ -194,6 +194,17 @@ Feature pedida directamente, sin UI nueva en web (usa el flujo ya existente de `
 - **`BarbersApi.CreateBarberAsync`**: tras crear el `User` vinculado, llama a `authService.SendWelcomeEmailAsync(...)` con `request.UserEmail`/`BarberName`/`UserName`/`Password` (texto plano recién recibido en el request, nunca se persiste — se descarta después de usarse para el hash y para este correo). `UserEmail` es requerido por `BarberRequestValidator`, así que siempre hay un destinatario cuando se llega a esta rama.
 - Tests: `AuthServiceTests` cubre el envío feliz (contiene usuario + password en el cuerpo) y que un fallo de envío no lanza excepción; `BarbersApiTests` no necesitó casos nuevos (usa `ConsoleEmailService` en tests, mismo registro que ya cubre el flujo de OTP).
 
+## Vista de agenda por horas (día) — implementada detrás de feature flag
+Plan completo, decisiones y notas de implementación en **`AGENDA_DAY_VIEW_PLAN.md`** (este mismo directorio). **Fases 1 y 2 hechas en web (2026-09-29)**, flag apagado por defecto, pendiente de validación del usuario; mobile sin tocar. Resumen de lo acordado:
+- Vista de día tipo Google Calendar: spots de **30 min**, **8:00–20:00**, botón "Añadir el {fecha}" y spot vacío que abre el formulario con la hora precargada, bloque con cliente + servicio, **arrastrar para mover** (dnd-kit; presión larga en touch).
+- **1 spot por cita** en v1; la **duración variable se valora después** según el uso real (requeriría `DurationMinutes` aditivo y cambiar la regla de choque de "hora exacta" a "traslape": decidirlo entonces).
+- **Convive con la vista actual detrás de un feature flag** por dispositivo (`localStorage`, **apagado por defecto**, interruptor en Configuración → Preferencias). Flag apagado = comportamiento idéntico al actual.
+- **Web primero; mobile no se toca** hasta que el usuario confirme que la web funciona.
+- Solo **componentes/hooks nuevos** (`components/agenda/`, `FeatureFlagsContext`, `agendaLayout.ts`); cambios en archivos existentes solo aditivos. **Backend sin cambios** en las fases 1–2 (usa `search` y `PATCH move` tal cual); cualquier cambio futuro será aditivo y retrocompatible.
+- Horario 8–20 como constante; setting por barbería (campos nullable en `BarberShop`) queda como fase opcional.
+- **Cómo activarla:** Configuración → Preferencias → "Vista de agenda por horas (beta)" (por dispositivo). En Citas → Día se ve la agenda; con el flag apagado, la lista de siempre. Con el flag encendido el formulario de cita nueva también muestra el buscador de cliente.
+- **Código:** `presentation/components/agenda/` (`AgendaDayView`, `AgendaTimeGrid`, `AgendaAppointmentBlock`, `AgendaAddButton`, `ClientAutocomplete`), `presentation/context/FeatureFlagsContext.tsx`, lógica pura + tests en `shared/utils/agendaLayout(.test).ts`, constantes en `shared/constants/agenda.ts`. Dependencia nueva: `@dnd-kit/core`.
+
 ## Pendientes (según comparación con mobile)
 
 - **Email de bienvenida al crear un Barbero — falta el lado mobile**: mobile no tiene ninguna pantalla/flujo para crear cuentas de Barbero (`ApplicationUsersCard`/`ApplicationUsersDialog` es exclusivo de web); el backend ya envía el correo sin importar qué cliente llame a `POST /api/barbers/create`, así que en la práctica esto solo se dispara hoy desde web. Si en algún momento se porta a mobile la gestión de usuarios de aplicación (fuera del alcance de este trabajo), no hace falta tocar el backend — ya queda cubierto.

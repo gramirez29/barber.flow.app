@@ -34,7 +34,8 @@ import { APPOINTMENT_CONSTANTS } from '@shared/constants/appointments';
 import { appColors } from '@presentation/theme/appColors';
 import { scrollbarSx } from '@presentation/theme/scrollbarSx';
 import { useConfirmDialog } from '@presentation/context/ConfirmDialogContext';
-import type { AppointmentPrefill } from '@shared/utils/appointmentPrefill';
+import { buildAppointmentPrefill, type AppointmentPrefill } from '@shared/utils/appointmentPrefill';
+import { ClientAutocomplete } from '@presentation/components/agenda/ClientAutocomplete';
 
 interface AppointmentFormProps {
   open: boolean;
@@ -43,6 +44,10 @@ interface AppointmentFormProps {
   defaultDate?: string;
   /** Cliente con el que se precarga el formulario de una cita nueva (viene de la lista de clientes). */
   prefill?: AppointmentPrefill | null;
+  /** Hora precargada al crear (p. ej. al tocar un spot de la agenda por horas). */
+  defaultTime?: string;
+  /** Muestra el buscador de cliente (solo con la agenda por horas activa). */
+  enableClientPicker?: boolean;
   onSubmit: (data: CreateAppointmentFormData) => Promise<void>;
   onMove?: (appointmentId: string, newDate: string, newTime: string) => Promise<void>;
   /** Cantidad de citas por serie según el setting del barbero (0/undefined = recurrencia deshabilitada). */
@@ -125,6 +130,8 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   appointment,
   defaultDate,
   prefill,
+  defaultTime,
+  enableClientPicker = false,
   onSubmit,
   onMove,
   maxRecurringAppointments = 0,
@@ -185,7 +192,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         clientName: prefill?.clientName ?? '',
         phone: prefill?.phone ?? '',
         date: defaultDate || '',
-        time: '',
+        time: defaultTime || '',
         serviceName: '',
         price: undefined,
         notes: '',
@@ -296,6 +303,19 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 ))}
               </Box>
             </Box>
+
+            {/* Buscador de cliente (agenda por horas): precarga nombre, teléfono y método de pago */}
+            {!appointment && enableClientPicker && (
+              <ClientAutocomplete
+                disabled={isLoading}
+                onSelect={(client) => {
+                  const selected = buildAppointmentPrefill(client);
+                  form.setFieldValue('clientName', selected.clientName);
+                  form.setFieldValue('phone', selected.phone);
+                  if (selected.paymentMethod) form.setFieldValue('paymentMethod', selected.paymentMethod);
+                }}
+              />
+            )}
 
             {/* Cliente */}
             <FormTextField

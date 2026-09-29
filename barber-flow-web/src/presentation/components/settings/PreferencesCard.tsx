@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Typography, Switch } from '@mui/material';
 import { appColors } from '@presentation/theme/appColors';
 import { useThemeContext } from '@presentation/context/ThemeContext';
+import { useFeatureFlags } from '@presentation/context/FeatureFlagsContext';
 import { useNotificationInbox } from '@presentation/context/NotificationInboxContext';
 
 const switchSx = {
@@ -40,6 +41,7 @@ const Pill: React.FC<{ label: string; active: boolean; onClick: () => void; disa
 export const PreferencesCard: React.FC = () => {
   const { mode, setMode, isDark } = useThemeContext();
   const { notificationsEnabled, setNotificationsEnabled } = useNotificationInbox();
+  const { agendaDayViewEnabled, setAgendaDayViewEnabled } = useFeatureFlags();
 
   const isFollowingSystem = mode === 'system';
 
@@ -116,6 +118,24 @@ export const PreferencesCard: React.FC = () => {
           </Typography>
         </Box>
         <Switch checked={notificationsEnabled} onChange={handleNotificationsToggle} sx={switchSx} />
+      </Box>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, pt: 2 }}>
+        <Box sx={{ flex: 1 }}>
+          <Typography sx={{ fontSize: 15, fontWeight: 600, color: appColors.textPrimary }}>
+            Vista de agenda por horas (beta)
+          </Typography>
+          <Typography sx={{ fontSize: 13, color: appColors.textSecondary, mt: 0.5 }}>
+            Muestra el día como una agenda con franjas de 30 minutos: toca un espacio libre para agendar o
+            mantén presionada una cita y arrástrala para cambiarle la hora. Se guarda solo en este dispositivo.
+          </Typography>
+        </Box>
+        <Switch
+          checked={agendaDayViewEnabled}
+          onChange={(e) => setAgendaDayViewEnabled(e.target.checked)}
+          inputProps={{ 'aria-label': 'Vista de agenda por horas' }}
+          sx={switchSx}
+        />
       </Box>
     </Box>
   );
