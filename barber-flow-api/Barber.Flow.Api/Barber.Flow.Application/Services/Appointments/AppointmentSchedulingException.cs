@@ -6,4 +6,6 @@ public class AppointmentSchedulingException(string message, string? code = null)
     public string? Code { get; } = code;
 
     public const string SlotTakenCode = "SLOT_TAKEN";
+
+    public const string RecurrenceDisabledCode = "RECURRENCE_DISABLED";
 }

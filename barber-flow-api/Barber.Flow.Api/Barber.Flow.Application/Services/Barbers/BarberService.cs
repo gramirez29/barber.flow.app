@@ -49,6 +49,18 @@ public class BarberService(IBarberRepository repo, IBarberShopRepository shopRep
             return null;
         }
 
+        // Settings are written by two different screens (the admin's user dialog and the barber's
+        // report-calculation card), and the repository replaces the whole block. So an update that
+        // omits Settings - or omits a single field like MaxRecurringAppointments - must keep the stored
+        // value instead of wiping it.
+        barber.Settings = barber.Settings == null
+            ? existing.Settings
+            : barber.Settings with
+            {
+                MaxRecurringAppointments = barber.Settings.MaxRecurringAppointments
+                    ?? existing.Settings?.MaxRecurringAppointments
+            };
+
         // Preserve the barber's existing shop link by default; only touched below
         // when the request actually carries shop-info fields to sync.
         barber.ShopId = existing.ShopId;

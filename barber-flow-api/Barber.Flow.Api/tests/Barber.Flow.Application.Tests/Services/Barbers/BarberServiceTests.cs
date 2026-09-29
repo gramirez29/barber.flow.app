@@ -117,6 +117,58 @@ public class BarberServiceTests
     }
 
     [Fact]
+    public async Task UpdateAsync_RequestWithoutSettings_KeepsStoredSettings()
+    {
+        var stored = new Barber.Flow.Domain.ValueObjects.BarberSettings(25m, 1500m, 12);
+        var existing = new BarberEntity { Id = "CRB-0001", ShopId = "SHOP-0001", CreatedBy = "admin", Settings = stored };
+        _repo.Setup(r => r.GetByIdAsync("CRB-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _repo.Setup(r => r.UpdateAsync("CRB-0001", It.IsAny<BarberEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, BarberEntity b, CancellationToken _) => b);
+
+        var result = await CreateSut().UpdateAsync("CRB-0001", new BarberEntity { BarberName = "Main Barber", Settings = null });
+
+        Assert.Equal(stored, result!.Settings);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SettingsWithoutMaxRecurring_KeepsStoredMaxAndAppliesNewCommission()
+    {
+        var existing = new BarberEntity
+        {
+            Id = "CRB-0001", ShopId = "SHOP-0001", CreatedBy = "admin",
+            Settings = new Barber.Flow.Domain.ValueObjects.BarberSettings(25m, 1500m, 12),
+        };
+        _repo.Setup(r => r.GetByIdAsync("CRB-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _repo.Setup(r => r.UpdateAsync("CRB-0001", It.IsAny<BarberEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, BarberEntity b, CancellationToken _) => b);
+        var request = new BarberEntity { Settings = new Barber.Flow.Domain.ValueObjects.BarberSettings(30m, 2000m) };
+
+        var result = await CreateSut().UpdateAsync("CRB-0001", request);
+
+        Assert.Equal(30m, result!.Settings!.CommissionPercentage);
+        Assert.Equal(2000m, result.Settings.FixedDailyExpense);
+        Assert.Equal(12, result.Settings.MaxRecurringAppointments);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SettingsWithMaxRecurring_OverridesStoredValue()
+    {
+        var existing = new BarberEntity
+        {
+            Id = "CRB-0001", ShopId = "SHOP-0001", CreatedBy = "admin",
+            Settings = new Barber.Flow.Domain.ValueObjects.BarberSettings(25m, 1500m, 12),
+        };
+        _repo.Setup(r => r.GetByIdAsync("CRB-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _repo.Setup(r => r.UpdateAsync("CRB-0001", It.IsAny<BarberEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, BarberEntity b, CancellationToken _) => b);
+        var request = new BarberEntity { Settings = new Barber.Flow.Domain.ValueObjects.BarberSettings(25m, 1500m, 0) };
+
+        var result = await CreateSut().UpdateAsync("CRB-0001", request);
+
+        Assert.Equal(0, result!.Settings!.MaxRecurringAppointments);
+    }
+
+    [Fact]
     public async Task UpdateAsync_WithShopNameAndExistingShopId_UpdatesLinkedShop()
     {
         var barber = new BarberEntity { BarberName = "Main Barber", BarberShopName = "Renamed Shop", BarberShopPhone = "8888-2222", Address = "New Address" };

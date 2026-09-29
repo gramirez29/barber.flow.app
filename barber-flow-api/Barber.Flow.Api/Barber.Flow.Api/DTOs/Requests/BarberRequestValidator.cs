@@ -33,6 +33,11 @@ public class BarberRequestValidator : AbstractValidator<BarberRequest>
             RuleFor(x => x.Settings!.FixedDailyExpense)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage("Fixed daily expense must be greater than or equal to 0.");
+
+            RuleFor(x => x.Settings!.MaxRecurringAppointments)
+                .InclusiveBetween(0, 20)
+                .When(x => x.Settings!.MaxRecurringAppointments.HasValue)
+                .WithMessage("Max recurring appointments must be between 0 and 20.");
         });
     }
 }

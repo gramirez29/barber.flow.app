@@ -4,12 +4,15 @@ import {
 	TextInput,
 } from "react-native-paper";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import {
 	APPOINTMENT_PAYMENT_METHOD_OPTIONS,
 	AppointmentDraft,
 	AppointmentStatus,
 	getAppointmentPaymentMethodLabel,
+	RECURRENCE_FREQUENCY_OPTIONS,
+	RecurrenceFrequency,
 } from "../../features/appointments/appointments.types";
 import type { AppointmentFormErrors } from "../../features/appointments/useAppointmentForm";
 import { useTranslation } from "../../context/LanguageContext";
@@ -35,6 +38,14 @@ interface AppointmentFormProps {
 	onPaymentMethodTouched?: () => void;
 	onOpenClientSearch?: () => void;
 	onStatusChange?: (next: AppointmentStatus) => void;
+	/** Only passed on create and only when the admin enabled recurrence (maxOccurrences > 0) for this barber. */
+	recurrence?: {
+		maxOccurrences: number;
+		enabled: boolean;
+		frequency: RecurrenceFrequency;
+		onToggle: (enabled: boolean) => void;
+		onFrequencyChange: (frequency: RecurrenceFrequency) => void;
+	};
 }
 
 export const AppointmentForm: React.FC<AppointmentFormProps> = ({
@@ -51,6 +62,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 	onPaymentMethodTouched,
 	onOpenClientSearch,
 	onStatusChange,
+	recurrence,
 }) => {
 	const { translateText } = useTranslation();
 	const { theme } = useAppTheme();
@@ -283,6 +295,55 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 				/>
 			</View>
 
+			{!isEditMode && !readOnly && recurrence && recurrence.maxOccurrences > 0 && (
+				<View style={[styles.recurringCard, recurrence.enabled && styles.recurringCardActive]}>
+					<Pressable
+						style={styles.recurringToggleRow}
+						onPress={() => recurrence.onToggle(!recurrence.enabled)}
+						disabled={isSaving}
+						accessibilityRole="checkbox"
+						accessibilityState={{ checked: recurrence.enabled }}
+					>
+						<Ionicons
+							name={recurrence.enabled ? "checkbox" : "square-outline"}
+							size={22}
+							color={recurrence.enabled ? theme.colors.accent : theme.colors.textSecondary}
+						/>
+						<Text style={styles.recurringToggleText}>
+							{translateText("calendar.appointmentModal.recurringToggle")}
+						</Text>
+					</Pressable>
+
+					{recurrence.enabled && (
+						<View style={styles.recurringBody}>
+							<Text style={styles.sectionLabel}>
+								{translateText("calendar.appointmentModal.recurringFrequency")}
+							</Text>
+							<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillRow}>
+								{RECURRENCE_FREQUENCY_OPTIONS.map((option) => (
+									<Pressable
+										key={option}
+										style={[styles.pill, recurrence.frequency === option && styles.pillActive]}
+										onPress={() => recurrence.onFrequencyChange(option)}
+										disabled={isSaving}
+									>
+										<Text style={recurrence.frequency === option ? styles.pillTextActive : styles.pillText}>
+											{translateText(`calendar.appointmentModal.recurringFrequencies.${option}`)}
+										</Text>
+									</Pressable>
+								))}
+							</ScrollView>
+							<Text style={styles.helperInfo}>
+								{translateText("calendar.appointmentModal.recurringSummary", {
+									count: String(recurrence.maxOccurrences),
+									frequency: translateText(`calendar.appointmentModal.recurringPlurals.${recurrence.frequency}`),
+								})}
+							</Text>
+						</View>
+					)}
+				</View>
+			)}
+
 			<View style={styles.actions}>
 				{!readOnly && (
 					<Pressable
@@ -380,6 +441,32 @@ const createStyles = (theme: AppTheme) =>
 			fontSize: 12,
 			marginTop: 3,
 			marginLeft: 4,
+		},
+		recurringCard: {
+			backgroundColor: theme.colors.surfaceElevated,
+			borderColor: theme.colors.border,
+			borderRadius: 14,
+			borderWidth: 1,
+			marginTop: 12,
+			paddingHorizontal: 14,
+			paddingVertical: 10,
+		},
+		recurringCardActive: {
+			borderColor: theme.colors.accent,
+		},
+		recurringToggleRow: {
+			alignItems: "center",
+			flexDirection: "row",
+			gap: 10,
+			paddingVertical: 4,
+		},
+		recurringToggleText: {
+			color: theme.colors.textPrimary,
+			fontSize: 14,
+			fontWeight: "600",
+		},
+		recurringBody: {
+			marginTop: 10,
 		},
 		actions: {
 			flexDirection: "row",

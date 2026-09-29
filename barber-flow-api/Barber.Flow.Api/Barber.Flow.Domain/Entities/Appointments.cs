@@ -32,6 +32,9 @@ public class Appointments
 
     public string? ShopId { get; set; }
 
+    /// <summary>Shared by every appointment created together as a recurring series; null otherwise.</summary>
+    public string? SeriesId { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

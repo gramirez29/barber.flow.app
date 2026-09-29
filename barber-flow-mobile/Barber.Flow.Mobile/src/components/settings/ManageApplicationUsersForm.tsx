@@ -270,6 +270,33 @@ export const ManageApplicationUsersForm: React.FC<ManageApplicationUsersFormProp
 					</HelperText>
 				</View>
 
+				{values.userName.trim().toLowerCase() !== "admin" && (
+					<>
+						<Text style={[styles.sectionLabel, isUltraCompact && styles.sectionLabelUltraCompact]}>{translateText("settings.manageUsersForm.recurringSection")}</Text>
+
+						<View style={[styles.formGroup, isUltraCompact && styles.formGroupUltraCompact]}>
+							<TextInput
+								label={translateText("settings.manageUsersForm.recurringLabel")}
+								value={values.maxRecurringAppointments ?? "0"}
+								onChangeText={(value) => onFieldChange("maxRecurringAppointments", value.replace(/[^0-9]/g, ""))}
+								onBlur={() => onBlurField("maxRecurringAppointments")}
+								error={Boolean(touched.maxRecurringAppointments && errors.maxRecurringAppointments)}
+								mode="outlined"
+								theme={paperTheme as any}
+								textColor={theme.colors.textPrimary}
+								keyboardType="number-pad"
+								maxLength={2}
+								disabled={loading}
+							/>
+							<HelperText type={touched.maxRecurringAppointments && errors.maxRecurringAppointments ? "error" : "info"} visible>
+								{touched.maxRecurringAppointments && errors.maxRecurringAppointments
+									? translateText(errors.maxRecurringAppointments)
+									: translateText("settings.manageUsersForm.recurringHelper")}
+							</HelperText>
+						</View>
+					</>
+				)}
+
 				<Text style={[styles.sectionLabel, isUltraCompact && styles.sectionLabelUltraCompact]}>{translateText("settings.manageUsersForm.accessSection")}</Text>
 
 				<View style={[styles.formGroup, isUltraCompact && styles.formGroupUltraCompact]}>

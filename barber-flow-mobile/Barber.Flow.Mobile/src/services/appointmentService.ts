@@ -4,6 +4,8 @@ import type {
   AppointmentDraft,
   AppointmentStatus,
   AppointmentPaymentMethod,
+  RecurrenceFrequency,
+  RecurringAppointmentsResult,
 } from "../features/appointments/appointments.types";
 
 export interface AppointmentSearchParams {
@@ -30,6 +32,7 @@ const mapResponse = (raw: Record<string, unknown>): Appointment => ({
   serviceName: (raw.serviceName ?? raw.ServiceName) as string | undefined,
   servicePrice: (raw.servicePrice ?? raw.ServicePrice) as number | undefined,
   notes: (raw.notes ?? raw.Notes) as string | undefined,
+  seriesId: (raw.seriesId ?? raw.SeriesId) as string | undefined,
 });
 
 const mapRequest = (draft: AppointmentDraft) => ({
@@ -52,6 +55,31 @@ export const appointmentService = {
       json: mapRequest(draft),
     });
     return mapResponse(response);
+  },
+
+  /**
+   * Creates a recurring series. How many appointments are created is decided by the backend from the
+   * authenticated barber's setting (never sent by the client); colliding dates come back in `conflicts`.
+   */
+  createRecurring: async (
+    draft: AppointmentDraft,
+    frequency: RecurrenceFrequency,
+  ): Promise<RecurringAppointmentsResult> => {
+    const response = await apiFetch("/api/appointments/create-recurring", {
+      method: "POST",
+      json: { Frequency: frequency, Appointment: mapRequest(draft) },
+    });
+    const created = (response.created ?? response.Created ?? []) as Record<string, unknown>[];
+    const conflicts = (response.conflicts ?? response.Conflicts ?? []) as Record<string, unknown>[];
+    return {
+      seriesId: ((response.seriesId ?? response.SeriesId) as string) ?? "",
+      requestedCount: ((response.requestedCount ?? response.RequestedCount) as number) ?? created.length,
+      created: created.map(mapResponse),
+      conflicts: conflicts.map((c) => ({
+        date: ((c.date ?? c.Date) as string) ?? "",
+        time: ((c.time ?? c.Time) as string) ?? "",
+      })),
+    };
   },
 
   update: async (id: string, draft: AppointmentDraft): Promise<Appointment> => {

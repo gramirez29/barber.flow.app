@@ -63,6 +63,17 @@ When working on features, reference the following existing structures in the wor
 ## Regla de agenda de citas (2026-09)
 `AppointmentService` ya **no** rechaza citas en el pasado ni limita el futuro (walk-ins registrados tarde, citas recurrentes). La única regla es no tener dos citas activas en la misma fecha+hora exacta (`HasConflictAsync`, ignora `cancelled`); si choca, `AppointmentSchedulingException` con `Code = "SLOT_TAKEN"` → `400 { message, code }`. Los clientes piden confirmación al usuario cuando la hora ya pasó.
 
+## Citas recurrentes (2026-09)
+Reglas de negocio (confirmadas con el usuario):
+- **Endpoint:** `POST /api/appointments/create-recurring` con `{ frequency: "weekly"|"biweekly"|"monthly", appointment: AppointmentRequest }`. Respuesta `{ seriesId, requestedCount, created[], conflicts[{date,time}] }`. Errores 400 con `code`: `RECURRENCE_DISABLED` (setting en 0/sin definir o cuenta sin `Barber` vinculado) y `SLOT_TAKEN` (**todos** los horarios de la serie chocan).
+- **La cantidad NO la manda el cliente:** es `Barber.Settings.MaxRecurringAppointments` del usuario autenticado (**default 0 = deshabilitado**, rango 0..20, techo duro `AppointmentService.MaxRecurringAppointmentsLimit = 20` aplicado en el servicio aunque el valor guardado sea mayor). **Incluye la primera cita** (12 = la primera + 11).
+- **Solo el admin lo modifica** (por barbero): viaja en `Settings` de `PUT /api/barbers/update/{id}`, que ya es exclusivo de la cuenta admin. `BarberRequestValidator` valida 0..20.
+- **Fechas** (`RecurrenceCalculator`): semanal = +7 días × n; quincenal = +14 días × n (mismo día de la semana); mensual = `anchor.AddMonths(n)` **siempre desde la fecha original** (31 ene → 28/29 feb → 31 mar → 30 abr; nunca encadenado, para no derivar al 28).
+- **Choques (opción B):** se crean los horarios libres y se devuelven los que chocaron en `conflicts`; la misma regla de choque exacto (fecha+hora, ignora `cancelled`) de `CreateAsync`. Solo la primera cita conserva el `Status`/`CompletedAt` enviado; las siguientes son siempre `scheduled`.
+- **Modelo:** cada ocurrencia es una `Appointments` normal (reportes/calendario/notificaciones no cambian) enlazada por `SeriesId` (Guid, nullable). `AppointmentResponse` expone `SeriesId`. Editar/cancelar "toda la serie" NO existe todavía (cada cita se edita por separado).
+- **`BarberSettings` merge (bug preexistente arreglado):** el repositorio reemplaza el bloque `Settings` completo, y el diálogo de usuarios de web enviaba el barbero sin `Settings` (los borraba). `BarberService.UpdateAsync` ahora conserva `existing.Settings` si el request no trae `Settings`, y conserva `MaxRecurringAppointments` si viene `null` (`int?` en DTO y value object). Así la tarjeta de comisión (que no manda el tope) y el diálogo del admin no se pisan.
+- 255 tests backend en verde (86 Application / 110 Infrastructure / 59 Api).
+
 ## Short-Term Development Roadmap (Pending)
 1. [x] Configure the initial MongoDB dependency injection pipeline in Program.cs and bind appsettings.json.
 2. [x] Audit existing domain models (User.cs, Client.cs, Appointments.cs) to ensure alignment with MongoDB NoSQL structures.

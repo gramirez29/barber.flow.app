@@ -1,5 +1,5 @@
 import { IAppointmentRepository } from '@domain/interfaces';
-import { Appointment } from '@domain/entities';
+import { Appointment, RecurrenceFrequency, RecurringAppointmentsResult } from '@domain/entities';
 import { HttpClient } from '../http';
 import { CreateAppointmentRequest, UpdateAppointmentRequest } from '@application/dtos/requests';
 
@@ -32,6 +32,17 @@ export class AppointmentApi implements IAppointmentRepository {
 
   async create(request: CreateAppointmentRequest): Promise<Appointment> {
     return this.httpClient.post<Appointment>('/api/appointments/create', request);
+  }
+
+  async createRecurring(
+    request: UpdateAppointmentRequest,
+    frequency: RecurrenceFrequency
+  ): Promise<RecurringAppointmentsResult> {
+    // La cantidad de citas NO viaja: la decide el backend según el setting del barbero autenticado.
+    return this.httpClient.post<RecurringAppointmentsResult>('/api/appointments/create-recurring', {
+      frequency,
+      appointment: request,
+    });
   }
 
   async update(id: string, request: UpdateAppointmentRequest): Promise<Appointment> {

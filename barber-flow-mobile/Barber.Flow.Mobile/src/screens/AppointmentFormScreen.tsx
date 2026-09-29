@@ -29,6 +29,9 @@ import type {
 import { mapClientPaymentMethodToAppointment } from "../features/appointments/appointments.types";
 import { useAppointmentForm } from "../features/appointments/useAppointmentForm";
 import { useDialog } from "../context/DialogContext";
+import { useAuthStore } from "../store/auth.store";
+import { settingsService } from "../services/settingsService";
+import type { RecurrenceFrequency, RecurringAppointmentsResult } from "../features/appointments/appointments.types";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { format } from "date-fns";
 import { AppTheme } from "../theme/themes";
@@ -57,8 +60,14 @@ export const AppointmentFormScreen = () => {
 	const { showAlert } = useDialog();
 	const { theme } = useAppTheme();
 	const styles = useMemo(() => createStyles(theme), [theme]);
-	const { appointments, addAppointment, updateAppointment } =
+	const { appointments, addAppointment, addRecurringAppointments, updateAppointment } =
 		useAppointmentStore();
+	const user = useAuthStore((state) => state.user);
+
+	// Recurrence is opt-in per barber: the admin sets how many appointments a series has (0 = hidden).
+	const [maxRecurringAppointments, setMaxRecurringAppointments] = useState(0);
+	const [isRecurring, setIsRecurring] = useState(false);
+	const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceFrequency>("weekly");
 
 	const params = route.params;
 	const afterSave = params.afterSave ?? "goBack";
@@ -262,6 +271,44 @@ export const AppointmentFormScreen = () => {
 		setMovePickerStep(null);
 	}, [pendingMoveDate, setField]);
 
+	useEffect(() => {
+		if (params.mode === "edit" || !user?.userName) {
+			return;
+		}
+
+		let mounted = true;
+		void settingsService.getMaxRecurringAppointments(user.userName).then((max) => {
+			if (mounted) {
+				setMaxRecurringAppointments(max);
+			}
+		});
+
+		return () => {
+			mounted = false;
+		};
+	}, [params.mode, user?.userName]);
+
+	const showRecurringResult = (result: RecurringAppointmentsResult) => {
+		const title = translateText("appointments.alerts.appointmentAlertTitle");
+		if (result.conflicts.length > 0) {
+			const dates = result.conflicts.map((c) => c.date.split("-").reverse().join("/")).join(", ");
+			showAlert(
+				title,
+				translateText("appointments.alerts.recurringPartial", {
+					created: String(result.created.length),
+					requested: String(result.requestedCount),
+					dates,
+				}),
+			);
+			return;
+		}
+
+		showAlert(
+			title,
+			translateText("appointments.alerts.recurringCreated", { created: String(result.created.length) }),
+		);
+	};
+
 	const handleCancel = () => {
 		navigation.goBack();
 	};
@@ -314,6 +361,8 @@ const handleSubmit = async () => {
 		try {
 			if (params.mode === "edit" && params.appointmentId) {
 				await updateAppointment(params.appointmentId, normalizedDraft);
+			} else if (isRecurring && maxRecurringAppointments > 0) {
+				showRecurringResult(await addRecurringAppointments(normalizedDraft, recurrenceFrequency));
 			} else {
 				await addAppointment(normalizedDraft);
 			}
@@ -390,6 +439,17 @@ const handleSubmit = async () => {
 						isSaving={isSaving}
 						onOpenClientSearch={handleOpenClientSearch}
 						onStatusChange={handleStatusChange}
+						recurrence={
+							params.mode === "edit" || maxRecurringAppointments <= 0
+								? undefined
+								: {
+									maxOccurrences: maxRecurringAppointments,
+									enabled: isRecurring,
+									frequency: recurrenceFrequency,
+									onToggle: setIsRecurring,
+									onFrequencyChange: setRecurrenceFrequency,
+								}
+						}
 						onPaymentMethodTouched={() =>
 						setTouched((currentTouched: Record<string, boolean>) => ({
 							...currentTouched,

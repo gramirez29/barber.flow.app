@@ -15,7 +15,7 @@ import {
   updateBarberSchema,
   CreateBarberFormData,
 } from '@shared/validation/barberSchemas';
-import { Barber } from '@domain/entities/Barber';
+import { Barber, BarberSettings } from '@domain/entities/Barber';
 import { useBarbers } from '@presentation/hooks/useBarbers';
 import { useConfirmDialog } from '@presentation/context/ConfirmDialogContext';
 import { appColors } from '@presentation/theme/appColors';
@@ -82,6 +82,10 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
   const [searchResults, setSearchResults] = useState<Barber[]>([]);
   const [loading, setLoading] = useState(false);
   const [blockToggleLoading, setBlockToggleLoading] = useState(false);
+  // Máx. citas por serie recurrente (0 = deshabilitado). Lo fija solo el admin, por barbero.
+  const [maxRecurring, setMaxRecurring] = useState('0');
+  const [loadedSettings, setLoadedSettings] = useState<BarberSettings | undefined>(undefined);
+  const [loadedMaxRecurring, setLoadedMaxRecurring] = useState(0);
 
   const form = useForm<CreateBarberFormData>(emptyFormValues, mode === 'edit' ? updateBarberSchema : createBarberSchema);
 
@@ -91,6 +95,9 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
     setEditingId(null);
     setEditingUserId(null);
     setEditingIsBlocked(false);
+    setMaxRecurring('0');
+    setLoadedSettings(undefined);
+    setLoadedMaxRecurring(0);
     setSearchResults([]);
     setSearchQuery('');
   };
@@ -111,6 +118,10 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
     setEditingId(barber.id);
     setEditingUserId(barber.userId ?? null);
     setEditingIsBlocked(barber.isBlocked ?? false);
+    const loadedMax = barber.settings?.maxRecurringAppointments ?? 0;
+    setMaxRecurring(String(loadedMax));
+    setLoadedMaxRecurring(loadedMax);
+    setLoadedSettings(barber.settings);
   };
 
   // Hint de UI únicamente (mismo username de fallback que usa el backend) — el
@@ -150,21 +161,40 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
     setSearchResults([barber]);
   };
 
+  const parsedMaxRecurring = Number(maxRecurring);
+  const isMaxRecurringValid =
+    maxRecurring.trim() !== '' && Number.isInteger(parsedMaxRecurring) && parsedMaxRecurring >= 0 && parsedMaxRecurring <= 20;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const isValid = await form.validate();
     if (!isValid) return;
+    if (!isMaxRecurringValid) return;
 
     setLoading(true);
     try {
       const { password, ...rest } = form.values;
+      // Los settings solo se envían si hay algo que fijar: así una edición que no toca el tope
+      // nunca pisa la comisión/gasto fijo del barbero (y viceversa, el backend conserva lo omitido).
+      const shouldSendSettings = mode === 'edit' ? parsedMaxRecurring !== loadedMaxRecurring : parsedMaxRecurring > 0;
       const request = {
         ...rest,
         ...(password ? { password } : {}),
+        ...(shouldSendSettings
+          ? {
+              settings: {
+                commissionPercentage: loadedSettings?.commissionPercentage ?? 40,
+                fixedDailyExpense: loadedSettings?.fixedDailyExpense ?? 0,
+                maxRecurringAppointments: parsedMaxRecurring,
+              },
+            }
+          : {}),
       };
 
       if (mode === 'edit' && editingId) {
-        await updateBarber(editingId, request);
+        const updated = await updateBarber(editingId, request);
+        setLoadedSettings(updated.settings);
+        setLoadedMaxRecurring(updated.settings?.maxRecurringAppointments ?? 0);
       } else {
         await createBarber(request);
         resetForm();
@@ -496,6 +526,25 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
                 }}
               />
             </Box>
+
+            {!isAdminAccount && (
+              <>
+                <SectionLabel>Citas recurrentes</SectionLabel>
+                <FormTextField
+                  id="maxRecurringAppointments"
+                  label="Citas por serie recurrente"
+                  type="number"
+                  value={maxRecurring}
+                  onChange={(e) => setMaxRecurring(e.target.value)}
+                  error={isMaxRecurringValid ? undefined : 'Debe ser un entero entre 0 y 20'}
+                  isTouched
+                  disabled={loading}
+                  helperText="0 = el barbero no ve la opción. Máximo 20 (incluye la primera cita)."
+                  inputProps={{ min: 0, max: 20, step: 1 }}
+                  sx={inputSx}
+                />
+              </>
+            )}
 
             <SectionLabel>Información de acceso</SectionLabel>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
