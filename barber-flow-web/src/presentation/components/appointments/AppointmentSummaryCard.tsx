@@ -14,9 +14,9 @@ interface AppointmentSummaryCardProps {
 }
 
 const VIEW_MODES: { mode: CalendarViewMode; label: string }[] = [
-  { mode: 'month', label: 'Mes' },
-  { mode: 'week', label: 'Semana' },
   { mode: 'day', label: 'Día' },
+  { mode: 'week', label: 'Semana' },
+  { mode: 'month', label: 'Mes' },
 ];
 
 export const AppointmentSummaryCard: React.FC<AppointmentSummaryCardProps> = ({

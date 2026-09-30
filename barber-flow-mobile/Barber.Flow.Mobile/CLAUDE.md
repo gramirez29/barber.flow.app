@@ -89,6 +89,9 @@ Paridad con web; reglas y contrato en `barber-flow-api/Barber.Flow.Api/claude.md
 - **Admin** (`ManageApplicationUsersForm`, campo "Citas por serie recurrente", 0..20, oculto para `admin`): `ApplicationUserSettingsForm.maxRecurringAppointments` (texto) + `existingCommissionPercentage/existingFixedDailyExpense` (copia de lo guardado del barbero). **Cambio de comportamiento:** `settingsService.updateApplicationUser` ya no manda la comisión/gasto del AsyncStorage local del admin (eso pisaba la comisión de cualquier barbero editado); reenvía los valores guardados del barbero y solo cae al AsyncStorage si se desconocen. `createApplicationUser` sigue usando los valores locales como iniciales.
 - `tsc --noEmit` limpio; `npm run lint` con los mismos 4 warnings preexistentes. No se probó en dispositivo/emulador.
 
+## Pendiente (bloqueado hasta validar web): vista de agenda por horas
+La web va a estrenar una vista de día tipo agenda (spots de 30 min, arrastrar para mover) detrás de un feature flag; ver `barber-flow-web/AGENDA_DAY_VIEW_PLAN.md`. **No tocar mobile hasta que el usuario confirme que la web funciona** (decisión 2026-09-29). Cuando se aborde (fase 4 del plan): timeline en `CalendarScreen` modo día, arrastre con presión larga usando `react-native-gesture-handler` + `react-native-reanimated` (ya instalados), y `appointmentService.move` debe enviar también la hora (hoy solo manda `NewDate`). Requiere build nuevo.
+
 ## Pendiente: portar a mobile 3 fixes/mejoras hechas solo en web (2026-08-21)
 
 Ver `barber-flow-web/CLAUDE.md` (sección Pendientes) para el detalle completo del lado web. Resumen para cuando se retome este trabajo desde mobile:

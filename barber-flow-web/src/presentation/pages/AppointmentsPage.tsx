@@ -19,6 +19,10 @@ import {
 import type { CalendarViewMode } from '@presentation/components/appointments';
 import { useAppointments } from '@presentation/hooks/useAppointments';
 import { useBarbers } from '@presentation/hooks/useBarbers';
+import { useFeatureFlags } from '@presentation/context/FeatureFlagsContext';
+import { useConfirmDialog } from '@presentation/context/ConfirmDialogContext';
+import { AgendaDayView } from '@presentation/components/agenda';
+import { isPastAppointmentDateTime } from '@shared/validation/appointmentSchemas';
 import { useAuth } from '@presentation/context/AuthContext';
 import { CreateAppointmentFormData } from '@shared/validation/appointmentSchemas';
 import { Appointment, RecurrenceFrequency } from '@domain/entities/Appointment';
@@ -31,12 +35,15 @@ type ViewMode = CalendarViewMode;
 const toKey = (date: Date) => format(date, 'yyyy-MM-dd');
 
 export const AppointmentsPage: React.FC = () => {
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [visibleMonth, setVisibleMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [formOpen, setFormOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [prefill, setPrefill] = useState<AppointmentPrefill | null>(null);
+  const [defaultTime, setDefaultTime] = useState<string | undefined>(undefined);
+  const { agendaDayViewEnabled } = useFeatureFlags();
+  const { confirm } = useConfirmDialog();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -115,11 +122,17 @@ export const AppointmentsPage: React.FC = () => {
     return map;
   }, [appointments]);
 
-  const handleOpenCreateForm = () => {
+  const openCreateForm = (time?: string) => {
     setEditingAppointment(null);
     setPrefill(null);
+    setDefaultTime(time);
     setFormOpen(true);
   };
+
+  const handleOpenCreateForm = () => openCreateForm();
+
+  // Agenda por horas: botón "Añadir el {fecha}" (sin hora) o toque en un spot vacío (con su hora).
+  const handleAddAt = (time?: string) => openCreateForm(time);
 
   const handleSelectAppointment = (appointment: Appointment) => {
     setEditingAppointment(appointment);
@@ -130,6 +143,7 @@ export const AppointmentsPage: React.FC = () => {
     setFormOpen(false);
     setEditingAppointment(null);
     setPrefill(null);
+    setDefaultTime(undefined);
   };
 
   const refreshCurrentRange = () => {
@@ -177,6 +191,24 @@ export const AppointmentsPage: React.FC = () => {
     await moveAppointment(appointmentId, newDate, newTime);
     refreshCurrentRange();
     handleCloseForm();
+  };
+
+  // Arrastrar una cita a otro spot de la agenda: mismo día, nueva hora (PATCH move). Si el destino ya
+  // pasó se pide confirmación; si el backend rechaza (p. ej. SLOT_TAKEN) el error se notifica en
+  // useAppointments y la cita vuelve a su lugar.
+  const handleAgendaMove = async (appointment: Appointment, newTime: string) => {
+    if (isPastAppointmentDateTime(appointment.date, newTime)) {
+      const confirmed = await confirm({
+        title: 'Hora ya pasada',
+        message: `${newTime} ya pasó. ¿Mover la cita de todos modos?`,
+        confirmText: 'Mover',
+        cancelText: 'Cancelar',
+      });
+      if (!confirmed) return;
+    }
+
+    await moveAppointment(appointment.id!, appointment.date, newTime);
+    refreshCurrentRange();
   };
 
   const handleSelectDateFromMonth = (date: Date) => {
@@ -300,21 +332,33 @@ export const AppointmentsPage: React.FC = () => {
             <Box sx={{ height: 1, backgroundColor: appColors.border, my: 2.5 }} />
           )}
 
-          <AppointmentAgendaList
-            appointments={appointmentsForSelectedDay}
-            emptyMessage={emptyMessage}
-            onSelectAppointment={handleSelectAppointment}
-          />
+          {viewMode === 'day' && agendaDayViewEnabled ? (
+            <AgendaDayView
+              date={selectedDate}
+              appointments={appointmentsForSelectedDay}
+              onAddAt={handleAddAt}
+              onSelectAppointment={handleSelectAppointment}
+              onMoveAppointment={handleAgendaMove}
+            />
+          ) : (
+            <AppointmentAgendaList
+              appointments={appointmentsForSelectedDay}
+              emptyMessage={emptyMessage}
+              onSelectAppointment={handleSelectAppointment}
+            />
+          )}
         </Box>
       </Box>
 
       <AppointmentForm
-        key={editingAppointment?.id ?? `new-${toKey(selectedDate)}-${prefill?.phone ?? ''}`}
+        key={editingAppointment?.id ?? `new-${toKey(selectedDate)}-${prefill?.phone ?? ''}-${defaultTime ?? ''}`}
         open={formOpen}
         title={editingAppointment ? editingAppointment.clientName : 'Agendar cita'}
         appointment={editingAppointment}
         defaultDate={toKey(selectedDate)}
         prefill={prefill}
+        defaultTime={defaultTime}
+        enableClientPicker={agendaDayViewEnabled}
         onSubmit={handleFormSubmit}
         onMove={handleMove}
         maxRecurringAppointments={maxRecurringAppointments}
