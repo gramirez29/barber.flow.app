@@ -73,6 +73,7 @@ export const AppointmentsPage: React.FC = () => {
     createRecurringAppointments,
     updateAppointment,
     moveAppointment,
+    deleteAppointment,
   } = useAppointments();
   const { user } = useAuth();
   const { getBarberByUserName } = useBarbers();
@@ -189,6 +190,12 @@ export const AppointmentsPage: React.FC = () => {
 
   const handleMove = async (appointmentId: string, newDate: string, newTime: string) => {
     await moveAppointment(appointmentId, newDate, newTime);
+    refreshCurrentRange();
+    handleCloseForm();
+  };
+
+  const handleDelete = async (appointmentId: string) => {
+    await deleteAppointment(appointmentId);
     refreshCurrentRange();
     handleCloseForm();
   };
@@ -361,6 +368,7 @@ export const AppointmentsPage: React.FC = () => {
         enableClientPicker={agendaDayViewEnabled}
         onSubmit={handleFormSubmit}
         onMove={handleMove}
+        onDelete={handleDelete}
         maxRecurringAppointments={maxRecurringAppointments}
         onSubmitRecurring={handleRecurringSubmit}
         onClose={handleCloseForm}
