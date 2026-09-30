@@ -50,6 +50,8 @@ interface AppointmentFormProps {
   enableClientPicker?: boolean;
   onSubmit: (data: CreateAppointmentFormData) => Promise<void>;
   onMove?: (appointmentId: string, newDate: string, newTime: string) => Promise<void>;
+  /** Elimina la cita en edición (el botón solo aparece si se provee y la cita ya existe). */
+  onDelete?: (appointmentId: string) => Promise<void>;
   /** Cantidad de citas por serie según el setting del barbero (0/undefined = recurrencia deshabilitada). */
   maxRecurringAppointments?: number;
   onSubmitRecurring?: (data: CreateAppointmentFormData, frequency: RecurrenceFrequency) => Promise<void>;
@@ -134,6 +136,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   enableClientPicker = false,
   onSubmit,
   onMove,
+  onDelete,
   maxRecurringAppointments = 0,
   onSubmitRecurring,
   onClose,
@@ -173,6 +176,30 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       // El error ya se muestra vía notificación en useAppointments.moveAppointment
     } finally {
       setIsMoving(false);
+    }
+  };
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!appointment?.id || !onDelete) return;
+
+    const confirmed = await confirm({
+      title: 'Eliminar cita',
+      message: `¿Seguro que querés eliminar la cita de ${appointment.clientName}? Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await onDelete(appointment.id);
+    } catch {
+      // El error ya se muestra vía notificación en useAppointments.deleteAppointment
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -683,6 +710,39 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 'Mover cita'
               )}
             </Box>
+          </Box>
+        )}
+
+        {appointment?.id && onDelete && (
+          <Box
+            component="button"
+            type="button"
+            onClick={handleDelete}
+            disabled={isDeleting || isLoading || isMoving}
+            sx={{
+              mt: 2.5,
+              width: '100%',
+              cursor: 'pointer',
+              backgroundColor: 'transparent',
+              color: appColors.error,
+              border: `1px solid ${appColors.error}`,
+              borderRadius: '12px',
+              py: 1.5,
+              fontSize: 15,
+              fontWeight: 700,
+              letterSpacing: '0.4px',
+              opacity: isDeleting ? 0.6 : 1,
+              '&:hover': { backgroundColor: appColors.errorBg },
+            }}
+          >
+            {isDeleting ? (
+              <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+                <CircularProgress size={18} sx={{ color: appColors.error }} />
+                <span>Eliminando...</span>
+              </Stack>
+            ) : (
+              'Eliminar cita'
+            )}
           </Box>
         )}
       </DialogContent>
