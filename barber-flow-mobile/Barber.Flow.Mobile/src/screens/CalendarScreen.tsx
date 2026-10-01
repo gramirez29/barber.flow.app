@@ -10,7 +10,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AppointmentCard } from "../components/calendar/AppointmentCard";
 import { AgendaDayView } from "../components/agenda/AgendaDayView";
 import { useFeatureFlags } from "../context/FeatureFlagsContext";
-import { getErrorMessage } from "../utils/errors";
+import { getErrorMessage, isSlotTakenError } from "../utils/errors";
 import { isPastDateTime } from "../utils/formatUtil";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { useDialog } from "../context/DialogContext";
@@ -561,7 +561,10 @@ export const CalendarScreen: React.FC = () => {
 			try {
 				await moveAppointment(appointment.id, appointment.date, newTime);
 			} catch (moveError) {
-				showAlert(title, getErrorMessage(moveError) || translateText("common.somethingWentWrong"));
+				showAlert(
+					isSlotTakenError(moveError) ? translateText("appointments.alerts.slotTakenTitle") : title,
+					getErrorMessage(moveError) || translateText("common.somethingWentWrong"),
+				);
 			}
 		},
 		[moveAppointment, showAlert, translateText],

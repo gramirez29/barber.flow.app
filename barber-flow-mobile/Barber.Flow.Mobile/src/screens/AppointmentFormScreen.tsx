@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { getErrorMessage } from "../utils/errors";
+import { getErrorMessage, isSlotTakenError } from "../utils/errors";
 import { isPastDateTime } from "../utils/formatUtil";
 import { Platform, Pressable, StyleSheet } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -272,7 +272,10 @@ export const AppointmentFormScreen = () => {
 			await moveAppointment(params.appointmentId, newDate, newTime);
 		} catch (error) {
 			setIsSaving(false);
-			showAlert(moveTitle, getErrorMessage(error) || translateText("common.somethingWentWrong"));
+			showAlert(
+				isSlotTakenError(error) ? translateText("appointments.alerts.slotTakenTitle") : moveTitle,
+				getErrorMessage(error) || translateText("common.somethingWentWrong"),
+			);
 			return;
 		}
 		setIsSaving(false);
@@ -429,7 +432,10 @@ const handleSubmit = async () => {
 				await addAppointment(normalizedDraft);
 			}
 		} catch (error) {
-			showAlert(title, getErrorMessage(error) || translateText("common.somethingWentWrong"));
+			showAlert(
+				isSlotTakenError(error) ? translateText("appointments.alerts.slotTakenTitle") : title,
+				getErrorMessage(error) || translateText("common.somethingWentWrong"),
+			);
 			setIsSaving(false);
 			return;
 		}

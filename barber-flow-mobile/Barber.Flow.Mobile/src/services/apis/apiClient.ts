@@ -21,6 +21,20 @@ export class SessionExpiredError extends Error {
 // isBlocked flag is already updated at the point this is thrown, so RootNavigator picks
 // up the change on its next render and shows BlockedScreen — callers can treat this as
 // already-handled, same as SessionExpiredError.
+// Generic failed response. Keeps the backend `code` (e.g. "SLOT_TAKEN") so callers can tell a business
+// rule apart from a real error without parsing the message.
+export class ApiError extends Error {
+    code?: string;
+    status: number;
+
+    constructor(message: string, status: number, code?: string) {
+        super(message);
+        this.name = "ApiError";
+        this.status = status;
+        this.code = code;
+    }
+}
+
 export class AccountBlockedError extends Error {
     constructor(message: string) {
         super(message);
@@ -201,7 +215,12 @@ export async function apiFetch(path: string, opts: ApiFetchOptions = {}, _isRetr
     }
 
     if (!response.ok) {
-        throw new Error(extractErrorMessage(response.body, response.status));
+        const code = (response.body as { code?: unknown } | null)?.code;
+        throw new ApiError(
+            extractErrorMessage(response.body, response.status),
+            response.status,
+            typeof code === "string" ? code : undefined,
+        );
     }
 
     return response.body;

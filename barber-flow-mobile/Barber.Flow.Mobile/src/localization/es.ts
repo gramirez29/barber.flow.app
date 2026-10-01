@@ -285,6 +285,7 @@
 			pastDateTimeReview: "Revisar",
 			moveAppointmentCta: "Mover cita",
 			moveSuccess: "La cita fue movida correctamente.",
+			slotTakenTitle: "Horario ocupado",
 			pastDateTimeMoveMessage: "La fecha y hora seleccionadas ya pasaron. ¿Desea mover la cita de todos modos?",
 			pastDateTimeMoveConfirm: "Mover",
 		},
