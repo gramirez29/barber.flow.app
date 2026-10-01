@@ -102,6 +102,12 @@ public class InMemoryClientRepository : IClientRepository
         if (!string.IsNullOrWhiteSpace(createdBy))
             clients = clients.Where(client => client.CreatedBy == createdBy);
 
+        // Same order as the Mongo repository: alphabetical by first then last name (case-insensitive).
+        clients = clients
+            .OrderBy(client => client.FirstName, StringComparer.InvariantCultureIgnoreCase)
+            .ThenBy(client => client.LastName, StringComparer.InvariantCultureIgnoreCase)
+            .ThenBy(client => client.Id, StringComparer.Ordinal);
+
         if (page.HasValue && pageSize.HasValue)
         {
             var ps = Math.Clamp(pageSize.Value, 1, 200);

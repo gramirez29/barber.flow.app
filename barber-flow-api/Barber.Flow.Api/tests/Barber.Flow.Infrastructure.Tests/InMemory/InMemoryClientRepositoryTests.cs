@@ -25,6 +25,23 @@ public class InMemoryClientRepositoryTests
     }
 
     [Fact]
+    public async Task FindAsync_ReturnsClientsAlphabeticallyByFirstThenLastName_IgnoringCase()
+    {
+        var repo = new InMemoryClientRepository();
+        const string owner = "sort-test-owner";
+        foreach (var (first, last) in new[] { ("zoe", "Alba"), ("Maria", "Zapata"), ("maria", "Gomez"), ("Ana", "Perez") })
+        {
+            var client = BuildClient(first, last, "0000-0002");
+            client.CreatedBy = owner;
+            await repo.CreateAsync(client);
+        }
+
+        var result = (await repo.FindAsync(createdBy: owner)).Select(c => $"{c.FirstName} {c.LastName}").ToList();
+
+        Assert.Equal(new[] { "Ana Perez", "maria Gomez", "Maria Zapata", "zoe Alba" }, result);
+    }
+
+    [Fact]
     public async Task UpdateAsync_ClientNotFound_ReturnsNull()
     {
         var repo = new InMemoryClientRepository();

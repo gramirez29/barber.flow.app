@@ -68,14 +68,16 @@ public sealed class MongoDbClientRepository : IClientRepository
         CancellationToken cancellation = default)
     {
         var filter = BuildSearchFilter(query, shopId, createdBy);
-        // CreatedAt alone isn't a stable sort key: clients created in the same millisecond
-        // (e.g. bulk-created in a loop) tie, and Mongo doesn't guarantee tie order is
-        // preserved across separate Skip/Limit queries - Id breaks ties deterministically
-        // so paginated pages never overlap or drop a document.
+        // Alphabetical by first then last name. Primary-strength collation makes the sort
+        // case- and accent-insensitive ("álvaro" sits next to "Alvaro", not after "Zoe"). Id is the
+        // final tie-breaker: Mongo doesn't guarantee tie order across separate Skip/Limit queries, so
+        // without a unique last key paginated pages could overlap or drop a document.
         var findCursor = _collection
-            .Find(filter)
-            .SortByDescending(c => c.CreatedAt)
-            .ThenByDescending(c => c.Id);
+            .Find(filter, new FindOptions { Collation = new Collation("es", strength: CollationStrength.Primary) })
+            .Sort(Builders<Client>.Sort
+                .Ascending(c => c.FirstName)
+                .Ascending(c => c.LastName)
+                .Ascending(c => c.Id));
 
         if (page.HasValue && pageSize.HasValue)
         {
