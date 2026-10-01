@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, ImageBackground, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Calendar, LocaleConfig } from "react-native-calendars";
@@ -8,6 +8,10 @@ import { DrawerActions } from "@react-navigation/core";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AppointmentCard } from "../components/calendar/AppointmentCard";
+import { AgendaDayView } from "../components/agenda/AgendaDayView";
+import { useFeatureFlags } from "../context/FeatureFlagsContext";
+import { getErrorMessage } from "../utils/errors";
+import { isPastDateTime } from "../utils/formatUtil";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { useDialog } from "../context/DialogContext";
 import { useTranslation } from "../context/LanguageContext";
@@ -396,7 +400,10 @@ export const CalendarScreen: React.FC = () => {
 		clearError,
 		getAppointmentsByDate,
 		fetchAppointmentsByDateRange,
+		moveAppointment,
 	} = useAppointmentStore();
+	const { agendaDayViewEnabled } = useFeatureFlags();
+	const [scrollLocked, setScrollLocked] = useState(false);
 
 	useEffect(() => {
 		if (!error) return;
@@ -405,7 +412,7 @@ export const CalendarScreen: React.FC = () => {
 	}, [error, showAlert, clearError, translateText]);
 
 	const today = format(new Date(), DATE_FORMAT);
-	const [viewMode, setViewMode] = useState<ViewMode>("month");
+	const [viewMode, setViewMode] = useState<ViewMode>("day");
 	const [selectedDate, setSelectedDate] = useState(today);
 	const [visibleMonth, setVisibleMonth] = useState(today);
 	const locale = getIntlLocale(language);
@@ -526,6 +533,40 @@ export const CalendarScreen: React.FC = () => {
 		});
 	};
 
+	const openCreateAt = (date: string, time: string) => {
+		setSelectedDate(date);
+		setVisibleMonth(date);
+		navigation.navigate("AppointmentForm", {
+			mode: "create",
+			date,
+			initialDraft: { time },
+			afterSave: "goBack",
+		});
+	};
+
+	// Drag & drop in the hourly agenda: same day, new time. The backend rejects a taken slot (SLOT_TAKEN)
+	// and the block snaps back because AgendaDayView clears its optimistic time when this promise settles.
+	const handleAgendaMove = useCallback(
+		async (appointment: Appointment, newTime: string) => {
+			const title = translateText("appointments.alerts.moveAppointmentDialogTitle");
+			if (isPastDateTime(appointment.date, newTime)) {
+				const confirmed = await new Promise<boolean>((resolve) => {
+					showAlert(title, translateText("appointments.alerts.pastDateTimeMoveMessage"), [
+						{ text: translateText("appointments.alerts.pastDateTimeMoveConfirm"), onPress: () => resolve(true) },
+						{ text: translateText("appointments.alerts.pastDateTimeReview"), style: "cancel", onPress: () => resolve(false) },
+					]);
+				});
+				if (!confirmed) return;
+			}
+			try {
+				await moveAppointment(appointment.id, appointment.date, newTime);
+			} catch (moveError) {
+				showAlert(title, getErrorMessage(moveError) || translateText("common.somethingWentWrong"));
+			}
+		},
+		[moveAppointment, showAlert, translateText],
+	);
+
 	const renderAppointmentList = (
 		dayAppointments: Appointment[],
 		emptyMessage: string,
@@ -568,6 +609,7 @@ export const CalendarScreen: React.FC = () => {
 				<KeyboardAwareScrollView
 					style={styles.flex}
 					contentContainerStyle={styles.scrollContent}
+					scrollEnabled={!scrollLocked}
 					enableOnAndroid
 					keyboardOpeningTime={0}
 					extraScrollHeight={Platform.OS === "android" ? 120 : 20}
@@ -612,7 +654,7 @@ export const CalendarScreen: React.FC = () => {
 
 					{/* View mode pills */}
 					<View style={styles.viewModeRow}>
-						{(["month", "week", "day"] as ViewMode[]).map((mode) => {
+						{(["day", "week", "month"] as ViewMode[]).map((mode) => {
 							const active = viewMode === mode;
 							return (
 								<Pressable
@@ -758,9 +800,20 @@ export const CalendarScreen: React.FC = () => {
 							</Pressable>
 						</View>
 
-						{renderAppointmentList(
-							selectedAppointments,
-							translateText("calendar.emptyBodyDay"),
+						{agendaDayViewEnabled ? (
+							<AgendaDayView
+								date={selectedDate}
+								appointments={selectedAppointments}
+								onAddAt={(time) => openCreateAt(selectedDate, time)}
+								onOpen={openEditModal}
+								onMove={handleAgendaMove}
+								onDragActiveChange={setScrollLocked}
+							/>
+						) : (
+							renderAppointmentList(
+								selectedAppointments,
+								translateText("calendar.emptyBodyDay"),
+							)
 						)}
 					</View>
 				) : null}

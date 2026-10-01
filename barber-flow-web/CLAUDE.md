@@ -214,8 +214,7 @@ Plan completo, decisiones y notas de implementación en **`AGENDA_DAY_VIEW_PLAN.
 
 Estado de paridad web ↔ mobile verificado contra el código el 2026-10-01. **Ya portado a mobile** (no requiere más trabajo): zona horaria de citas de "hoy" (fix 100% backend), spinner + bloqueo al guardar (`isSaving`), citas recurrentes (formulario, `createRecurring` y campo del admin en `ManageApplicationUsersForm`), confirmación para citas en el pasado (`isPastDateTime`), prefill de cita desde Clientes, badge de estado en `AppointmentCard.tsx` y botón "Eliminar cita" en `AppointmentFormScreen.tsx` (ambos, rama `feat/mobile-delete-appointment-status-badge`). El email de bienvenida al crear un Barbero es solo backend y cubre a cualquier cliente.
 
-- **Vista de agenda por horas (solo web, tras feature flag)**: única feature grande sin equivalente en mobile. Mobile no se toca hasta que el usuario valide la web (ver `AGENDA_DAY_VIEW_PLAN.md`).
-- **"Mover cita" difiere entre apps**: web ejecuta el `PATCH /api/appointments/move/{id}` real con fecha **y hora**; mobile solo precarga el formulario y depende de "Guardar cambios", y `moveAppointment` de su store solo recibe `newDate`. Decisión de producto pendiente: ¿mobile adopta el `PATCH` inmediato?
+- **Vista de agenda por horas y "Mover cita" con hora: portados a mobile (2026-10-01, rama `feat/mobile-agenda-day-view`)**, pendientes de prueba en dispositivo real (arrastre vs. scroll en iOS/Android). Flag por dispositivo en Configuración → Preferencias, apagado por defecto. Detalle en `AGENDA_DAY_VIEW_PLAN.md` §10. Falta que el usuario valide en dispositivo antes de dar el flag por bueno.
 - **Aviso de choque de horario**: web muestra `SLOT_TAKEN` como notificación `warning` (6 s); mobile lo muestra como alert de error genérico con el mensaje del backend (no mapea el `code`). Funciona, pero no es idéntico.
 
 Pantallas de mobile (`barber-flow-mobile/Barber.Flow.Mobile/src/screens/`) sin paridad visual todavía en web:
