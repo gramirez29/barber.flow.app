@@ -4,7 +4,7 @@ import { CreateClientRequest, UpdateClientRequest } from '@application/dtos/requ
 import { useNotification } from '@presentation/context/NotificationContext';
 import { ClientApi } from '@infrastructure/api/ClientApi';
 import { AxiosHttpClient } from '@infrastructure/http/AxiosHttpClient';
-import { getErrorMessage } from '@shared/utils/errorUtils';
+import { getErrorMessage, isDuplicateClientError } from '@shared/utils/errorUtils';
 
 /**
  * useClients: Hook para manejo de clientes
@@ -89,7 +89,7 @@ export function useClients() {
         return newClient;
       } catch (error) {
         const message = getErrorMessage(error, 'Error al crear cliente');
-        showNotification(message, 'error');
+        showNotification(message, isDuplicateClientError(error) ? 'warning' : 'error', isDuplicateClientError(error) ? 6000 : undefined);
         throw error;
       }
     },
@@ -110,7 +110,7 @@ export function useClients() {
         return updatedClient;
       } catch (error) {
         const message = getErrorMessage(error, 'Error al actualizar cliente');
-        showNotification(message, 'error');
+        showNotification(message, isDuplicateClientError(error) ? 'warning' : 'error', isDuplicateClientError(error) ? 6000 : undefined);
         throw error;
       }
     },

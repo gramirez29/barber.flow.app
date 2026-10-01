@@ -323,6 +323,7 @@
 			removeClientMessage: "¿Eliminar cliente?",
 			removeFailed: "No se pudo eliminar",
 			saveFailed: "No se pudo guardar",
+			duplicateTitle: "Cliente duplicado",
 			searchFailed: "No se pudo buscar",
 			validation: "Corrige los campos obligatorios.",
 		},

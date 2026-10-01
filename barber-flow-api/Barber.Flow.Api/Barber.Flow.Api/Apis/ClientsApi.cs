@@ -76,10 +76,31 @@ public static class ClientsApi
             UpdatedBy = userId
         };
 
-        var created = await clientService.CreateAsync(client, cancellationToken);
-        var dto = Map(created);
-        return TypedResults.Ok(dto);
+        try
+        {
+            var created = await clientService.CreateAsync(client, cancellationToken);
+            var dto = Map(created);
+            return TypedResults.Ok(dto);
+        }
+        catch (ClientDuplicateException ex)
+        {
+            return DuplicateConflict(ex);
+        }
     }
+
+    // 409 with the existing client so web/mobile can say who already has that phone.
+    private static IResult DuplicateConflict(ClientDuplicateException ex) =>
+        TypedResults.Conflict(new
+        {
+            message = ex.Message,
+            code = ex.Code,
+            existingClient = new
+            {
+                id = ex.ExistingClient.Id,
+                firstName = ex.ExistingClient.FirstName,
+                lastName = ex.ExistingClient.LastName
+            }
+        });
 
     private static async Task<IResult> UpdateClientAsync(
         string id,
@@ -112,13 +133,20 @@ public static class ClientsApi
             UpdatedBy = userId
         };
 
-        var updated = await clientService.UpdateAsync(id, client, cancellationToken);
-        if (updated == null)
+        try
         {
-            return TypedResults.NotFound();
-        }
+            var updated = await clientService.UpdateAsync(id, client, cancellationToken);
+            if (updated == null)
+            {
+                return TypedResults.NotFound();
+            }
 
-        return TypedResults.Ok(Map(updated));
+            return TypedResults.Ok(Map(updated));
+        }
+        catch (ClientDuplicateException ex)
+        {
+            return DuplicateConflict(ex);
+        }
     }
 
     private static async Task<IResult> FindClientsAsync(
