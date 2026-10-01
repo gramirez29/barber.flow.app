@@ -285,6 +285,7 @@
 			pastDateTimeReview: "Review",
 			moveAppointmentCta: "Move appointment",
 			moveSuccess: "The appointment was moved successfully.",
+			slotTakenTitle: "Time slot taken",
 			pastDateTimeMoveMessage: "The selected date and time have already passed. Do you want to move the appointment anyway?",
 			pastDateTimeMoveConfirm: "Move",
 		},

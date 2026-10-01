@@ -1,4 +1,11 @@
 /**
+ * True when the backend rejected an appointment because another one already holds that exact
+ * date+time (400 code "SLOT_TAKEN"). It is a business rule, not a failure, so it is shown as a warning.
+ */
+export const isSlotTakenError = (err: unknown): boolean =>
+	err !== null && typeof err === "object" && (err as { code?: unknown }).code === "SLOT_TAKEN";
+
+/**
  * Extracts a human-readable message from an unknown catch value.
  * Use as: catch (err: unknown) { setError(getErrorMessage(err)); }
  */
