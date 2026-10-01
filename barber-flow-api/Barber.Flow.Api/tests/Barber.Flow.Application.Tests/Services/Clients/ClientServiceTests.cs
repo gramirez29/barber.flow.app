@@ -110,4 +110,112 @@ public class ClientServiceTests
 
         Assert.Same(updated, result);
     }
+
+    private void SetupOwnClients(string owner, params Client[] clients) =>
+        _repo.Setup(r => r.FindAsync(null, null, null, null, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(clients);
+
+    [Theory]
+    [InlineData("8888-0000")]
+    [InlineData("88880000")]
+    [InlineData("+506 8888 0000")]
+    [InlineData("(506) 8888-0000")]
+    public async Task CreateAsync_SamePhoneInAnyFormat_ThrowsClientDuplicate(string phone)
+    {
+        SetupOwnClients("barber1", new Client { Id = "1", FirstName = "Juan", LastName = "Perez", Phone = "8888-0000", CreatedBy = "barber1" });
+        var client = new Client { FirstName = "Juan", LastName = "Perez", Phone = phone, CreatedBy = "barber1" };
+
+        var ex = await Assert.ThrowsAsync<ClientDuplicateException>(() => CreateSut().CreateAsync(client));
+
+        Assert.Equal(ClientDuplicateException.DuplicatePhoneCode, ex.Code);
+        Assert.Equal("1", ex.ExistingClient.Id);
+        _repo.Verify(r => r.CreateAsync(It.IsAny<Client>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_SamePhoneDifferentName_StillThrows()
+    {
+        SetupOwnClients("barber1", new Client { Id = "1", FirstName = "Juan", Phone = "8888-0000", CreatedBy = "barber1" });
+        var client = new Client { FirstName = "Juanito", Phone = "8888-0000", CreatedBy = "barber1" };
+
+        await Assert.ThrowsAsync<ClientDuplicateException>(() => CreateSut().CreateAsync(client));
+    }
+
+    [Fact]
+    public async Task CreateAsync_PhoneUsedByAnotherBarber_IsAllowed()
+    {
+        SetupOwnClients("barber1", new Client { Id = "1", Phone = "8888-0000", CreatedBy = "barber1" });
+        SetupOwnClients("barber2");
+        var client = new Client { FirstName = "Juan", Phone = "8888-0000", CreatedBy = "barber2" };
+        _repo.Setup(r => r.CreateAsync(It.IsAny<Client>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Client c, CancellationToken _) => c);
+
+        var result = await CreateSut().CreateAsync(client);
+
+        Assert.Equal("8888-0000", result.Phone);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PhoneUnchanged_DoesNotCheckDuplicates()
+    {
+        var existing = new Client { Id = "1", Phone = "8888-0000", CreatedBy = "barber1" };
+        var incoming = new Client { FirstName = "Juan Edited", Phone = "88880000" };
+        _repo.Setup(r => r.GetByIdAsync("1", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _repo.Setup(r => r.UpdateAsync("1", It.IsAny<Client>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, Client c, CancellationToken _) => c);
+
+        var result = await CreateSut().UpdateAsync("1", incoming);
+
+        Assert.NotNull(result);
+        _repo.Verify(r => r.FindAsync(It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ChangedToPhoneOfAnotherClient_Throws()
+    {
+        var existing = new Client { Id = "1", Phone = "8888-0000", CreatedBy = "barber1" };
+        var other = new Client { Id = "2", FirstName = "Maria", Phone = "7777-1111", CreatedBy = "barber1" };
+        SetupOwnClients("barber1", existing, other);
+        _repo.Setup(r => r.GetByIdAsync("1", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+
+        var ex = await Assert.ThrowsAsync<ClientDuplicateException>(
+            () => CreateSut().UpdateAsync("1", new Client { Phone = "7777 1111" }));
+
+        Assert.Equal("2", ex.ExistingClient.Id);
+        _repo.Verify(r => r.UpdateAsync(It.IsAny<string>(), It.IsAny<Client>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ChangedToFreePhone_Succeeds()
+    {
+        var existing = new Client { Id = "1", Phone = "8888-0000", CreatedBy = "barber1" };
+        SetupOwnClients("barber1", existing);
+        _repo.Setup(r => r.GetByIdAsync("1", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _repo.Setup(r => r.UpdateAsync("1", It.IsAny<Client>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, Client c, CancellationToken _) => c);
+
+        var result = await CreateSut().UpdateAsync("1", new Client { Phone = "6666-2222" });
+
+        Assert.Equal("6666-2222", result!.Phone);
+    }
+}
+
+public class PhoneNormalizerTests
+{
+    [Theory]
+    [InlineData("8888-0000", "88880000")]
+    [InlineData("+506 8888 0000", "88880000")]
+    [InlineData("50688880000", "88880000")]
+    [InlineData("(506) 8888-0000", "88880000")]
+    [InlineData("12345", "12345")]
+    public void Normalize_ReducesToComparableDigits(string input, string expected) =>
+        Assert.Equal(expected, PhoneNormalizer.Normalize(input));
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("abc")]
+    public void Normalize_WithoutDigits_ReturnsNull(string? input) =>
+        Assert.Null(PhoneNormalizer.Normalize(input));
 }

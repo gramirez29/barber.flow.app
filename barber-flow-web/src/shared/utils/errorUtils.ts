@@ -1,4 +1,16 @@
 /**
+ * El backend responde 409 { message, code, existingClient } cuando el barbero ya tiene otro
+ * cliente con el mismo teléfono (code = "CLIENT_DUPLICATE_PHONE").
+ */
+export function isDuplicateClientError(error: unknown): boolean {
+  return (
+    !!error &&
+    typeof error === 'object' &&
+    (error as { code?: unknown }).code === 'CLIENT_DUPLICATE_PHONE'
+  );
+}
+
+/**
  * Extrae un mensaje legible de un error de tipo desconocido.
  * AxiosHttpClient rechaza con `error.response?.data || error.message`,
  * por lo que el valor puede ser un string, un objeto `{ message }`, o un Error real.

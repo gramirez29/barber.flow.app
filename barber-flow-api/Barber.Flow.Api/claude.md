@@ -74,6 +74,14 @@ Reglas de negocio (confirmadas con el usuario):
 - **`BarberSettings` merge (bug preexistente arreglado):** el repositorio reemplaza el bloque `Settings` completo, y el diálogo de usuarios de web enviaba el barbero sin `Settings` (los borraba). `BarberService.UpdateAsync` ahora conserva `existing.Settings` si el request no trae `Settings`, y conserva `MaxRecurringAppointments` si viene `null` (`int?` en DTO y value object). Así la tarjeta de comisión (que no manda el tope) y el diálogo del admin no se pisan.
 - 255 tests backend en verde (86 Application / 110 Infrastructure / 59 Api).
 
+## Clientes duplicados por teléfono (2026-10)
+Regla de negocio (confirmada con el usuario): **no se permite crear ni editar un cliente con el mismo teléfono que otro cliente del mismo barbero**; el nombre no cuenta (un duplicado puede venir con el nombre escrito distinto).
+- **Alcance por barbero (`CreatedBy`)**: dos barberos distintos pueden tener el mismo número. Los clientes de un barbero son pocos, así que `ClientService` compara en memoria los teléfonos normalizados (`FindAsync(createdBy:)`); **no hay campo derivado ni migración**.
+- **Normalización (`PhoneNormalizer`)**: solo dígitos y se quita el prefijo `506` si quedan 11 dígitos, así `8888-0000`, `88880000` y `+506 8888 0000` son el mismo número. Teléfono sin dígitos = no se compara.
+- **Crear:** `POST /api/clients/create` → `409 { message, code: "CLIENT_DUPLICATE_PHONE", existingClient: { id, firstName, lastName } }` (`ClientDuplicateException`). **Editar:** misma regla, pero **solo si el teléfono cambió** (normalizado) y excluyendo al propio cliente, para que los duplicados que ya existían se puedan seguir editando; los **borra el usuario a mano** (no hay herramienta de fusión).
+- **Frontends:** web (`isDuplicateClientError` → notificación `warning`, el formulario queda abierto) y mobile (`isDuplicateClientError` → alert "Cliente duplicado") muestran el mensaje del backend.
+- **Pendiente (opcional):** índice único parcial `(CreatedBy, teléfono normalizado)` contra peticiones simultáneas; requiere guardar el teléfono normalizado y que antes no queden duplicados. Mientras tanto la carrera entre dos creaciones simultáneas del mismo número no está cubierta.
+
 ## Short-Term Development Roadmap (Pending)
 1. [x] Configure the initial MongoDB dependency injection pipeline in Program.cs and bind appsettings.json.
 2. [x] Audit existing domain models (User.cs, Client.cs, Appointments.cs) to ensure alignment with MongoDB NoSQL structures.
