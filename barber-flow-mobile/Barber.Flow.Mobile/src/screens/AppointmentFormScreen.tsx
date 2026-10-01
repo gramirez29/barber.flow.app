@@ -60,7 +60,7 @@ export const AppointmentFormScreen = () => {
 	const { showAlert } = useDialog();
 	const { theme } = useAppTheme();
 	const styles = useMemo(() => createStyles(theme), [theme]);
-	const { appointments, addAppointment, addRecurringAppointments, updateAppointment } =
+	const { appointments, addAppointment, addRecurringAppointments, updateAppointment, removeAppointment } =
 		useAppointmentStore();
 	const user = useAuthStore((state) => state.user);
 
@@ -356,6 +356,37 @@ const handleSubmit = async () => {
 		await saveAppointment(normalizedDraft);
 	};
 
+	const handleDeletePress = () => {
+		if (!params.appointmentId) return;
+		const appointmentId = params.appointmentId;
+		showAlert(
+			translateText("appointments.alerts.deleteAppointmentTitle"),
+			translateText("appointments.alerts.deleteAppointmentMessage"),
+			[
+				{
+					text: translateText("appointments.alerts.deleteAppointmentCta"),
+					style: "destructive",
+					onPress: async () => {
+						setIsSaving(true);
+						try {
+							await removeAppointment(appointmentId);
+						} catch (error) {
+							setIsSaving(false);
+							showAlert(
+								translateText("appointments.alerts.deleteAppointmentTitle"),
+								getErrorMessage(error) || translateText("common.somethingWentWrong"),
+							);
+							return;
+						}
+						setIsSaving(false);
+						navigation.goBack();
+					},
+				},
+				{ text: translateText("appointments.alerts.noAlertResponse"), style: "cancel" },
+			],
+		);
+	};
+
 	const saveAppointment = async (normalizedDraft: NonNullable<ReturnType<typeof submit>>) => {
 		setIsSaving(true);
 		try {
@@ -473,6 +504,15 @@ const handleSubmit = async () => {
 						</Pressable>
 					</View>
 				)}
+				{params.mode === "edit" && !isReadOnly && (
+					<Pressable
+						style={({ pressed }) => [styles.deleteBtn, (pressed || isSaving) && styles.deleteBtnDim]}
+						onPress={isSaving ? undefined : handleDeletePress}
+						disabled={isSaving}
+					>
+						<Text style={styles.deleteBtnText}>{translateText("appointments.alerts.deleteAppointmentCta")}</Text>
+					</Pressable>
+				)}
 			</KeyboardAwareScrollView>
 			<ClientSearchModal
 				clients={clientSearchResults}
@@ -574,6 +614,22 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
 	},
 	goldBtnPressed: {
 		opacity: 0.85,
+	},
+	deleteBtn: {
+		marginTop: 12,
+		borderRadius: 999,
+		borderWidth: 1,
+		borderColor: theme.colors.error,
+		paddingVertical: 14,
+		alignItems: "center",
+	},
+	deleteBtnDim: {
+		opacity: 0.6,
+	},
+	deleteBtnText: {
+		color: theme.colors.error,
+		fontWeight: "700",
+		fontSize: 15,
 	},
 	goldBtnText: {
 		color: "#0F172A",
