@@ -60,7 +60,7 @@ export const AppointmentFormScreen = () => {
 	const { showAlert } = useDialog();
 	const { theme } = useAppTheme();
 	const styles = useMemo(() => createStyles(theme), [theme]);
-	const { appointments, addAppointment, addRecurringAppointments, updateAppointment, removeAppointment } =
+	const { appointments, addAppointment, addRecurringAppointments, updateAppointment, removeAppointment, moveAppointment } =
 		useAppointmentStore();
 	const user = useAuthStore((state) => state.user);
 
@@ -262,14 +262,45 @@ export const AppointmentFormScreen = () => {
 		setMovePickerStep("time");
 	}, []);
 
-	const handleMoveTimeConfirm = useCallback((time: Date) => {
-		if (pendingMoveDate) {
-			setField("date", pendingMoveDate);
-			setField("time", format(time, "HH:mm"));
+	// Unlike the old flow (which only prefilled the form and relied on "Guardar cambios"), moving now
+	// runs the real PATCH right away with date AND time, same as web.
+	const performMove = useCallback(async (newDate: string, newTime: string) => {
+		if (!params.appointmentId) return;
+		const moveTitle = translateText("appointments.alerts.moveAppointmentDialogTitle");
+		setIsSaving(true);
+		try {
+			await moveAppointment(params.appointmentId, newDate, newTime);
+		} catch (error) {
+			setIsSaving(false);
+			showAlert(moveTitle, getErrorMessage(error) || translateText("common.somethingWentWrong"));
+			return;
 		}
+		setIsSaving(false);
+		setField("date", newDate);
+		setField("time", newTime);
+		showAlert(moveTitle, translateText("appointments.alerts.moveSuccess"));
+	}, [params.appointmentId, moveAppointment, setField, showAlert, translateText]);
+
+	const handleMoveTimeConfirm = useCallback((time: Date) => {
+		const newDate = pendingMoveDate;
+		const newTime = format(time, "HH:mm");
 		setPendingMoveDate(null);
 		setMovePickerStep(null);
-	}, [pendingMoveDate, setField]);
+		if (!newDate) return;
+
+		if (isPastDateTime(newDate, newTime)) {
+			showAlert(
+				translateText("appointments.alerts.moveAppointmentDialogTitle"),
+				translateText("appointments.alerts.pastDateTimeMoveMessage"),
+				[
+					{ text: translateText("appointments.alerts.pastDateTimeMoveConfirm"), onPress: () => void performMove(newDate, newTime) },
+					{ text: translateText("appointments.alerts.pastDateTimeReview"), style: "cancel" },
+				],
+			);
+			return;
+		}
+		void performMove(newDate, newTime);
+	}, [pendingMoveDate, performMove, showAlert, translateText]);
 
 	useEffect(() => {
 		if (params.mode === "edit" || !user?.userName) {

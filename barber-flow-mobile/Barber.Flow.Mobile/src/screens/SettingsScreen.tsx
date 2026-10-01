@@ -16,6 +16,7 @@ import { ReportCalculationSettingsForm } from "../components/settings/ReportCalc
 import { ScreenLayout } from "../components/ScreenLayout";
 import { ApplicationUsersModal } from "../components/settings/ApplicationUsersModal";
 import { useNotification } from "../context/NotificationContext";
+import { useFeatureFlags } from "../context/FeatureFlagsContext";
 import { useReportCalculationSettingsForm } from "../features/settings/reportCalculationsForm";
 import {
 	mapBarberResponseToForm,
@@ -55,6 +56,7 @@ export const SettingsScreen = () => {
 	const isSafeModeEnabled = useAdminAccessStore((state) => state.isSafeModeEnabled);
 	const setSafeModeEnabled = useAdminAccessStore((state) => state.setSafeModeEnabled);
 	const { notificationsEnabled, setNotificationsEnabled, unreadCount } = useNotification();
+	const { agendaDayViewEnabled, setAgendaDayViewEnabled } = useFeatureFlags();
 	const { isUsingSystemLanguage, language, resetToSystemLanguage, setLanguage, systemLanguage } = useLanguage();
 	const { translateText } = useTranslation();
 	const {
@@ -562,6 +564,20 @@ export const SettingsScreen = () => {
 										{translateText("settings.preferencesPanel.dark")}
 									</Text>
 								</Pressable>
+							</View>
+
+							<View style={styles.settingRow}>
+								<View style={styles.settingCopy}>
+									<Text style={styles.settingLabel}>
+										{translateText("settings.preferencesPanel.agendaDayView")}
+									</Text>
+								</View>
+								<Switch
+									trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+									thumbColor={theme.colors.textPrimary}
+									onValueChange={() => void setAgendaDayViewEnabled(!agendaDayViewEnabled)}
+									value={agendaDayViewEnabled}
+								/>
 							</View>
 
 							<View style={[styles.settingRow, { borderBottomWidth: 0 }]}>

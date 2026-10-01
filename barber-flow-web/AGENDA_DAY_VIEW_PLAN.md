@@ -96,7 +96,7 @@ src/presentation/hooks/useAgendaDrag.ts             drag & drop (dnd-kit) + regl
 - [x] **Fase 1 — Timeline de día (web, sin drag):** constantes, `agendaLayout.ts` + tests, `FeatureFlagsContext` + interruptor, `AgendaDayView`/`Grid`/`Block`/`AddButton`, integración en `AppointmentsPage`, spot vacío + botón abren el formulario con hora precargada, `ClientAutocomplete`. *Criterio:* con el flag apagado la pantalla es idéntica a hoy; encendido muestra la agenda y permite crear/editar citas.
 - [x] **Fase 2 — Arrastrar y soltar (web):** `useAgendaDrag`, dnd-kit, snap, optimista + rollback, `SLOT_TAKEN`, confirmación de hora pasada. *Criterio:* mover con mouse y con touch (presión larga) funciona y persiste tras recargar.
 - [ ] **Fase 3 — Validación con el usuario en producción** (flag encendido solo en sus dispositivos). Ajustes de UX según feedback. **Aquí se decide si se pasa a mobile.**
-- [ ] **Fase 4 — Mobile:** timeline (`CalendarScreen`, modo día) con el mismo diseño; `react-native-gesture-handler` + `reanimated` (ya instalados) para el arrastre con presión larga; `appointmentService.move` debe **enviar también la hora** (hoy solo manda `NewDate`). Feature flag equivalente en Settings. Requiere build nuevo.
+- [x] **Fase 4 — Mobile (implementada 2026-10-01, pendiente de prueba en dispositivo):** timeline (`CalendarScreen`, modo día) con el mismo diseño; `react-native-gesture-handler` + `reanimated` (ya instalados) para el arrastre con presión larga; `appointmentService.move` debe **enviar también la hora** (hoy solo manda `NewDate`). Feature flag equivalente en Settings. Requiere build nuevo.
 - [ ] **Fase 5 (opcional) — Setting de horario y/o duración variable** (ver §8).
 
 ## 7.1 Implementación (lo que quedó en el código)
@@ -143,3 +143,11 @@ src/presentation/hooks/useAgendaDrag.ts             drag & drop (dnd-kit) + regl
 - **Tests:** la lógica de posiciones/carriles va en funciones puras con `vitest` (web tiene el runner sin tests). Mobile no tiene `jest` (`npm test` roto): se validará con `tsc` + prueba en dispositivo.
 - **Modo Seguro del admin:** no cambia; el admin sigue sin ver Citas con el modo activo.
 - **Verificación local:** un barbero de prueba (el admin no ve Citas con Modo Seguro y no tiene `Barber` vinculado), como se hizo con las citas recurrentes.
+
+## 10. Implementación en mobile (Fase 4, rama `feat/mobile-agenda-day-view`)
+
+- **Archivos nuevos** (`barber-flow-mobile/Barber.Flow.Mobile/src/`): `utils/agendaLayout.ts` (puerto 1:1 de la lógica pura web + `getDropMinutes`), `context/FeatureFlagsContext.tsx` (flag por dispositivo en AsyncStorage `barber-flow-flag-agenda-day-view`, apagado por defecto, montado en `App.tsx`), `components/agenda/AgendaDayView.tsx` (grilla de 30 min, carriles, línea de "ahora", spot vacío → formulario con hora, bloque arrastrable).
+- **Arrastre:** `react-native-gesture-handler` (`Pan.activateAfterLongPress(250)` + `Tap`) y `reanimated`, ya instalados: **no requiere build nativo nuevo**. Mientras se arrastra, `CalendarScreen` bloquea el scroll de la página (`scrollEnabled`). Actualización optimista y rollback igual que web; `SLOT_TAKEN` llega como alert con el mensaje del backend; hora pasada pide confirmación.
+- **Integración:** `CalendarScreen` (modo Día) usa la agenda si el flag está encendido; interruptor en Configuración → Preferencias. Se alineó el selector a **Día · Semana · Mes** con **Día** por defecto. Sin flag, la lista de siempre.
+- **Mover cita (formulario):** ahora ejecuta el `PATCH /api/appointments/move/{id}` real con fecha **y hora** (`appointmentService.move` envía `NewTime`), con confirmación si es hora pasada, igual que web.
+- **Pendiente:** probar en dispositivo real (conflicto scroll/arrastre en iOS y Android) y ajustar según feedback.

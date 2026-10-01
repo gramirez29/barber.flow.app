@@ -131,6 +131,7 @@
 		heroSubtitle:
 		"Configure application preferences, manage admin-only application users, and keep the experience aligned with your workflow.",
 		preferencesPanel: {
+			agendaDayView: "Hourly agenda view (beta)",
 			darkModeBody:
 				"Choose a manual theme or let the app follow system preferences across the full experience.",
 			darkModeTitle: "Dark Mode",
@@ -283,6 +284,9 @@
 			pastDateTimeConfirm: "Save anyway",
 			pastDateTimeReview: "Review",
 			moveAppointmentCta: "Move appointment",
+			moveSuccess: "The appointment was moved successfully.",
+			pastDateTimeMoveMessage: "The selected date and time have already passed. Do you want to move the appointment anyway?",
+			pastDateTimeMoveConfirm: "Move",
 		},
 	},
 	otp: {

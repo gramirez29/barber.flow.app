@@ -131,6 +131,7 @@
 		version: "Versión",
 		workspaceSettings: "Ajustes del espacio",
 		preferencesPanel: {
+			agendaDayView: "Vista de agenda por horas (beta)",
 			darkModeBody:
 				"Elige un tema manual o deja que la aplicación siga las preferencias del sistema en toda la experiencia.",
 			darkModeTitle: "Modo oscuro",
@@ -283,6 +284,9 @@
 			pastDateTimeConfirm: "Registrar",
 			pastDateTimeReview: "Revisar",
 			moveAppointmentCta: "Mover cita",
+			moveSuccess: "La cita fue movida correctamente.",
+			pastDateTimeMoveMessage: "La fecha y hora seleccionadas ya pasaron. ¿Desea mover la cita de todos modos?",
+			pastDateTimeMoveConfirm: "Mover",
 		},
 	},
 	otp: {
