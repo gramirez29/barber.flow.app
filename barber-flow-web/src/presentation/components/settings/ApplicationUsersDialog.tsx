@@ -86,6 +86,9 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
   const [maxRecurring, setMaxRecurring] = useState('0');
   const [loadedSettings, setLoadedSettings] = useState<BarberSettings | undefined>(undefined);
   const [loadedMaxRecurring, setLoadedMaxRecurring] = useState(0);
+  // Duración ajustable de citas (spots de 15 min, redimensionar). Lo fija solo el admin, por barbero; apagado por defecto.
+  const [durationsEnabled, setDurationsEnabled] = useState(false);
+  const [loadedDurationsEnabled, setLoadedDurationsEnabled] = useState(false);
 
   const form = useForm<CreateBarberFormData>(emptyFormValues, mode === 'edit' ? updateBarberSchema : createBarberSchema);
 
@@ -98,6 +101,8 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
     setMaxRecurring('0');
     setLoadedSettings(undefined);
     setLoadedMaxRecurring(0);
+    setDurationsEnabled(false);
+    setLoadedDurationsEnabled(false);
     setSearchResults([]);
     setSearchQuery('');
   };
@@ -121,6 +126,9 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
     const loadedMax = barber.settings?.maxRecurringAppointments ?? 0;
     setMaxRecurring(String(loadedMax));
     setLoadedMaxRecurring(loadedMax);
+    const loadedDurations = barber.settings?.enableAppointmentDurations === true;
+    setDurationsEnabled(loadedDurations);
+    setLoadedDurationsEnabled(loadedDurations);
     setLoadedSettings(barber.settings);
   };
 
@@ -176,7 +184,10 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
       const { password, ...rest } = form.values;
       // Los settings solo se envían si hay algo que fijar: así una edición que no toca el tope
       // nunca pisa la comisión/gasto fijo del barbero (y viceversa, el backend conserva lo omitido).
-      const shouldSendSettings = mode === 'edit' ? parsedMaxRecurring !== loadedMaxRecurring : parsedMaxRecurring > 0;
+      const shouldSendSettings =
+        mode === 'edit'
+          ? parsedMaxRecurring !== loadedMaxRecurring || durationsEnabled !== loadedDurationsEnabled
+          : parsedMaxRecurring > 0 || durationsEnabled;
       const request = {
         ...rest,
         ...(password ? { password } : {}),
@@ -186,6 +197,7 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
                 commissionPercentage: loadedSettings?.commissionPercentage ?? 40,
                 fixedDailyExpense: loadedSettings?.fixedDailyExpense ?? 0,
                 maxRecurringAppointments: parsedMaxRecurring,
+                enableAppointmentDurations: durationsEnabled,
               },
             }
           : {}),
@@ -195,6 +207,7 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
         const updated = await updateBarber(editingId, request);
         setLoadedSettings(updated.settings);
         setLoadedMaxRecurring(updated.settings?.maxRecurringAppointments ?? 0);
+        setLoadedDurationsEnabled(updated.settings?.enableAppointmentDurations === true);
       } else {
         await createBarber(request);
         resetForm();
@@ -543,6 +556,28 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
                   inputProps={{ min: 0, max: 20, step: 1 }}
                   sx={inputSx}
                 />
+
+                <SectionLabel>Agenda</SectionLabel>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: appColors.textPrimary }}>
+                      Duración ajustable de citas
+                    </Typography>
+                    <Typography sx={{ fontSize: 12, color: appColors.textSecondary }}>
+                      Spots de 15 min y citas que se acortan o alargan desde la agenda. Una cita de 30 min bloquea los 15 min siguientes hasta que se acorte. Apagado = como siempre.
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={durationsEnabled}
+                    onChange={(e) => setDurationsEnabled(e.target.checked)}
+                    disabled={loading}
+                    inputProps={{ 'aria-label': 'Duración ajustable de citas' }}
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': { color: appColors.accent },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: appColors.accent },
+                    }}
+                  />
+                </Box>
               </>
             )}
 

@@ -1,4 +1,5 @@
 using Barber.Flow.Domain.Interfaces;
+using Barber.Flow.Domain.ValueObjects;
 
 namespace Barber.Flow.Application.Services.Appointments;
 
@@ -9,7 +10,17 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
 
     public async Task<Domain.Entities.Appointments> CreateAsync(Domain.Entities.Appointments appointment, CancellationToken cancellationToken = default)
     {
-        await EnsureSlotIsFreeAsync(appointment.Date, appointment.Time, excludeId: null, cancellationToken);
+        // Durations are opt-in per barber (admin setting). Off: the stored duration is dropped and the
+        // old exact date+time rule applies; on: validate it (default 30) and use the overlap rule.
+        int? duration = null;
+        if (await AreDurationsEnabledAsync(appointment.CreatedBy, cancellationToken))
+        {
+            duration = appointment.DurationMinutes ?? AppointmentSchedule.DefaultDurationMinutes;
+            EnsureDurationIsValid(duration.Value);
+        }
+        appointment.DurationMinutes = duration;
+
+        await EnsureSlotIsFreeAsync(appointment.CreatedBy, appointment.Date, appointment.Time, duration, excludeId: null, cancellationToken);
 
         // ShopId identifies the tenant an appointment belongs to; it's derived from the
         // creating barber's own shop unless the caller already supplied one explicitly.
@@ -68,6 +79,7 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
                 ServicePrice = template.ServicePrice,
                 Notes = template.Notes,
                 ShopId = template.ShopId,
+                DurationMinutes = template.DurationMinutes,
                 SeriesId = seriesId,
                 CreatedBy = template.CreatedBy,
                 UpdatedBy = template.UpdatedBy,
@@ -101,11 +113,32 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
             return null;
         }
 
-        // Only re-validate schedule if the date/time actually changed, so saving unrelated
-        // fields (e.g. marking a past appointment as completed) is never blocked.
-        if (existing.Date != appointment.Date || existing.Time != appointment.Time)
+        // The owner is whoever created the appointment (an admin editing it must not change the rule).
+        var owner = existing.CreatedBy;
+        var durationsEnabled = await AreDurationsEnabledAsync(owner, cancellationToken);
+
+        // A request that omits the duration (older clients, or the feature off) keeps the stored one,
+        // so editing other fields never resets it.
+        if (durationsEnabled && appointment.DurationMinutes is { } requested)
         {
-            await EnsureSlotIsFreeAsync(appointment.Date, appointment.Time, id, cancellationToken);
+            EnsureDurationIsValid(requested);
+        }
+        else
+        {
+            appointment.DurationMinutes = existing.DurationMinutes;
+        }
+
+        var effectiveDuration = durationsEnabled
+            ? appointment.DurationMinutes ?? AppointmentSchedule.DefaultDurationMinutes
+            : (int?)null;
+        var durationChanged = durationsEnabled
+            && effectiveDuration != (existing.DurationMinutes ?? AppointmentSchedule.DefaultDurationMinutes);
+
+        // Only re-validate schedule if the date/time/duration actually changed, so saving unrelated
+        // fields (e.g. marking a past appointment as completed) is never blocked.
+        if (existing.Date != appointment.Date || existing.Time != appointment.Time || durationChanged)
+        {
+            await EnsureSlotIsFreeAsync(owner, appointment.Date, appointment.Time, effectiveDuration, id, cancellationToken);
         }
 
         // ShopId is set at creation time and must not be reassigned by whoever edits the appointment later.
@@ -141,9 +174,42 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
         }
 
         var effectiveTime = string.IsNullOrWhiteSpace(newTime) ? existing.Time : newTime;
-        await EnsureSlotIsFreeAsync(newDate, effectiveTime, id, cancellationToken);
+        int? duration = await AreDurationsEnabledAsync(existing.CreatedBy, cancellationToken)
+            ? existing.DurationMinutes ?? AppointmentSchedule.DefaultDurationMinutes
+            : null;
+        await EnsureSlotIsFreeAsync(existing.CreatedBy, newDate, effectiveTime, duration, id, cancellationToken);
 
         return await _repo.MoveAsync(id, newDate, newTime, cancellationToken);
+    }
+
+    public async Task<Domain.Entities.Appointments?> ResizeAsync(string id, int durationMinutes, string? newTime = null, CancellationToken cancellationToken = default)
+    {
+        var existing = await _repo.GetByIdAsync(id, cancellationToken);
+        if (existing == null)
+        {
+            return null;
+        }
+
+        if (!await AreDurationsEnabledAsync(existing.CreatedBy, cancellationToken))
+        {
+            throw new AppointmentSchedulingException(
+                "La duración ajustable de citas no está habilitada para este usuario.",
+                AppointmentSchedulingException.FeatureDisabledCode);
+        }
+
+        EnsureDurationIsValid(durationMinutes);
+
+        var time = string.IsNullOrWhiteSpace(newTime) ? existing.Time : newTime;
+        if (!AppointmentSchedule.TryParseMinutes(time, out var start) || !AppointmentSchedule.FitsInDay(start, durationMinutes))
+        {
+            throw new AppointmentSchedulingException(
+                "La cita debe empezar y terminar dentro del mismo día.",
+                AppointmentSchedulingException.InvalidDurationCode);
+        }
+
+        await EnsureSlotIsFreeAsync(existing.CreatedBy, existing.Date, time, durationMinutes, id, cancellationToken);
+
+        return await _repo.ResizeAsync(id, durationMinutes, string.IsNullOrWhiteSpace(newTime) ? null : newTime, cancellationToken);
     }
 
     public Task<string> GetNextIdAsync(CancellationToken cancellationToken = default)
@@ -151,14 +217,45 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
 
     // Past and far-future dates are intentionally allowed: barbers log walk-ins after the fact
     // and book recurring clients weeks ahead. The only scheduling rule is "no two active
-    // appointments in the exact same date + time slot" (cancelled ones don't count).
-    private async Task EnsureSlotIsFreeAsync(string date, string time, string? excludeId, CancellationToken cancellationToken)
+    // appointments in the exact same date + time slot" (cancelled ones don't count), checked per barber.
+    // With adjustable durations on for the owner, the rule becomes "no overlapping time ranges" instead.
+    private async Task EnsureSlotIsFreeAsync(string? owner, string date, string time, int? durationMinutes, string? excludeId, CancellationToken cancellationToken)
     {
-        if (await _repo.HasConflictAsync(date, time, excludeId, cancellationToken))
+        if (durationMinutes is { } duration && AppointmentSchedule.TryParseMinutes(time, out var start))
+        {
+            if (await _repo.HasOverlapAsync(owner, date, start, duration, excludeId, cancellationToken))
+            {
+                throw new AppointmentSchedulingException(
+                    $"Ya existe una cita el {date} entre {AppointmentSchedule.FormatMinutes(start)} y {AppointmentSchedule.FormatMinutes(start + duration)}.",
+                    AppointmentSchedulingException.SlotTakenCode);
+            }
+
+            return;
+        }
+
+        if (await _repo.HasConflictAsync(owner, date, time, excludeId, cancellationToken))
         {
             throw new AppointmentSchedulingException(
                 $"Ya existe una cita agendada el {date} a las {time}.",
                 AppointmentSchedulingException.SlotTakenCode);
+        }
+    }
+
+    private async Task<bool> AreDurationsEnabledAsync(string? owner, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(owner)) return false;
+
+        var barber = await _barberRepo.GetByUserNameAsync(owner, cancellationToken);
+        return barber?.Settings?.EnableAppointmentDurations == true;
+    }
+
+    private static void EnsureDurationIsValid(int durationMinutes)
+    {
+        if (!AppointmentSchedule.IsValidDuration(durationMinutes))
+        {
+            throw new AppointmentSchedulingException(
+                $"La duración debe ser un múltiplo de {AppointmentSchedule.DurationStepMinutes} entre {AppointmentSchedule.MinDurationMinutes} y {AppointmentSchedule.MaxDurationMinutes} minutos.",
+                AppointmentSchedulingException.InvalidDurationCode);
         }
     }
 }

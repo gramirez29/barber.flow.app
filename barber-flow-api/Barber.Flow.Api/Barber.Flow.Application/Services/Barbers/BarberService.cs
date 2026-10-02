@@ -58,7 +58,9 @@ public class BarberService(IBarberRepository repo, IBarberShopRepository shopRep
             : barber.Settings with
             {
                 MaxRecurringAppointments = barber.Settings.MaxRecurringAppointments
-                    ?? existing.Settings?.MaxRecurringAppointments
+                    ?? existing.Settings?.MaxRecurringAppointments,
+                EnableAppointmentDurations = barber.Settings.EnableAppointmentDurations
+                    ?? existing.Settings?.EnableAppointmentDurations
             };
 
         // Preserve the barber's existing shop link by default; only touched below

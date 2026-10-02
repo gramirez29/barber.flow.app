@@ -57,13 +57,15 @@ public class AppointmentServiceTests
     public async Task CreateAsync_ExplicitShopIdAlreadySet_DoesNotOverrideIt()
     {
         var appointment = new Appointments { ClientName = "Juan", CreatedBy = "barber1", ShopId = "SHOP-0002" };
+        // The barber is looked up now (to read the durations flag) but must never override an explicit ShopId.
+        _barberRepo.Setup(b => b.GetByUserNameAsync("barber1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Barber.Flow.Domain.Entities.Barber { UserName = "barber1", ShopId = "SHOP-OTHER" });
         _repo.Setup(r => r.CreateAsync(It.IsAny<Appointments>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Appointments a, CancellationToken _) => a);
 
         var result = await CreateSut().CreateAsync(appointment);
 
         Assert.Equal("SHOP-0002", result.ShopId);
-        _barberRepo.Verify(b => b.GetByUserNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -134,7 +136,7 @@ public class AppointmentServiceTests
         var existing = new Appointments { Id = "APT-0001", Date = "2020-01-01", Time = "09:00" };
         var moved = new Appointments { Id = "APT-0001", Date = futureDate };
         _repo.Setup(r => r.GetByIdAsync("APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
-        _repo.Setup(r => r.HasConflictAsync(futureDate, "09:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string?>(), futureDate, "09:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _repo.Setup(r => r.MoveAsync("APT-0001", futureDate, null, It.IsAny<CancellationToken>())).ReturnsAsync(moved);
 
         var result = await CreateSut().MoveAsync("APT-0001", futureDate);
@@ -159,7 +161,7 @@ public class AppointmentServiceTests
         var existing = new Appointments { Id = "APT-0001", Date = "2020-01-01", Time = "09:00" };
         var moved = new Appointments { Id = "APT-0001", Date = "2020-01-02", Time = "09:00" };
         _repo.Setup(r => r.GetByIdAsync("APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
-        _repo.Setup(r => r.HasConflictAsync("2020-01-02", "09:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string?>(), "2020-01-02", "09:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _repo.Setup(r => r.MoveAsync("APT-0001", "2020-01-02", "09:00", It.IsAny<CancellationToken>())).ReturnsAsync(moved);
 
         var result = await CreateSut().MoveAsync("APT-0001", "2020-01-02", "09:00");
@@ -173,7 +175,7 @@ public class AppointmentServiceTests
         var futureDate = DateTime.Now.AddDays(5).ToString("yyyy-MM-dd");
         var existing = new Appointments { Id = "APT-0001", Date = "2020-01-01", Time = "09:00" };
         _repo.Setup(r => r.GetByIdAsync("APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
-        _repo.Setup(r => r.HasConflictAsync(futureDate, "10:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string?>(), futureDate, "10:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var ex = await Assert.ThrowsAsync<AppointmentSchedulingException>(
             () => CreateSut().MoveAsync("APT-0001", futureDate, "10:00"));
@@ -190,7 +192,7 @@ public class AppointmentServiceTests
         var existing = new Appointments { Id = "APT-0001", Date = "2020-01-01", Time = "09:00" };
         var moved = new Appointments { Id = "APT-0001", Date = futureDate, Time = "09:00" };
         _repo.Setup(r => r.GetByIdAsync("APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
-        _repo.Setup(r => r.HasConflictAsync(futureDate, "09:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string?>(), futureDate, "09:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _repo.Setup(r => r.MoveAsync("APT-0001", futureDate, null, It.IsAny<CancellationToken>())).ReturnsAsync(moved);
 
         var result = await CreateSut().MoveAsync("APT-0001", futureDate);
@@ -202,7 +204,7 @@ public class AppointmentServiceTests
     public async Task CreateAsync_PastDateTime_IsAllowed()
     {
         var appointment = new Appointments { ClientName = "Juan", Date = "2020-01-01", Time = "09:00" };
-        _repo.Setup(r => r.HasConflictAsync("2020-01-01", "09:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string?>(), "2020-01-01", "09:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _repo.Setup(r => r.CreateAsync(appointment, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await CreateSut().CreateAsync(appointment);
@@ -214,7 +216,7 @@ public class AppointmentServiceTests
     public async Task CreateAsync_FarFutureDateTime_IsAllowed()
     {
         var appointment = new Appointments { ClientName = "Juan", Date = "2099-06-15", Time = "10:00" };
-        _repo.Setup(r => r.HasConflictAsync("2099-06-15", "10:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string?>(), "2099-06-15", "10:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _repo.Setup(r => r.CreateAsync(appointment, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await CreateSut().CreateAsync(appointment);
@@ -227,7 +229,7 @@ public class AppointmentServiceTests
     {
         var futureDate = DateTime.Now.AddDays(5).ToString("yyyy-MM-dd");
         var appointment = new Appointments { ClientName = "Juan", Date = futureDate, Time = "09:00" };
-        _repo.Setup(r => r.HasConflictAsync(futureDate, "09:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string?>(), futureDate, "09:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var ex = await Assert.ThrowsAsync<AppointmentSchedulingException>(() => CreateSut().CreateAsync(appointment));
 
@@ -247,7 +249,7 @@ public class AppointmentServiceTests
         var result = await CreateSut().UpdateAsync("APT-0001", appointment);
 
         Assert.Same(updated, result);
-        _repo.Verify(r => r.HasConflictAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repo.Verify(r => r.HasConflictAsync(It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -257,7 +259,7 @@ public class AppointmentServiceTests
         var existing = new Appointments { Id = "APT-0001", Date = "2020-01-02", Time = "09:00" };
         var updated = new Appointments { Id = "APT-0001", Date = "2020-01-01", Time = "09:00" };
         _repo.Setup(r => r.GetByIdAsync("APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
-        _repo.Setup(r => r.HasConflictAsync("2020-01-01", "09:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string?>(), "2020-01-01", "09:00", "APT-0001", It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _repo.Setup(r => r.UpdateAsync("APT-0001", It.IsAny<Appointments>(), It.IsAny<CancellationToken>())).ReturnsAsync(updated);
 
         var result = await CreateSut().UpdateAsync("APT-0001", appointment);
@@ -346,7 +348,7 @@ public class AppointmentServiceTests
     public async Task CreateRecurringAsync_SomeSlotsTaken_CreatesFreeOnesAndReportsConflicts()
     {
         SetupBarberWithMax(3);
-        _repo.Setup(r => r.HasConflictAsync("2031-03-11", "10:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string?>(), "2031-03-11", "10:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var result = await CreateSut().CreateRecurringAsync(RecurringTemplate(), RecurrenceFrequency.Weekly);
 
@@ -359,7 +361,7 @@ public class AppointmentServiceTests
     public async Task CreateRecurringAsync_AllSlotsTaken_ThrowsSlotTaken()
     {
         SetupBarberWithMax(2);
-        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string>(), "10:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _repo.Setup(r => r.HasConflictAsync(It.IsAny<string?>(), It.IsAny<string>(), "10:00", null, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var ex = await Assert.ThrowsAsync<AppointmentSchedulingException>(
             () => CreateSut().CreateRecurringAsync(RecurringTemplate(), RecurrenceFrequency.Weekly));

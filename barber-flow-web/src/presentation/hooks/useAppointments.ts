@@ -5,6 +5,7 @@ import { useNotification } from '@presentation/context/NotificationContext';
 import { AppointmentApi } from '@infrastructure/api/AppointmentApi';
 import { AxiosHttpClient } from '@infrastructure/http/AxiosHttpClient';
 import { getErrorMessage, isSlotTakenError } from '@shared/utils/errorUtils';
+import { formatDuration } from "@shared/utils/agendaLayout";
 
 /**
  * useAppointments: Hook para manejo de citas
@@ -241,6 +242,37 @@ export function useAppointments() {
   );
 
   /**
+   * Cambiar la duración de una cita (y, con `newTime`, también su inicio: punto superior de la agenda).
+   * Con `previousDurationMinutes` el aviso de éxito dice si la cita se acortó o se extendió.
+   */
+  const resizeAppointment = useCallback(
+    async (appointmentId: string, durationMinutes: number, newTime?: string, previousDurationMinutes?: number) => {
+      try {
+        const updated = await appointmentApi.resize(appointmentId, durationMinutes, newTime);
+        setAppointments((prev) =>
+          prev.map((apt) => (apt.id === appointmentId ? updated : apt))
+        );
+        if (previousDurationMinutes === undefined || previousDurationMinutes === durationMinutes) {
+          showNotification('Cita actualizada correctamente', 'success');
+        } else {
+          const verb = durationMinutes < previousDurationMinutes ? 'acortada' : 'extendida';
+          showNotification(`Cita ${verb} correctamente: ahora dura ${formatDuration(durationMinutes)}`, 'success');
+        }
+        return updated;
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al cambiar la duración de la cita');
+        if (isSlotTakenError(error)) {
+          showNotification(message, 'warning', 6000);
+        } else {
+          showNotification(message, 'error');
+        }
+        throw error;
+      }
+    },
+    [appointmentApi, showNotification]
+  );
+
+  /**
    * Cambiar estado de cita (completed, cancelled)
    */
   const updateAppointmentStatus = useCallback(
@@ -292,6 +324,7 @@ export function useAppointments() {
     updateAppointment,
     deleteAppointment,
     moveAppointment,
+    resizeAppointment,
     updateAppointmentStatus,
     setSelectedAppointment,
   };

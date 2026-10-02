@@ -19,6 +19,9 @@ import {
 import type { CalendarViewMode } from '@presentation/components/appointments';
 import { useAppointments } from '@presentation/hooks/useAppointments';
 import { useBarbers } from '@presentation/hooks/useBarbers';
+import { useAppointmentDurationsEnabled } from "@presentation/hooks/useAppointmentDurationsEnabled";
+import { DURATION_GRID, LEGACY_GRID, DEFAULT_DURATION_MINUTES } from "@shared/constants/agenda";
+import { getBusyRanges, getDefaultDurationForSlot, timeToMinutes } from "@shared/utils/agendaLayout";
 import { useFeatureFlags } from '@presentation/context/FeatureFlagsContext';
 import { useConfirmDialog } from '@presentation/context/ConfirmDialogContext';
 import { AgendaDayView } from '@presentation/components/agenda';
@@ -42,6 +45,7 @@ export const AppointmentsPage: React.FC = () => {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [prefill, setPrefill] = useState<AppointmentPrefill | null>(null);
   const [defaultTime, setDefaultTime] = useState<string | undefined>(undefined);
+  const [defaultDuration, setDefaultDuration] = useState<number | undefined>(undefined);
   const { agendaDayViewEnabled } = useFeatureFlags();
   const { confirm } = useConfirmDialog();
   const location = useLocation();
@@ -73,9 +77,13 @@ export const AppointmentsPage: React.FC = () => {
     createRecurringAppointments,
     updateAppointment,
     moveAppointment,
+    resizeAppointment,
     deleteAppointment,
   } = useAppointments();
   const { user } = useAuth();
+  // Ajuste del barbero "duración ajustable" (lo cambia el admin; se relee al abrir el formulario).
+  const durationsEnabled = useAppointmentDurationsEnabled(formOpen);
+  const agendaGrid = durationsEnabled ? DURATION_GRID : LEGACY_GRID;
   const { getBarberByUserName } = useBarbers();
   // Cantidad de citas por serie recurrente, definida por el admin en el barbero (0 = deshabilitado).
   const [maxRecurringAppointments, setMaxRecurringAppointments] = useState(0);
@@ -127,6 +135,12 @@ export const AppointmentsPage: React.FC = () => {
     setEditingAppointment(null);
     setPrefill(null);
     setDefaultTime(time);
+    // Un spot con solo 15 min libres hasta la siguiente cita crea una cita de 15 (si caben 30, de 30).
+    setDefaultDuration(
+      durationsEnabled && time
+        ? getDefaultDurationForSlot(timeToMinutes(time), getBusyRanges(appointmentsForSelectedDay, undefined, DURATION_GRID))
+        : undefined
+    );
     setFormOpen(true);
   };
 
@@ -145,6 +159,7 @@ export const AppointmentsPage: React.FC = () => {
     setEditingAppointment(null);
     setPrefill(null);
     setDefaultTime(undefined);
+    setDefaultDuration(undefined);
   };
 
   const refreshCurrentRange = () => {
@@ -215,6 +230,24 @@ export const AppointmentsPage: React.FC = () => {
     }
 
     await moveAppointment(appointment.id!, appointment.date, newTime);
+    refreshCurrentRange();
+  };
+
+  // Redimensionar una cita desde la agenda (punto/borde superior o inferior): PATCH resize. Si el punto superior
+  // lleva el inicio a una hora que ya pasó se pide confirmación; si el backend rechaza (p. ej. SLOT_TAKEN) el
+  // error se notifica en useAppointments y el bloque vuelve a su tamaño.
+  const handleAgendaResize = async (appointment: Appointment, durationMinutes: number, newTime?: string) => {
+    if (newTime && isPastAppointmentDateTime(appointment.date, newTime)) {
+      const confirmed = await confirm({
+        title: "Hora ya pasada",
+        message: `${newTime} ya pasó. ¿Cambiar la hora de inicio de todos modos?`,
+        confirmText: "Cambiar",
+        cancelText: "Cancelar",
+      });
+      if (!confirmed) return;
+    }
+
+    await resizeAppointment(appointment.id!, durationMinutes, newTime, appointment.durationMinutes ?? DEFAULT_DURATION_MINUTES);
     refreshCurrentRange();
   };
 
@@ -345,7 +378,9 @@ export const AppointmentsPage: React.FC = () => {
               appointments={appointmentsForSelectedDay}
               onAddAt={handleAddAt}
               onSelectAppointment={handleSelectAppointment}
+              grid={agendaGrid}
               onMoveAppointment={handleAgendaMove}
+              onResizeAppointment={durationsEnabled ? handleAgendaResize : undefined}
             />
           ) : (
             <AppointmentAgendaList
@@ -358,7 +393,7 @@ export const AppointmentsPage: React.FC = () => {
       </Box>
 
       <AppointmentForm
-        key={editingAppointment?.id ?? `new-${toKey(selectedDate)}-${prefill?.phone ?? ''}-${defaultTime ?? ''}`}
+        key={editingAppointment?.id ?? `new-${toKey(selectedDate)}-${prefill?.phone ?? ""}-${defaultTime ?? ""}-${durationsEnabled ? "d" : "n"}-${defaultDuration ?? ""}`}
         open={formOpen}
         title={editingAppointment ? editingAppointment.clientName : 'Agendar cita'}
         appointment={editingAppointment}
@@ -366,6 +401,8 @@ export const AppointmentsPage: React.FC = () => {
         prefill={prefill}
         defaultTime={defaultTime}
         enableClientPicker={agendaDayViewEnabled}
+        durationsEnabled={durationsEnabled}
+        defaultDurationMinutes={defaultDuration}
         onSubmit={handleFormSubmit}
         onMove={handleMove}
         onDelete={handleDelete}

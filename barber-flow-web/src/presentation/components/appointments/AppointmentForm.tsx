@@ -31,6 +31,7 @@ import {
   RecurrenceFrequency,
 } from '@domain/entities/Appointment';
 import { APPOINTMENT_CONSTANTS } from '@shared/constants/appointments';
+import { DEFAULT_DURATION_MINUTES, DURATION_OPTIONS } from '@shared/constants/agenda';
 import { appColors } from '@presentation/theme/appColors';
 import { scrollbarSx } from '@presentation/theme/scrollbarSx';
 import { useConfirmDialog } from '@presentation/context/ConfirmDialogContext';
@@ -48,6 +49,10 @@ interface AppointmentFormProps {
   defaultTime?: string;
   /** Muestra el buscador de cliente (solo con la agenda por horas activa). */
   enableClientPicker?: boolean;
+  /** El barbero tiene el ajuste "duración ajustable" encendido: se muestra el selector de duración. */
+  durationsEnabled?: boolean;
+  /** Duración con la que se precarga una cita nueva (p. ej. 15 si el spot solo tiene 15 min libres). */
+  defaultDurationMinutes?: number;
   onSubmit: (data: CreateAppointmentFormData) => Promise<void>;
   onMove?: (appointmentId: string, newDate: string, newTime: string) => Promise<void>;
   /** Elimina la cita en edición (el botón solo aparece si se provee y la cita ya existe). */
@@ -60,6 +65,9 @@ interface AppointmentFormProps {
 }
 
 const MOVABLE_STATUSES: AppointmentStatus[] = ['scheduled', 'confirmed'];
+
+const DURATION_LABELS: Record<number, string> = { 15: "15 min", 30: "30 min", 45: "45 min", 60: "1 h", 90: "1 h 30", 120: "2 h" };
+const durationLabel = (minutes: number) => DURATION_LABELS[minutes] ?? `${minutes} min`;
 
 const FREQUENCY_OPTIONS: { value: RecurrenceFrequency; label: string; plural: string }[] = [
   { value: 'weekly', label: 'Semanal', plural: 'semanales' },
@@ -134,6 +142,8 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   prefill,
   defaultTime,
   enableClientPicker = false,
+  durationsEnabled = false,
+  defaultDurationMinutes,
   onSubmit,
   onMove,
   onDelete,
@@ -214,6 +224,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         notes: appointment.notes,
         paymentMethod: normalizePaymentMethod(appointment.paymentMethodUsed),
         status: appointment.status,
+        durationMinutes: durationsEnabled ? appointment.durationMinutes ?? DEFAULT_DURATION_MINUTES : undefined,
       }
     : {
         clientName: prefill?.clientName ?? '',
@@ -225,6 +236,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         notes: '',
         paymentMethod: prefill?.paymentMethod ?? APPOINTMENT_CONSTANTS.DEFAULT_PAYMENT_METHOD,
         status: 'scheduled',
+        durationMinutes: durationsEnabled ? defaultDurationMinutes ?? DEFAULT_DURATION_MINUTES : undefined,
       };
 
   const form = useForm(initialValues, appointment ? updateAppointmentSchema : createAppointmentSchema);
@@ -439,6 +451,28 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 }}
               />
             </Box>
+
+            {/* Duración (solo con el ajuste del barbero encendido) */}
+            {durationsEnabled && !isReadOnly && (
+              <Box>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: appColors.textSecondary, mb: 1 }}>
+                  Duración
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap" }}>
+                  {[...new Set([...DURATION_OPTIONS, form.values.durationMinutes ?? DEFAULT_DURATION_MINUTES])]
+                    .sort((a, b) => a - b)
+                    .map((minutes) => (
+                      <Pill
+                        key={minutes}
+                        label={durationLabel(minutes)}
+                        active={(form.values.durationMinutes ?? DEFAULT_DURATION_MINUTES) === minutes}
+                        disabled={isLoading}
+                        onClick={() => form.setFieldValue("durationMinutes", minutes)}
+                      />
+                    ))}
+                </Box>
+              </Box>
+            )}
 
             {/* Servicio */}
             <FormTextField

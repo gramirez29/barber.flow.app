@@ -8,4 +8,9 @@ public class AppointmentSchedulingException(string message, string? code = null)
     public const string SlotTakenCode = "SLOT_TAKEN";
 
     public const string RecurrenceDisabledCode = "RECURRENCE_DISABLED";
+
+    /// <summary>The barber does not have adjustable appointment durations enabled (admin setting).</summary>
+    public const string FeatureDisabledCode = "FEATURE_DISABLED";
+
+    public const string InvalidDurationCode = "INVALID_DURATION";
 }

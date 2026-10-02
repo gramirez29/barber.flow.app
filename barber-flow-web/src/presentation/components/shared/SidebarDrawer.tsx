@@ -10,6 +10,7 @@ import {
   Logout,
   HelpOutline,
   DeleteOutline,
+  Refresh,
   SvgIconComponent,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -21,8 +22,10 @@ import { useNotification } from '@presentation/context/NotificationContext';
 import { AuthApi } from '@infrastructure/api/AuthApi';
 import { AxiosHttpClient } from '@infrastructure/http/AxiosHttpClient';
 import { getErrorMessage } from '@shared/utils/errorUtils';
+import { forceRefresh } from '@shared/utils/forceRefresh';
 import { appColors } from '@presentation/theme/appColors';
 import { scrollbarSx } from '@presentation/theme/scrollbarSx';
+import { APPOINTMENT_STATUS_COLORS } from '@presentation/theme/statusColors';
 
 interface SidebarDrawerProps {
   open: boolean;
@@ -53,8 +56,10 @@ const ActionRow: React.FC<{
   icon: SvgIconComponent;
   label: string;
   destructive?: boolean;
+  /** Color propio de la fila (p. ej. verde de "Refrescar App"); si no, dorado o rojo si es destructiva. */
+  color?: string;
   onClick: () => void;
-}> = ({ icon: Icon, label, destructive, onClick }) => (
+}> = ({ icon: Icon, label, destructive, color, onClick }) => (
   <Box
     component="button"
     onClick={onClick}
@@ -69,7 +74,7 @@ const ActionRow: React.FC<{
       px: 1.5,
       py: 1.25,
       textAlign: 'left',
-      '&:hover': { backgroundColor: destructive ? appColors.errorBg : appColors.surfaceElevated },
+      '&:hover': { backgroundColor: color ? `${color}1F` : destructive ? appColors.errorBg : appColors.surfaceElevated },
     }}
   >
     <Box
@@ -81,12 +86,12 @@ const ActionRow: React.FC<{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: destructive ? `${appColors.error}38` : `${appColors.accent}29`,
+        backgroundColor: color ? `${color}33` : destructive ? `${appColors.error}38` : `${appColors.accent}29`,
       }}
     >
-      <Icon sx={{ color: destructive ? appColors.error : appColors.accent, fontSize: 19 }} />
+      <Icon sx={{ color: color ?? (destructive ? appColors.error : appColors.accent), fontSize: 19 }} />
     </Box>
-    <Typography sx={{ fontSize: 15, fontWeight: 700, color: destructive ? appColors.error : appColors.textPrimary }}>
+    <Typography sx={{ fontSize: 15, fontWeight: 700, color: color ?? (destructive ? appColors.error : appColors.textPrimary) }}>
       {label}
     </Typography>
   </Box>
@@ -119,6 +124,12 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ open, onClose }) =
     await logout();
     onClose();
     navigate('/login');
+  };
+
+  // Reemplaza al pull-to-refresh (desactivado): recarga la app completa sin cerrar la sesión.
+  const handleRefresh = () => {
+    onClose();
+    void forceRefresh();
   };
 
   const handleHelp = () => {
@@ -297,6 +308,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ open, onClose }) =
         <Box sx={{ borderTop: `1px solid ${appColors.border}`, opacity: 0.6, mb: 1 }} />
 
         <ActionRow icon={HelpOutline} label="Ayuda" onClick={handleHelp} />
+        <ActionRow icon={Refresh} label="Refrescar App" color={APPOINTMENT_STATUS_COLORS.completed} onClick={handleRefresh} />
         {user?.role !== 'Admin' && (
           <ActionRow icon={DeleteOutline} label="Eliminar mi cuenta" destructive onClick={handleDeleteAccount} />
         )}

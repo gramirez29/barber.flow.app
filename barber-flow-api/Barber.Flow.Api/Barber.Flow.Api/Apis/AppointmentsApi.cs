@@ -24,6 +24,10 @@ public static class AppointmentsApi
             .WithName(nameof(UpdateAppointmentAsync))
             .WithTags(AppointmentTag);
 
+        api.MapPatch("/resize/{id}", ResizeAppointmentAsync)
+            .WithName(nameof(ResizeAppointmentAsync))
+            .WithTags(AppointmentTag);
+
         api.MapPatch("/move/{id}", MoveAppointmentAsync)
             .WithName(nameof(MoveAppointmentAsync))
             .WithTags(AppointmentTag);
@@ -71,6 +75,7 @@ public static class AppointmentsApi
             ServiceName = request.ServiceName,
             ServicePrice = request.ServicePrice,
             Notes = request.Notes,
+            DurationMinutes = request.DurationMinutes,
             CreatedBy = userId,
             UpdatedBy = userId
         };
@@ -113,6 +118,7 @@ public static class AppointmentsApi
             ServiceName = first.ServiceName,
             ServicePrice = first.ServicePrice,
             Notes = first.Notes,
+            DurationMinutes = first.DurationMinutes,
             CreatedBy = userId,
             UpdatedBy = userId
         };
@@ -159,6 +165,7 @@ public static class AppointmentsApi
             ServiceName = request.ServiceName,
             ServicePrice = request.ServicePrice,
             Notes = request.Notes,
+            DurationMinutes = request.DurationMinutes,
             UpdatedBy = userId
         };
 
@@ -194,6 +201,32 @@ public static class AppointmentsApi
             if (moved == null) return TypedResults.NotFound();
 
             return TypedResults.Ok(Map(moved));
+        }
+        catch (AppointmentSchedulingException ex)
+        {
+            return TypedResults.BadRequest(new { message = ex.Message, code = ex.Code });
+        }
+    }
+
+    private static async Task<IResult> ResizeAppointmentAsync(
+        string id,
+        ResizeAppointmentRequest request,
+        IAppointmentService appointmentService,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await appointmentService.GetByIdAsync(id, cancellationToken);
+        if (existing == null) return TypedResults.NotFound();
+
+        var caller = ResolveCaller(httpContext);
+        if (!CanAccess(caller, existing.CreatedBy)) return TypedResults.NotFound();
+
+        try
+        {
+            var resized = await appointmentService.ResizeAsync(id, request.DurationMinutes, request.NewTime, cancellationToken);
+            if (resized == null) return TypedResults.NotFound();
+
+            return TypedResults.Ok(Map(resized));
         }
         catch (AppointmentSchedulingException ex)
         {
@@ -294,6 +327,7 @@ public static class AppointmentsApi
         a.UpdatedAt,
         a.CreatedBy,
         a.UpdatedBy,
-        a.SeriesId
+        a.SeriesId,
+        a.DurationMinutes ?? Barber.Flow.Domain.ValueObjects.AppointmentSchedule.DefaultDurationMinutes
     );
 }

@@ -103,7 +103,7 @@ public class MongoDbAppointmentRepositoryTests
         var sut = CreateSut();
         await sut.CreateAsync(BuildAppointment(date: "2026-03-15", time: "10:00"));
 
-        var result = await sut.HasConflictAsync("2026-03-15", "10:00", null);
+        var result = await sut.HasConflictAsync("admin", "2026-03-15", "10:00", null);
 
         Assert.True(result);
     }
@@ -116,7 +116,7 @@ public class MongoDbAppointmentRepositoryTests
         created.Status = "cancelled";
         await sut.UpdateAsync(created.Id, created);
 
-        var result = await sut.HasConflictAsync("2026-03-16", "10:00", null);
+        var result = await sut.HasConflictAsync("admin", "2026-03-16", "10:00", null);
 
         Assert.False(result);
     }
@@ -127,7 +127,7 @@ public class MongoDbAppointmentRepositoryTests
         var sut = CreateSut();
         var created = await sut.CreateAsync(BuildAppointment(date: "2026-03-17", time: "10:00"));
 
-        var result = await sut.HasConflictAsync("2026-03-17", "10:00", created.Id);
+        var result = await sut.HasConflictAsync("admin", "2026-03-17", "10:00", created.Id);
 
         Assert.False(result);
     }
@@ -263,5 +263,104 @@ public class MongoDbAppointmentRepositoryTests
         var result = await sut.FindByPhoneAsync("0000-0000", "admin");
 
         Assert.Null(result);
+    }
+
+    // ---- adjustable durations (AGENDA_DURATION_PLAN.md) ----------------------------------------
+
+    private static AppointmentEntity WithDuration(AppointmentEntity appointment, int? duration)
+    {
+        appointment.DurationMinutes = duration;
+        return appointment;
+    }
+
+    [Fact]
+    public async Task HasConflictAsync_SameSlotButDifferentOwner_ReturnsFalse()
+    {
+        var sut = CreateSut();
+        await sut.CreateAsync(BuildAppointment(date: "2032-02-1", time: "10:00", createdBy: "barber-a"));
+
+        Assert.False(await sut.HasConflictAsync("barber-b", "2032-02-1", "10:00", null));
+        Assert.True(await sut.HasConflictAsync("barber-a", "2032-02-1", "10:00", null));
+    }
+
+    [Fact]
+    public async Task HasOverlapAsync_30MinuteAppointmentBlocksTheNext15MinuteSpot_ButNotTheNextHalfHour()
+    {
+        var sut = CreateSut();
+        await sut.CreateAsync(WithDuration(BuildAppointment(date: "2032-02-2", time: "11:00"), 30));
+
+        Assert.True(await sut.HasOverlapAsync("admin", "2032-02-2", 11 * 60 + 15, 15, null));
+        Assert.True(await sut.HasOverlapAsync("admin", "2032-02-2", 10 * 60 + 45, 30, null));
+        Assert.False(await sut.HasOverlapAsync("admin", "2032-02-2", 11 * 60 + 30, 30, null));
+        Assert.False(await sut.HasOverlapAsync("admin", "2032-02-2", 10 * 60 + 30, 30, null));
+    }
+
+    [Fact]
+    public async Task HasOverlapAsync_ShorteningTo15MinutesFreesTheNextSpot()
+    {
+        var sut = CreateSut();
+        var created = await sut.CreateAsync(WithDuration(BuildAppointment(date: "2032-02-3", time: "11:00"), 30));
+        Assert.True(await sut.HasOverlapAsync("admin", "2032-02-3", 11 * 60 + 15, 15, null));
+
+        await sut.ResizeAsync(created.Id, 15);
+
+        Assert.False(await sut.HasOverlapAsync("admin", "2032-02-3", 11 * 60 + 15, 15, null));
+    }
+
+    [Fact]
+    public async Task HasOverlapAsync_AppointmentWithoutStoredDuration_CountsAs30Minutes()
+    {
+        var sut = CreateSut();
+        await sut.CreateAsync(BuildAppointment(date: "2032-02-4", time: "11:00"));
+
+        Assert.True(await sut.HasOverlapAsync("admin", "2032-02-4", 11 * 60 + 15, 15, null));
+        Assert.False(await sut.HasOverlapAsync("admin", "2032-02-4", 11 * 60 + 30, 15, null));
+    }
+
+    [Fact]
+    public async Task HasOverlapAsync_IgnoresCancelledOtherOwnersExcludedIdAndOtherDays()
+    {
+        var sut = CreateSut();
+        var mine = await sut.CreateAsync(BuildAppointment(date: "2032-02-5", time: "11:00"));
+        var cancelled = await sut.CreateAsync(BuildAppointment(date: "2032-02-5", time: "12:00"));
+        cancelled.Status = "cancelled";
+        await sut.UpdateAsync(cancelled.Id, cancelled);
+        await sut.CreateAsync(BuildAppointment(date: "2032-02-5", time: "13:00", createdBy: "barber-b"));
+        await sut.CreateAsync(BuildAppointment(date: "2032-02-5B", time: "14:00"));
+
+        Assert.False(await sut.HasOverlapAsync("admin", "2032-02-5", 11 * 60, 30, mine.Id));
+        Assert.False(await sut.HasOverlapAsync("admin", "2032-02-5", 12 * 60, 30, null));
+        Assert.False(await sut.HasOverlapAsync("admin", "2032-02-5", 13 * 60, 30, null));
+        Assert.False(await sut.HasOverlapAsync("admin", "2032-02-5", 14 * 60, 30, null));
+    }
+
+    [Fact]
+    public async Task ResizeAsync_SetsDurationAndOptionallyTheStartTime()
+    {
+        var sut = CreateSut();
+        var created = await sut.CreateAsync(WithDuration(BuildAppointment(date: "2032-02-6", time: "11:00"), 30));
+
+        var shortened = await sut.ResizeAsync(created.Id, 15);
+
+        Assert.Equal(15, shortened!.DurationMinutes);
+        Assert.Equal("11:00", shortened.Time);
+
+        var movedStart = await sut.ResizeAsync(created.Id, 15, "11:15");
+        Assert.Equal("11:15", movedStart!.Time);
+        Assert.Equal(15, (await sut.GetByIdAsync(created.Id))!.DurationMinutes);
+        Assert.Null(await sut.ResizeAsync("APT-9999", 15));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PersistsDurationMinutes()
+    {
+        var sut = CreateSut();
+        var created = await sut.CreateAsync(BuildAppointment(date: "2032-02-7", time: "11:00"));
+        created.DurationMinutes = 45;
+
+        var updated = await sut.UpdateAsync(created.Id, created);
+
+        Assert.Equal(45, updated!.DurationMinutes);
+        Assert.Equal(45, (await sut.GetByIdAsync(created.Id))!.DurationMinutes);
     }
 }

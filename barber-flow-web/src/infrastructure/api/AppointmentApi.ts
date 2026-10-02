@@ -56,6 +56,13 @@ export class AppointmentApi implements IAppointmentRepository {
     });
   }
 
+  async resize(id: string, durationMinutes: number, newTime?: string): Promise<Appointment> {
+    return this.httpClient.patch<Appointment>(`/api/appointments/resize/${id}`, {
+      durationMinutes,
+      ...(newTime ? { newTime } : {}),
+    });
+  }
+
   async delete(id: string): Promise<void> {
     await this.httpClient.delete(`/api/appointments/delete/${id}`);
   }
