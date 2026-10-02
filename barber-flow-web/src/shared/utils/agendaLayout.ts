@@ -248,3 +248,17 @@ export const formatDuration = (minutes: number): string => {
   const rest = minutes % 60;
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 };
+
+/**
+ * Spot de destino al arrastrar una cita: el que tiene su borde superior más cerca del borde superior del
+ * BLOQUE arrastrado (no del dedo/cursor). Así, en una cita alta, dónde se agarre no cambia a qué hora cae:
+ * moverla N spots hacia abajo la lleva exactamente N spots, y el spot resaltado es donde empezará.
+ */
+export const getNearestSlot = (slotTops: { id: string; top: number }[], blockTop: number): string | null => {
+  let best: { id: string; distance: number } | null = null;
+  for (const slot of slotTops) {
+    const distance = Math.abs(slot.top - blockTop);
+    if (best === null || distance < best.distance) best = { id: slot.id, distance };
+  }
+  return best?.id ?? null;
+};

@@ -7,7 +7,7 @@ import {
   Modifier,
   MouseSensor,
   TouchSensor,
-  pointerWithin,
+  CollisionDetection,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -19,6 +19,7 @@ import {
   ResizeHandle,
   ResizeResult,
   getBusyRanges,
+  getNearestSlot,
   getResizeResult,
   getVisibleRange,
   isAgendaMovable,
@@ -65,6 +66,19 @@ interface AgendaDayViewProps {
 
 // Solo movimiento vertical: la cita cambia de hora, nunca de carril/día.
 const restrictToVerticalAxis: Modifier = ({ transform }) => ({ ...transform, x: 0 });
+
+// El destino es el spot cuyo borde superior queda más cerca del borde superior del BLOQUE arrastrado, no el spot
+// que está bajo el dedo/cursor: en una cita alta (p. ej. de 1 h) dónde se agarre no debe cambiar a qué hora cae,
+// y el spot resaltado es exactamente donde empezará la cita.
+const topEdgeCollision: CollisionDetection = ({ collisionRect, droppableRects, droppableContainers }) => {
+  const slotTops: { id: string; top: number }[] = [];
+  for (const container of droppableContainers) {
+    const rect = droppableRects.get(container.id);
+    if (rect) slotTops.push({ id: String(container.id), top: rect.top });
+  }
+  const id = getNearestSlot(slotTops, collisionRect.top);
+  return id ? [{ id }] : [];
+};
 
 interface PendingChange {
   time?: string;
@@ -230,8 +244,10 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
     // El "soltar" no debe abrir la edición de la cita.
     suppressClickUntil.current = Date.now() + 300;
 
-    const { active, over } = event;
+    const { active, over, delta } = event;
     if (!over || !onMoveAppointment) return;
+    // Un roce menor a medio spot no mueve la cita (evita que una cita con hora "suelta", p. ej. 11:10, se ajuste sola).
+    if (Math.abs(delta.y) < grid.slotHeightPx / 2) return;
 
     const overId = String(over.id);
     if (!overId.startsWith('slot-')) return;
@@ -327,7 +343,7 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
       >
         <DndContext
           sensors={sensors}
-          collisionDetection={pointerWithin}
+          collisionDetection={topEdgeCollision}
           modifiers={[restrictToVerticalAxis]}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
