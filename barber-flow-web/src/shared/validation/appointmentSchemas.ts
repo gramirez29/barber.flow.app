@@ -56,6 +56,12 @@ const appointmentObjectSchema = z.object({
       errorMap: () => ({ message: 'Estado inválido' }),
     })
     .optional(),
+  durationMinutes: z
+    .number()
+    .int()
+    .min(15, "La duración mínima es de 15 minutos")
+    .max(120, "La duración máxima es de 120 minutos")
+    .optional(),
 });
 
 // Create Appointment Schema

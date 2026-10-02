@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
   Modifier,
   MouseSensor,
   TouchSensor,
@@ -13,12 +14,17 @@ import {
 import { format, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Appointment } from '@domain/entities/Appointment';
-import { AGENDA } from '@shared/constants/agenda';
+import { AGENDA, AgendaGrid, LEGACY_GRID } from '@shared/constants/agenda';
 import {
+  ResizeHandle,
+  ResizeResult,
+  getBusyRanges,
+  getResizeResult,
   getVisibleRange,
   isAgendaMovable,
   layoutLanes,
   minutesToOffset,
+  minutesToTime,
   timeToMinutes,
 } from '@shared/utils/agendaLayout';
 import { appColors } from '@presentation/theme/appColors';
@@ -36,6 +42,11 @@ interface AgendaDayViewProps {
   appointments: Appointment[];
   startHour?: number;
   endHour?: number;
+  /**
+   * Grilla de spots. Por defecto la de siempre (30 min, cada cita ocupa un spot). Con `DURATION_GRID`
+   * (ajuste "duración ajustable" del barbero) los spots son de 15 min y cada cita ocupa su duración.
+   */
+  grid?: AgendaGrid;
   /** Botón "Añadir el {fecha}" (sin hora) o toque en un spot vacío (con la hora del spot). */
   onAddAt: (time?: string) => void;
   onSelectAppointment: (appointment: Appointment) => void;
@@ -44,19 +55,32 @@ interface AgendaDayViewProps {
    * arrastre queda deshabilitado. Mientras la promesa está pendiente la cita se muestra en su nueva hora.
    */
   onMoveAppointment?: (appointment: Appointment, newTime: string) => Promise<void>;
+  /**
+   * Se llama al soltar un punto/borde de redimensionar. `newTime` solo viene cuando también cambió el inicio
+   * (punto superior). Debe guardar y lanzar si falla (el bloque vuelve a su tamaño). Si se omite, no se puede
+   * redimensionar (ajuste del barbero apagado).
+   */
+  onResizeAppointment?: (appointment: Appointment, durationMinutes: number, newTime?: string) => Promise<void>;
 }
 
 // Solo movimiento vertical: la cita cambia de hora, nunca de carril/día.
 const restrictToVerticalAxis: Modifier = ({ transform }) => ({ ...transform, x: 0 });
+
+interface PendingChange {
+  time?: string;
+  durationMinutes?: number;
+}
 
 export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
   date,
   appointments,
   startHour = AGENDA.START_HOUR,
   endHour = AGENDA.END_HOUR,
+  grid = LEGACY_GRID,
   onAddAt,
   onSelectAppointment,
   onMoveAppointment,
+  onResizeAppointment,
 }) => {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -68,10 +92,14 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
   // Pantallas grandes: la agenda va en una caja con scroll propio. Celular: altura completa y scrollea la página.
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const suppressClickUntil = useRef(0);
-  const [pendingTimes, setPendingTimes] = useState<Record<string, string>>({});
+  // Cambios "optimistas" (hora y/o duración) de las citas que se están guardando en el backend.
+  const [pending, setPending] = useState<Record<string, PendingChange>>({});
+  // Cita seleccionada con presión larga (touch): muestra los puntos de redimensionar.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
 
   const dragEnabled = Boolean(onMoveAppointment);
+  const resizeEnabled = Boolean(onResizeAppointment) && grid.durationsEnabled;
 
   // Ratón: arranca al mover unos píxeles. Touch: presión larga (así no pelea con el scroll vertical).
   const sensors = useSensors(
@@ -79,14 +107,23 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
     useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } })
   );
 
-  // Citas con la hora "optimista" de las que se están moviendo.
+  // Citas con la hora/duración "optimista" de las que se están guardando.
   const displayed = useMemo(
-    () => appointments.map((a) => (a.id && pendingTimes[a.id] ? { ...a, time: pendingTimes[a.id] } : a)),
-    [appointments, pendingTimes]
+    () =>
+      appointments.map((a) => {
+        const change = a.id ? pending[a.id] : undefined;
+        if (!change) return a;
+        return {
+          ...a,
+          ...(change.time ? { time: change.time } : {}),
+          ...(change.durationMinutes ? { durationMinutes: change.durationMinutes } : {}),
+        };
+      }),
+    [appointments, pending]
   );
 
-  const range = useMemo(() => getVisibleRange(displayed, startHour, endHour), [displayed, startHour, endHour]);
-  const laidOut = useMemo(() => layoutLanes(displayed), [displayed]);
+  const range = useMemo(() => getVisibleRange(displayed, startHour, endHour, grid), [displayed, startHour, endHour, grid]);
+  const laidOut = useMemo(() => layoutLanes(displayed, grid), [displayed, grid]);
 
   const showingToday = isToday(date);
   const nowMinutes = showingToday ? now.getHours() * 60 + now.getMinutes() : null;
@@ -113,11 +150,31 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
     };
   }, []);
 
+  // La selección se limpia al tocar fuera del bloque seleccionado, con Esc o al cambiar de día.
+  useEffect(() => {
+    if (!selectedId) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const block = (event.target as HTMLElement | null)?.closest('[data-agenda-block-id]');
+      if (block?.getAttribute('data-agenda-block-id') !== selectedId) setSelectedId(null);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedId(null);
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [selectedId]);
+
   const dateKey = format(date, 'yyyy-MM-dd');
+  useEffect(() => setSelectedId(null), [dateKey]);
+
   const hasAppointments = appointments.length > 0;
   useEffect(() => {
-    const grid = gridRef.current;
-    if (!grid) return;
+    const gridEl = gridRef.current;
+    if (!gridEl) return;
 
     if (isDesktop) {
       // Caja con scroll propio: al cambiar de día (o llegar las citas) va a la hora actual / primera cita.
@@ -128,7 +185,7 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
         const first = Math.min(...appointments.map((a) => timeToMinutes(a.time)).filter((m) => !Number.isNaN(m)));
         anchor = Number.isFinite(first) ? first : null;
       }
-      grid.scrollTo({ top: anchor === null ? 0 : Math.max(0, minutesToOffset(anchor - 60, range)) });
+      gridEl.scrollTo({ top: anchor === null ? 0 : Math.max(0, minutesToOffset(anchor - 60, range, grid)) });
       return;
     }
 
@@ -139,7 +196,7 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
 
     const current = new Date();
     const nowMinutesLocal = current.getHours() * 60 + current.getMinutes();
-    const lineTop = grid.getBoundingClientRect().top + window.scrollY + 10 + minutesToOffset(nowMinutesLocal, range);
+    const lineTop = gridEl.getBoundingClientRect().top + window.scrollY + 10 + minutesToOffset(nowMinutesLocal, range, grid);
     const viewportTop = window.scrollY + 80; // deja libre la barra superior
     const viewportBottom = window.scrollY + window.innerHeight - 120; // deja libre el botón "Añadir"
     if (lineTop < viewportTop || lineTop > viewportBottom) {
@@ -149,9 +206,25 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateKey, hasAppointments, isDesktop]);
 
-  const handleDragStart = () => {
+  const handleDragStart = (event: DragStartEvent) => {
     suppressClickUntil.current = Number.MAX_SAFE_INTEGER;
+    // Presión larga en touch = seleccionar el bloque (aparecen los puntos de redimensionar). Con mouse no.
+    const isTouch = typeof TouchEvent !== 'undefined' && event.activatorEvent instanceof TouchEvent;
+    if (isTouch && resizeEnabled) {
+      const dragged = appointments.find((a) => a.id === String(event.active.id));
+      setSelectedId(dragged && isAgendaMovable(dragged.status) ? String(event.active.id) : null);
+    } else {
+      setSelectedId(null);
+    }
   };
+
+  const clearPending = useCallback((id: string) => {
+    setPending((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+  }, []);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     // El "soltar" no debe abrir la edición de la cita.
@@ -170,22 +243,59 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
     const newTime = overId.slice('slot-'.length);
     if (newTime === appointment.time) return;
 
-    setPendingTimes((current) => ({ ...current, [id]: newTime }));
+    setPending((current) => ({ ...current, [id]: { ...current[id], time: newTime } }));
     try {
       await onMoveAppointment(appointment, newTime);
     } catch {
       // El error (p. ej. SLOT_TAKEN) ya se notificó en useAppointments; la cita vuelve a su lugar.
     } finally {
-      setPendingTimes((current) => {
-        const next = { ...current };
-        delete next[id];
-        return next;
-      });
+      clearPending(id);
     }
   };
 
   const handleDragCancel = () => {
     suppressClickUntil.current = Date.now() + 300;
+  };
+
+  // --- Redimensionar -------------------------------------------------------------------------------------
+
+  // Durante el arrastre de un punto: nuevo inicio/duración, limitados a las citas vecinas y al rango visible.
+  const computeResize = useCallback(
+    (appointment: Appointment, handle: ResizeHandle, deltaPx: number): ResizeResult =>
+      getResizeResult({
+        startMinutes: timeToMinutes(appointment.time),
+        durationMinutes: displayed.find((a) => a.id === appointment.id)?.durationMinutes ?? appointment.durationMinutes ?? 30,
+        handle,
+        deltaPx,
+        range,
+        busy: getBusyRanges(displayed, appointment.id, grid),
+        grid,
+      }),
+    [displayed, range, grid]
+  );
+
+  const handleResizeCommit = async (appointment: Appointment, result: ResizeResult) => {
+    const id = appointment.id;
+    if (!id || !onResizeAppointment) return;
+
+    const startChanged = result.startMinutes !== timeToMinutes(appointment.time);
+    const newTime = startChanged ? minutesToTime(result.startMinutes) : undefined;
+    setPending((current) => ({
+      ...current,
+      [id]: { ...current[id], durationMinutes: result.durationMinutes, ...(newTime ? { time: newTime } : {}) },
+    }));
+    try {
+      await onResizeAppointment(appointment, result.durationMinutes, newTime);
+    } catch {
+      // El error (p. ej. SLOT_TAKEN) ya se notificó en useAppointments; el bloque vuelve a su tamaño.
+    } finally {
+      clearPending(id);
+    }
+  };
+
+  const handleResizeActiveChange = (active: boolean) => {
+    // Al soltar el punto no debe abrirse el formulario de la cita.
+    suppressClickUntil.current = active ? Number.MAX_SAFE_INTEGER : Date.now() + 300;
   };
 
   const addLabel = `Añadir el ${format(date, "d MMM", { locale: es }).replace('.', '')}`;
@@ -219,18 +329,24 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <AgendaTimeGrid range={range} nowMinutes={nowMinutes} onSelectSlot={(time) => onAddAt(time)}>
+          <AgendaTimeGrid range={range} nowMinutes={nowMinutes} grid={grid} onSelectSlot={(time) => onAddAt(time)}>
             {laidOut.map(({ appointment, startMinutes, lane, laneCount }) => (
               <AgendaAppointmentBlock
                 key={appointment.id ?? `${appointment.date}-${appointment.time}-${appointment.phone}`}
                 appointment={appointment}
-                top={minutesToOffset(startMinutes, range)}
+                top={minutesToOffset(startMinutes, range, grid)}
                 lane={lane}
                 laneCount={laneCount}
+                grid={grid}
                 draggable={dragEnabled && isAgendaMovable(appointment.status)}
-                isPending={Boolean(appointment.id && pendingTimes[appointment.id])}
+                resizable={resizeEnabled && isAgendaMovable(appointment.status) && Boolean(appointment.id)}
+                selected={Boolean(appointment.id) && appointment.id === selectedId}
+                isPending={Boolean(appointment.id && pending[appointment.id])}
                 isClickSuppressed={() => Date.now() < suppressClickUntil.current}
                 onClick={onSelectAppointment}
+                computeResize={computeResize}
+                onResizeCommit={handleResizeCommit}
+                onResizeActiveChange={handleResizeActiveChange}
               />
             ))}
           </AgendaTimeGrid>
