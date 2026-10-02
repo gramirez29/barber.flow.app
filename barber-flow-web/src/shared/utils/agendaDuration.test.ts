@@ -9,6 +9,7 @@ import {
   getBusyRanges,
   getDefaultDurationForSlot,
   getFreeMinutesFrom,
+  getNearestSlot,
   getGridHeight,
   getResizeResult,
   getSlotStarts,
@@ -156,5 +157,28 @@ describe('formatDuration', () => {
     expect(formatDuration(60)).toBe('1 h');
     expect(formatDuration(90)).toBe('1 h 30 min');
     expect(formatDuration(120)).toBe('2 h');
+  });
+});
+
+describe('getNearestSlot (destino al arrastrar por el borde superior del bloque)', () => {
+  // spots de 32 px: 11:00 en 0, 11:15 en 32, 11:30 en 64, 11:45 en 96, 12:00 en 128
+  const tops = [0, 32, 64, 96, 128].map((top, i) => ({ id: `slot-${['11:00', '11:15', '11:30', '11:45', '12:00'][i]}`, top }));
+
+  it('elige el spot cuyo borde superior queda más cerca del borde superior del bloque', () => {
+    expect(getNearestSlot(tops, 0)).toBe('slot-11:00');
+    expect(getNearestSlot(tops, 30)).toBe('slot-11:15');
+    expect(getNearestSlot(tops, 47)).toBe('slot-11:15'); // por debajo del punto medio (48)
+    expect(getNearestSlot(tops, 49)).toBe('slot-11:30'); // por encima del punto medio
+    expect(getNearestSlot(tops, 70)).toBe('slot-11:30');
+  });
+
+  it('no depende de dónde se agarró el bloque: mover un bloque de 1 h un spot lo lleva un spot', () => {
+    // bloque de 60 min que arranca en 11:00 (top 0); se mueve 32 px (1 spot) agarrándolo en cualquier punto
+    const blockTopAfterDrag = 0 + 32;
+    expect(getNearestSlot(tops, blockTopAfterDrag)).toBe('slot-11:15');
+  });
+
+  it('sin spots no hay destino', () => {
+    expect(getNearestSlot([], 10)).toBeNull();
   });
 });
