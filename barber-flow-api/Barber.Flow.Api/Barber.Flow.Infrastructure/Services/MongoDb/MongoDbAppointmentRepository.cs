@@ -1,5 +1,6 @@
 using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
+using Barber.Flow.Domain.ValueObjects;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -46,6 +47,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
             .Set(a => a.ServicePrice, appointment.ServicePrice)
             .Set(a => a.Notes, appointment.Notes)
             .Set(a => a.ShopId, appointment.ShopId)
+            .Set(a => a.DurationMinutes, appointment.DurationMinutes)
             .Set(a => a.UpdatedAt, DateTime.UtcNow)
             .Set(a => a.UpdatedBy, appointment.UpdatedBy);
 
@@ -161,12 +163,47 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
     }
 
     /// <inheritdoc/>
-    public async Task<bool> HasConflictAsync(string date, string time, string? excludeId, CancellationToken cancellation = default)
+    public async Task<Appointments?> ResizeAsync(string id, int durationMinutes, string? newTime = null, CancellationToken cancellation = default)
+    {
+        var update = Builders<Appointments>.Update
+            .Set(a => a.DurationMinutes, durationMinutes)
+            .Set(a => a.UpdatedAt, DateTime.UtcNow);
+
+        if (!string.IsNullOrWhiteSpace(newTime))
+        {
+            update = update.Set(a => a.Time, newTime);
+        }
+
+        return await _collection.FindOneAndUpdateAsync(
+            Builders<Appointments>.Filter.Eq(a => a.Id, id),
+            update,
+            new FindOneAndUpdateOptions<Appointments> { ReturnDocument = ReturnDocument.After },
+            cancellation);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> HasConflictAsync(string? owner, string date, string time, string? excludeId, CancellationToken cancellation = default)
+    {
+        var filter = BuildSameDayFilter(owner, date, excludeId);
+        filter = Builders<Appointments>.Filter.And(filter, Builders<Appointments>.Filter.Eq(a => a.Time, time));
+        return await _collection.Find(filter).AnyAsync(cancellation);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> HasOverlapAsync(string? owner, string date, int startMinutes, int durationMinutes, string? excludeId, CancellationToken cancellation = default)
+    {
+        // One barber has a handful of appointments per day, so the overlap is evaluated in memory.
+        var sameDay = await _collection.Find(BuildSameDayFilter(owner, date, excludeId)).ToListAsync(cancellation);
+        return sameDay.Any(a => AppointmentSchedule.Overlaps(a.Time, a.DurationMinutes, startMinutes, durationMinutes));
+    }
+
+    // Active (non-cancelled) appointments of one owner on one date, optionally excluding one id.
+    private static FilterDefinition<Appointments> BuildSameDayFilter(string? owner, string date, string? excludeId)
     {
         var filters = new List<FilterDefinition<Appointments>>
         {
             Builders<Appointments>.Filter.Eq(a => a.Date, date),
-            Builders<Appointments>.Filter.Eq(a => a.Time, time),
+            Builders<Appointments>.Filter.Eq(a => a.CreatedBy, owner ?? string.Empty),
             Builders<Appointments>.Filter.Ne(a => a.Status, "cancelled"),
         };
 
@@ -175,8 +212,7 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
             filters.Add(Builders<Appointments>.Filter.Ne(a => a.Id, excludeId));
         }
 
-        var filter = Builders<Appointments>.Filter.And(filters);
-        return await _collection.Find(filter).AnyAsync(cancellation);
+        return Builders<Appointments>.Filter.And(filters);
     }
 
     /// <inheritdoc/>

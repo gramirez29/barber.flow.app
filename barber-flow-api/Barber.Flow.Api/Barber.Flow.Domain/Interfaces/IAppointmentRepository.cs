@@ -70,14 +70,29 @@ public interface IAppointmentRepository
     Task<Entities.Appointments?> MoveAsync(string id, string newDate, string? newTime = null, CancellationToken cancellation = default);
 
     /// <summary>
-    /// Checks whether a non-cancelled appointment already exists at the given date and time.
+    /// Sets how long an appointment lasts and, when <paramref name="newTime"/> is given, its start time.
     /// </summary>
+    /// <returns>The updated appointment entity, or null if the appointment does not exist.</returns>
+    Task<Entities.Appointments?> ResizeAsync(string id, int durationMinutes, string? newTime = null, CancellationToken cancellation = default);
+
+    /// <summary>
+    /// Checks whether the owner already has a non-cancelled appointment at exactly the given date and time.
+    /// Scoped to the owner (CreatedBy): data is private per barber, so one barber's appointment never blocks another's.
+    /// </summary>
+    /// <param name="owner">The barber (CreatedBy) whose appointments are checked.</param>
     /// <param name="date">The date to check.</param>
     /// <param name="time">The time to check.</param>
     /// <param name="excludeId">An appointment id to exclude from the check (e.g. the appointment being moved/updated).</param>
     /// <param name="cancellation">A token to monitor for cancellation requests.</param>
     /// <returns>True if a conflicting appointment exists, false otherwise.</returns>
-    Task<bool> HasConflictAsync(string date, string time, string? excludeId, CancellationToken cancellation = default);
+    Task<bool> HasConflictAsync(string? owner, string date, string time, string? excludeId, CancellationToken cancellation = default);
+
+    /// <summary>
+    /// Checks whether the owner has a non-cancelled appointment that overlaps
+    /// [<paramref name="startMinutes"/>, <paramref name="startMinutes"/> + <paramref name="durationMinutes"/>) on the given date.
+    /// A stored appointment without duration counts as 30 minutes; ends are exclusive.
+    /// </summary>
+    Task<bool> HasOverlapAsync(string? owner, string date, int startMinutes, int durationMinutes, string? excludeId, CancellationToken cancellation = default);
 
     /// <summary>
     /// Generates the next unique identifier for an appointment.

@@ -28,7 +28,7 @@ public class AppointmentsApiTests : IClassFixture<ApiWebApplicationFactory>
     /// an authenticated client logged in as that new barber. Appointment ownership checks are
     /// keyed on the barber's own username (CreatedBy), not the shop they belong to.
     /// </summary>
-    private async Task<HttpClient> CreateBarberClientAsync(string userName, int? maxRecurring = null)
+    private async Task<HttpClient> CreateBarberClientAsync(string userName, int? maxRecurring = null, bool durations = false)
     {
         var adminClient = await CreateAuthenticatedClientAsync();
         var request = new BarberRequest(
@@ -42,7 +42,7 @@ public class AppointmentsApiTests : IClassFixture<ApiWebApplicationFactory>
             BarberShopPhone: null,
             PhotoUrl: null,
             Password: "password123",
-            Settings: maxRecurring is null ? null : new BarberSettingsDto(40m, 0m, maxRecurring),
+            Settings: maxRecurring is null && !durations ? null : new BarberSettingsDto(40m, 0m, maxRecurring, durations ? true : null),
             ShopId: null
         );
         var response = await adminClient.PostAsJsonAsync("/api/barbers/create", request);
@@ -253,5 +253,120 @@ public class AppointmentsApiTests : IClassFixture<ApiWebApplicationFactory>
 
         var after = await admin.GetFromJsonAsync<BarberResponse>($"/api/barbers/getById/{barber.Id}");
         Assert.Equal(5, after!.Settings!.MaxRecurringAppointments);
+    }
+
+    // ---- adjustable durations (AGENDA_DURATION_PLAN.md) ----------------------------------------
+
+    private static AppointmentRequest DurationRequest(string date, string time, int? duration = null)
+        => new("Duration Client", "9999-0011", null, date, time, "scheduled", null, "cash", "Corte", 5000m, null, null, duration);
+
+    private static async Task<string> CreateAndGetIdAsync(HttpClient client, AppointmentRequest request)
+    {
+        var response = await client.PostAsJsonAsync("/api/appointments/create", request);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<AppointmentResponse>())!.Id;
+    }
+
+    [Fact]
+    public async Task Durations_FeatureOn_AThirtyMinuteAppointmentBlocksTheNextSpotUntilItIsShortened()
+    {
+        var barber = await CreateBarberClientAsync($"barberDur1-{Guid.NewGuid():N}", durations: true);
+        var id = await CreateAndGetIdAsync(barber, DurationRequest("2033-03-01", "11:00"));
+
+        var blocked = await barber.PostAsJsonAsync("/api/appointments/create", DurationRequest("2033-03-01", "11:15", 15));
+        Assert.Equal(HttpStatusCode.BadRequest, blocked.StatusCode);
+        Assert.Contains("SLOT_TAKEN", await blocked.Content.ReadAsStringAsync());
+
+        var resized = await barber.PatchAsJsonAsync($"/api/appointments/resize/{id}", new ResizeAppointmentRequest(15));
+        Assert.Equal(HttpStatusCode.OK, resized.StatusCode);
+        Assert.Equal(15, (await resized.Content.ReadFromJsonAsync<AppointmentResponse>())!.DurationMinutes);
+
+        var accepted = await barber.PostAsJsonAsync("/api/appointments/create", DurationRequest("2033-03-01", "11:15", 15));
+        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
+    }
+
+    [Fact]
+    public async Task Durations_FeatureOn_ResizeToAnOverlappingRangeIsRejected()
+    {
+        var barber = await CreateBarberClientAsync($"barberDur2-{Guid.NewGuid():N}", durations: true);
+        var first = await CreateAndGetIdAsync(barber, DurationRequest("2033-03-02", "11:00", 15));
+        await CreateAndGetIdAsync(barber, DurationRequest("2033-03-02", "11:15", 15));
+
+        var response = await barber.PatchAsJsonAsync($"/api/appointments/resize/{first}", new ResizeAppointmentRequest(30));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("SLOT_TAKEN", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Durations_FeatureOn_UpdateWithoutDuration_KeepsTheStoredOne()
+    {
+        var barber = await CreateBarberClientAsync($"barberDur3-{Guid.NewGuid():N}", durations: true);
+        var id = await CreateAndGetIdAsync(barber, DurationRequest("2033-03-03", "11:00", 15));
+
+        var update = await barber.PutAsJsonAsync($"/api/appointments/update/{id}", DurationRequest("2033-03-03", "11:00") with { Notes = "edited" });
+
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        Assert.Equal(15, (await update.Content.ReadFromJsonAsync<AppointmentResponse>())!.DurationMinutes);
+    }
+
+    [Fact]
+    public async Task Durations_FeatureOff_ResizeIsRejectedAndTheOldExactTimeRuleApplies()
+    {
+        var barber = await CreateBarberClientAsync($"barberDur4-{Guid.NewGuid():N}");
+        var id = await CreateAndGetIdAsync(barber, DurationRequest("2033-03-04", "11:00", 15));
+
+        var resize = await barber.PatchAsJsonAsync($"/api/appointments/resize/{id}", new ResizeAppointmentRequest(15));
+        Assert.Equal(HttpStatusCode.BadRequest, resize.StatusCode);
+        Assert.Contains("FEATURE_DISABLED", await resize.Content.ReadAsStringAsync());
+
+        // Off: the stored duration is ignored (30) and only the exact same time conflicts.
+        var neighbour = await barber.PostAsJsonAsync("/api/appointments/create", DurationRequest("2033-03-04", "11:15"));
+        Assert.Equal(HttpStatusCode.OK, neighbour.StatusCode);
+        var sameTime = await barber.PostAsJsonAsync("/api/appointments/create", DurationRequest("2033-03-04", "11:00"));
+        Assert.Equal(HttpStatusCode.BadRequest, sameTime.StatusCode);
+        Assert.Equal(30, (await (await barber.GetAsync($"/api/appointments/getById/{id}")).Content.ReadFromJsonAsync<AppointmentResponse>())!.DurationMinutes);
+    }
+
+    [Fact]
+    public async Task Conflicts_AreScopedPerBarber_TheSameSlotIsFreeForAnotherBarber()
+    {
+        var barberA = await CreateBarberClientAsync($"barberDur5a-{Guid.NewGuid():N}");
+        var barberB = await CreateBarberClientAsync($"barberDur5b-{Guid.NewGuid():N}");
+        await CreateAndGetIdAsync(barberA, DurationRequest("2033-03-05", "11:00"));
+
+        var sameSlotOtherBarber = await barberB.PostAsJsonAsync("/api/appointments/create", DurationRequest("2033-03-05", "11:00"));
+
+        Assert.Equal(HttpStatusCode.OK, sameSlotOtherBarber.StatusCode);
+    }
+
+    [Fact]
+    public async Task Resize_AnotherBarbersAppointment_ReturnsNotFound()
+    {
+        var owner = await CreateBarberClientAsync($"barberDur6a-{Guid.NewGuid():N}", durations: true);
+        var other = await CreateBarberClientAsync($"barberDur6b-{Guid.NewGuid():N}", durations: true);
+        var id = await CreateAndGetIdAsync(owner, DurationRequest("2033-03-06", "11:00"));
+
+        var response = await other.PatchAsJsonAsync($"/api/appointments/resize/{id}", new ResizeAppointmentRequest(15));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task BarberSettings_EnableAppointmentDurations_IsReturnedAndSurvivesASettingsUpdateThatOmitsIt()
+    {
+        var admin = await CreateAuthenticatedClientAsync();
+        var userName = $"barberDur7-{Guid.NewGuid():N}";
+        await CreateBarberClientAsync(userName, durations: true);
+        var barber = (await admin.GetFromJsonAsync<List<BarberResponse>>("/api/barbers/search"))!.First(b => b.UserName == userName);
+        Assert.True(barber.Settings!.EnableAppointmentDurations);
+
+        // A report-calculation edit (commission/expense only) must not switch the feature off.
+        var update = new BarberRequest(userName, "8888-0000", $"{userName}@example.com", userName, "8888-0000", null, null, null, null, null,
+            new BarberSettingsDto(25m, 1500m), null);
+        var response = await admin.PutAsJsonAsync($"/api/barbers/update/{barber.Id}", update);
+        response.EnsureSuccessStatusCode();
+
+        Assert.True((await response.Content.ReadFromJsonAsync<BarberResponse>())!.Settings!.EnableAppointmentDurations);
     }
 }

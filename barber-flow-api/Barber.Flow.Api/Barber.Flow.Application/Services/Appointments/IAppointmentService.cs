@@ -30,5 +30,8 @@ public interface IAppointmentService
 
     Task<Domain.Entities.Appointments?> MoveAsync(string id, string newDate, string? newTime = null, CancellationToken cancellationToken = default);
 
+    /// <summary>Changes the duration (and optionally the start time) of an appointment. Requires the owner to have adjustable durations enabled.</summary>
+    Task<Domain.Entities.Appointments?> ResizeAsync(string id, int durationMinutes, string? newTime = null, CancellationToken cancellationToken = default);
+
     Task<string> GetNextIdAsync(CancellationToken cancellationToken = default);
 }

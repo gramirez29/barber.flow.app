@@ -1,5 +1,6 @@
 using Barber.Flow.Domain.Entities;
 using Barber.Flow.Domain.Interfaces;
+using Barber.Flow.Domain.ValueObjects;
 using System.Collections.Concurrent;
 
 namespace Barber.Flow.Infrastructure.Services.InMemory;
@@ -98,6 +99,7 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
         existing.ServicePrice = appointment.ServicePrice;
         existing.Notes = appointment.Notes;
         existing.ShopId = appointment.ShopId;
+        existing.DurationMinutes = appointment.DurationMinutes;
         existing.UpdatedAt = DateTime.UtcNow;
         existing.UpdatedBy = appointment.UpdatedBy;
         _store[id] = existing;
@@ -184,16 +186,42 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
         return Task.FromResult<Domain.Entities.Appointments?>(existing);
     }
 
-    public Task<bool> HasConflictAsync(string date, string time, string? excludeId, CancellationToken cancellation = default)
+    public Task<Domain.Entities.Appointments?> ResizeAsync(string id, int durationMinutes, string? newTime = null, CancellationToken cancellation = default)
     {
-        var hasConflict = _store.Values.Any(a =>
-            a.Date == date &&
-            a.Time == time &&
-            a.Status != "cancelled" &&
-            (string.IsNullOrWhiteSpace(excludeId) || a.Id != excludeId));
+        if (!_store.TryGetValue(id, out var existing))
+            return Task.FromResult<Domain.Entities.Appointments?>(null);
 
+        existing.DurationMinutes = durationMinutes;
+        if (!string.IsNullOrWhiteSpace(newTime))
+        {
+            existing.Time = newTime;
+        }
+        existing.UpdatedAt = DateTime.UtcNow;
+        _store[id] = existing;
+
+        return Task.FromResult<Domain.Entities.Appointments?>(existing);
+    }
+
+    public Task<bool> HasConflictAsync(string? owner, string date, string time, string? excludeId, CancellationToken cancellation = default)
+    {
+        var hasConflict = ActiveOnDay(owner, date, excludeId).Any(a => a.Time == time);
         return Task.FromResult(hasConflict);
     }
+
+    public Task<bool> HasOverlapAsync(string? owner, string date, int startMinutes, int durationMinutes, string? excludeId, CancellationToken cancellation = default)
+    {
+        var overlaps = ActiveOnDay(owner, date, excludeId)
+            .Any(a => AppointmentSchedule.Overlaps(a.Time, a.DurationMinutes, startMinutes, durationMinutes));
+        return Task.FromResult(overlaps);
+    }
+
+    // Non-cancelled appointments of one owner on one date, optionally excluding one id.
+    private IEnumerable<Domain.Entities.Appointments> ActiveOnDay(string? owner, string date, string? excludeId) =>
+        _store.Values.Where(a =>
+            a.Date == date &&
+            a.CreatedBy == (owner ?? string.Empty) &&
+            a.Status != "cancelled" &&
+            (string.IsNullOrWhiteSpace(excludeId) || a.Id != excludeId));
 
     public Task<IEnumerable<Domain.Entities.Appointments>> GetClientHistoryAsync(
         string clientId,

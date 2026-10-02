@@ -82,6 +82,17 @@ Regla de negocio (confirmada con el usuario): **no se permite crear ni editar un
 - **Frontends:** web (`isDuplicateClientError` → notificación `warning`, el formulario queda abierto) y mobile (`isDuplicateClientError` → alert "Cliente duplicado") muestran el mensaje del backend.
 - **Pendiente (opcional):** índice único parcial `(CreatedBy, teléfono normalizado)` contra peticiones simultáneas; requiere guardar el teléfono normalizado y que antes no queden duplicados. Mientras tanto la carrera entre dos creaciones simultáneas del mismo número no está cubierta.
 
+## Duración ajustable de citas (2026-10, Fase 1 backend)
+Plan y decisiones en `barber-flow-web/AGENDA_DURATION_PLAN.md`. Todo es **opt-in por barbero**: con el ajuste apagado (default) el comportamiento es el de siempre.
+- **Flag:** `BarberSettings.EnableAppointmentDurations` (bool?, default null/false), solo lo cambia el admin vía `PUT /api/barbers/update/{id}` (`BarberSettingsDto`). `BarberService` conserva el valor guardado si el update lo omite (mismo patrón que `MaxRecurringAppointments`: el repositorio reemplaza el bloque `Settings` completo). `AppointmentService` lee el flag del **dueño** de la cita (`CreatedBy`) con `IBarberRepository.GetByUserNameAsync`; la cuenta `admin` (sin `Barber`) siempre lo tiene apagado.
+- **Modelo:** `Appointments.DurationMinutes` (int?, null = 30), múltiplos de 15 entre 15 y 120 (`AppointmentSchedule` en Domain: constantes, `Overlaps`, `TryParseMinutes`). El fin es **exclusivo** (11:00+30 y 11:30 no se traslapan). `AppointmentRequest.DurationMinutes` es opcional al final; `AppointmentResponse.DurationMinutes` devuelve el valor guardado o 30.
+- **Regla de choque:** ahora **acotada al dueño** (`HasConflictAsync(owner, …)`, arreglo de un bug: antes la cita de un barbero bloqueaba el mismo horario de otro). Con el flag **apagado**: hora exacta, la duración enviada se descarta (no se guarda) y `PUT` conserva la guardada. Con el flag **encendido**: `HasOverlapAsync` (traslape por rango, citas canceladas ignoradas, la propia excluida); `SLOT_TAKEN` con mensaje "Ya existe una cita el {fecha} entre HH:mm y HH:mm."; duración inválida → `400 INVALID_DURATION`.
+- **Cuándo se revalida:** crear (siempre), editar (solo si cambió fecha, hora **o duración**), mover (con la duración guardada), recurrentes (cada ocurrencia hereda la duración) y redimensionar.
+- **Update (PUT):** si el request **no trae** duración se conserva la guardada (si no, cada edición desde un cliente viejo la reiniciaría).
+- **Endpoint nuevo `PATCH /api/appointments/resize/{id}`** `{ durationMinutes, newTime? }`: `newTime` solo cuando se arrastra el punto superior (cambia inicio y duración). Flag apagado → `400 FEATURE_DISABLED`; la cita debe empezar y terminar el mismo día; acceso solo del dueño o admin (`404` si no).
+- **Pendiente (no es de esta fase):** `UpdateAppointmentAsync`/`CreateAppointmentAsync` no mapean `ClientId` del request (en Mongo el update lo deja en `null`); anotado para revisar aparte.
+- 341 tests backend en verde (146 Application / 127 Infrastructure / 68 Api).
+
 ## Short-Term Development Roadmap (Pending)
 1. [x] Configure the initial MongoDB dependency injection pipeline in Program.cs and bind appsettings.json.
 2. [x] Audit existing domain models (User.cs, Client.cs, Appointments.cs) to ensure alignment with MongoDB NoSQL structures.
