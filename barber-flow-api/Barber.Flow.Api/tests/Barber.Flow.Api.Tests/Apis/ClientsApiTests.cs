@@ -204,4 +204,36 @@ public class ClientsApiTests : IClassFixture<ApiWebApplicationFactory>
 
         Assert.DoesNotContain(results!, c => c.LastName == "OwnedByD");
     }
+
+    [Fact]
+    public async Task CreateClient_DuplicatePhone_ReturnsConflictWithExistingClient()
+    {
+        var barber = await CreateBarberClientAsync("dup_phone_barber");
+        var first = new ClientRequest("Juan", "Perez", "8123-4567", null, null, null, null, null, true, null, null);
+        var second = new ClientRequest("Juan", "Perez", "+506 8123 4567", null, null, null, null, null, true, null, null);
+        var firstResponse = await barber.PostAsJsonAsync("/api/clients/create", first);
+        firstResponse.EnsureSuccessStatusCode();
+        var existing = await firstResponse.Content.ReadFromJsonAsync<ClientResponse>();
+
+        var response = await barber.PostAsJsonAsync("/api/clients/create", second);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal("CLIENT_DUPLICATE_PHONE", body.GetProperty("code").GetString());
+        Assert.Equal(existing!.Id, body.GetProperty("existingClient").GetProperty("id").GetString());
+    }
+
+    [Fact]
+    public async Task CreateClient_SamePhoneForDifferentBarbers_IsAllowed()
+    {
+        var barberA = await CreateBarberClientAsync("dup_phone_a");
+        var barberB = await CreateBarberClientAsync("dup_phone_b");
+        var request = new ClientRequest("Juan", "Perez", "8222-3333", null, null, null, null, null, true, null, null);
+
+        var responseA = await barberA.PostAsJsonAsync("/api/clients/create", request);
+        var responseB = await barberB.PostAsJsonAsync("/api/clients/create", request);
+
+        Assert.Equal(HttpStatusCode.OK, responseA.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, responseB.StatusCode);
+    }
 }

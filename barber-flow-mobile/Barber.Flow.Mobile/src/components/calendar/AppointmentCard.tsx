@@ -13,6 +13,14 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
     const { translateText } = useTranslation();
     const { theme } = useAppTheme();
 
+    const statusColors: Record<Appointment["status"], string> = {
+        completed: "#10B981",
+        confirmed: theme.colors.accent,
+        scheduled: "#3B82F6",
+        cancelled: theme.colors.error,
+    };
+    const statusColor = statusColors[appointment.status] ?? theme.colors.textSecondary;
+
     return (
         <Pressable
             style={({ pressed }) => [
@@ -31,6 +39,11 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
                 <View style={styles.topRow}>
                     <Text style={[styles.clientName, { color: theme.colors.textPrimary }]}>{appointment.clientName}</Text>
                     <Text style={[styles.time, { color: theme.colors.accent }]}>{appointment.time}</Text>
+                </View>
+                <View style={[styles.badge, { borderColor: statusColor, backgroundColor: `${statusColor}22` }]}>
+                    <Text style={[styles.badgeText, { color: statusColor }]}>
+                        {translateText(`calendar.appointmentModal.statuses.${appointment.status}`)}
+                    </Text>
                 </View>
                 {appointment.serviceName ? (
                     <Text style={[styles.service, { color: theme.colors.textSecondary }]}>{appointment.serviceName}</Text>
@@ -84,6 +97,17 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "700",
         marginLeft: 8,
+    },
+    badge: {
+        alignSelf: "flex-start",
+        borderWidth: 1,
+        borderRadius: 999,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+    },
+    badgeText: {
+        fontSize: 11,
+        fontWeight: "700",
     },
     service: {
         fontSize: 13,

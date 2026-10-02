@@ -161,6 +161,36 @@ public class MongoDbClientRepositoryTests
     }
 
     [Fact]
+    public async Task FindAsync_ReturnsClientsAlphabeticallyByFirstThenLastName_IgnoringCaseAndAccents()
+    {
+        var sut = CreateSut();
+        foreach (var (first, last) in new[] { ("zoe", "Alba"), ("Maria", "Zapata"), ("maria", "Gomez"), ("Álvaro", "Ruiz"), ("Ana", "Perez") })
+        {
+            await sut.CreateAsync(BuildClient(first, last, "8888-0100"));
+        }
+
+        var result = (await sut.FindAsync()).Select(c => $"{c.FirstName} {c.LastName}").ToList();
+
+        Assert.Equal(new[] { "Álvaro Ruiz", "Ana Perez", "maria Gomez", "Maria Zapata", "zoe Alba" }, result);
+    }
+
+    [Fact]
+    public async Task FindAsync_WithPagination_FollowsAlphabeticalOrderAcrossPages()
+    {
+        var sut = CreateSut();
+        foreach (var first in new[] { "Delta", "Alfa", "Echo", "Bravo", "Charlie" })
+        {
+            await sut.CreateAsync(BuildClient(first, "Test", "8888-0200"));
+        }
+
+        var firstPage = (await sut.FindAsync(page: 1, pageSize: 2)).Select(c => c.FirstName);
+        var secondPage = (await sut.FindAsync(page: 2, pageSize: 2)).Select(c => c.FirstName);
+
+        Assert.Equal(new[] { "Alfa", "Bravo" }, firstPage);
+        Assert.Equal(new[] { "Charlie", "Delta" }, secondPage);
+    }
+
+    [Fact]
     public async Task FindAsync_ByShopId_ReturnsOnlyMatchingShop()
     {
         var sut = CreateSut();

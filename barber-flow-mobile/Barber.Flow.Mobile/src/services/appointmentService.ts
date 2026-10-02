@@ -90,10 +90,10 @@ export const appointmentService = {
     return mapResponse(response);
   },
 
-  move: async (id: string, newDate: string): Promise<Appointment> => {
+  move: async (id: string, newDate: string, newTime?: string): Promise<Appointment> => {
     const response = await apiFetch(`/api/appointments/move/${id}`, {
       method: "PATCH",
-      json: { NewDate: newDate },
+      json: newTime ? { NewDate: newDate, NewTime: newTime } : { NewDate: newDate },
     });
     return mapResponse(response);
   },

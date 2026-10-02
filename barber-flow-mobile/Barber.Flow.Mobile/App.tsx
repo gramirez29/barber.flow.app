@@ -8,6 +8,7 @@ import { NotificationProvider } from './src/context/NotificationContext';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { createNavigationTheme, createPaperTheme } from './src/theme/themes';
 import { DialogProvider } from './src/context/DialogContext';
+import { FeatureFlagsProvider } from './src/context/FeatureFlagsContext';
 
 function Main() {
 	const { theme } = useAppTheme();
@@ -19,10 +20,12 @@ function Main() {
 			<PaperProvider theme={paperTheme}>
 				<DialogProvider>
 					<NavigationContainer theme={navigationTheme}>
+						<FeatureFlagsProvider>
 						<NotificationProvider>
 							<StatusBar style="light" />
 							<RootNavigator />
 						</NotificationProvider>
+						</FeatureFlagsProvider>
 					</NavigationContainer>
 				</DialogProvider>
 			</PaperProvider>

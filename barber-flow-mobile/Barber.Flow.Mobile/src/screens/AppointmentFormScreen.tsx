@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { getErrorMessage } from "../utils/errors";
+import { getErrorMessage, isSlotTakenError } from "../utils/errors";
 import { isPastDateTime } from "../utils/formatUtil";
 import { Platform, Pressable, StyleSheet } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -60,7 +60,7 @@ export const AppointmentFormScreen = () => {
 	const { showAlert } = useDialog();
 	const { theme } = useAppTheme();
 	const styles = useMemo(() => createStyles(theme), [theme]);
-	const { appointments, addAppointment, addRecurringAppointments, updateAppointment } =
+	const { appointments, addAppointment, addRecurringAppointments, updateAppointment, removeAppointment, moveAppointment } =
 		useAppointmentStore();
 	const user = useAuthStore((state) => state.user);
 
@@ -262,14 +262,48 @@ export const AppointmentFormScreen = () => {
 		setMovePickerStep("time");
 	}, []);
 
-	const handleMoveTimeConfirm = useCallback((time: Date) => {
-		if (pendingMoveDate) {
-			setField("date", pendingMoveDate);
-			setField("time", format(time, "HH:mm"));
+	// Unlike the old flow (which only prefilled the form and relied on "Guardar cambios"), moving now
+	// runs the real PATCH right away with date AND time, same as web.
+	const performMove = useCallback(async (newDate: string, newTime: string) => {
+		if (!params.appointmentId) return;
+		const moveTitle = translateText("appointments.alerts.moveAppointmentDialogTitle");
+		setIsSaving(true);
+		try {
+			await moveAppointment(params.appointmentId, newDate, newTime);
+		} catch (error) {
+			setIsSaving(false);
+			showAlert(
+				isSlotTakenError(error) ? translateText("appointments.alerts.slotTakenTitle") : moveTitle,
+				getErrorMessage(error) || translateText("common.somethingWentWrong"),
+			);
+			return;
 		}
+		setIsSaving(false);
+		setField("date", newDate);
+		setField("time", newTime);
+		showAlert(moveTitle, translateText("appointments.alerts.moveSuccess"));
+	}, [params.appointmentId, moveAppointment, setField, showAlert, translateText]);
+
+	const handleMoveTimeConfirm = useCallback((time: Date) => {
+		const newDate = pendingMoveDate;
+		const newTime = format(time, "HH:mm");
 		setPendingMoveDate(null);
 		setMovePickerStep(null);
-	}, [pendingMoveDate, setField]);
+		if (!newDate) return;
+
+		if (isPastDateTime(newDate, newTime)) {
+			showAlert(
+				translateText("appointments.alerts.moveAppointmentDialogTitle"),
+				translateText("appointments.alerts.pastDateTimeMoveMessage"),
+				[
+					{ text: translateText("appointments.alerts.pastDateTimeMoveConfirm"), onPress: () => void performMove(newDate, newTime) },
+					{ text: translateText("appointments.alerts.pastDateTimeReview"), style: "cancel" },
+				],
+			);
+			return;
+		}
+		void performMove(newDate, newTime);
+	}, [pendingMoveDate, performMove, showAlert, translateText]);
 
 	useEffect(() => {
 		if (params.mode === "edit" || !user?.userName) {
@@ -356,6 +390,37 @@ const handleSubmit = async () => {
 		await saveAppointment(normalizedDraft);
 	};
 
+	const handleDeletePress = () => {
+		if (!params.appointmentId) return;
+		const appointmentId = params.appointmentId;
+		showAlert(
+			translateText("appointments.alerts.deleteAppointmentTitle"),
+			translateText("appointments.alerts.deleteAppointmentMessage"),
+			[
+				{
+					text: translateText("appointments.alerts.deleteAppointmentCta"),
+					style: "destructive",
+					onPress: async () => {
+						setIsSaving(true);
+						try {
+							await removeAppointment(appointmentId);
+						} catch (error) {
+							setIsSaving(false);
+							showAlert(
+								translateText("appointments.alerts.deleteAppointmentTitle"),
+								getErrorMessage(error) || translateText("common.somethingWentWrong"),
+							);
+							return;
+						}
+						setIsSaving(false);
+						navigation.goBack();
+					},
+				},
+				{ text: translateText("appointments.alerts.noAlertResponse"), style: "cancel" },
+			],
+		);
+	};
+
 	const saveAppointment = async (normalizedDraft: NonNullable<ReturnType<typeof submit>>) => {
 		setIsSaving(true);
 		try {
@@ -367,7 +432,10 @@ const handleSubmit = async () => {
 				await addAppointment(normalizedDraft);
 			}
 		} catch (error) {
-			showAlert(title, getErrorMessage(error) || translateText("common.somethingWentWrong"));
+			showAlert(
+				isSlotTakenError(error) ? translateText("appointments.alerts.slotTakenTitle") : title,
+				getErrorMessage(error) || translateText("common.somethingWentWrong"),
+			);
 			setIsSaving(false);
 			return;
 		}
@@ -473,6 +541,15 @@ const handleSubmit = async () => {
 						</Pressable>
 					</View>
 				)}
+				{params.mode === "edit" && !isReadOnly && (
+					<Pressable
+						style={({ pressed }) => [styles.deleteBtn, (pressed || isSaving) && styles.deleteBtnDim]}
+						onPress={isSaving ? undefined : handleDeletePress}
+						disabled={isSaving}
+					>
+						<Text style={styles.deleteBtnText}>{translateText("appointments.alerts.deleteAppointmentCta")}</Text>
+					</Pressable>
+				)}
 			</KeyboardAwareScrollView>
 			<ClientSearchModal
 				clients={clientSearchResults}
@@ -574,6 +651,22 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
 	},
 	goldBtnPressed: {
 		opacity: 0.85,
+	},
+	deleteBtn: {
+		marginTop: 12,
+		borderRadius: 999,
+		borderWidth: 1,
+		borderColor: theme.colors.error,
+		paddingVertical: 14,
+		alignItems: "center",
+	},
+	deleteBtnDim: {
+		opacity: 0.6,
+	},
+	deleteBtnText: {
+		color: theme.colors.error,
+		fontWeight: "700",
+		fontSize: 15,
 	},
 	goldBtnText: {
 		color: "#0F172A",

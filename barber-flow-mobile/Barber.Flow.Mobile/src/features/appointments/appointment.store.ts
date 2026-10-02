@@ -26,7 +26,7 @@ interface AppointmentState {
 		frequency: RecurrenceFrequency,
 	) => Promise<RecurringAppointmentsResult>;
 	getCompletedAppointmentsByDate: (date: string) => Appointment[];
-	moveAppointment: (id: string, newDate: string) => Promise<void>;
+	moveAppointment: (id: string, newDate: string, newTime?: string) => Promise<void>;
 	updateAppointment: (id: string, appointment: AppointmentDraft) => Promise<void>;
 	removeAppointment: (id: string) => Promise<void>;
 	getAppointmentsByDate: (date: string) => Appointment[];
@@ -117,8 +117,8 @@ export const useAppointmentStore = create<AppointmentState>()(
 				return result;
 			},
 
-			moveAppointment: async (id, newDate) => {
-				const updated = await appointmentService.move(id, newDate);
+			moveAppointment: async (id, newDate, newTime) => {
+				const updated = await appointmentService.move(id, newDate, newTime);
 				set((state) => ({
 					appointments: sortAppointments(
 						state.appointments.map((appointment) =>

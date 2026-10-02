@@ -17,7 +17,7 @@ import type { ClientStats } from "../types/clients";
 import type { ClientsStackParamList } from "../navigation/ClientsNavigator";
 import { clientsService } from "../services/clientService";
 import { ScreenLayout } from "../components/ScreenLayout";
-import { getErrorMessage } from '../utils/errors';
+import { getErrorMessage, isDuplicateClientError } from '../utils/errors';
 import { useDialog } from '../context/DialogContext';
 import type { Client } from "../types/clients";
 import { formatPhoneNumber } from "../utils/formatUtil";
@@ -213,7 +213,7 @@ export const ClientFormScreen = () => {
 			navigation.goBack();
 			} catch (error: unknown) {
 				showAlert(
-					translateText("common.save"),
+					isDuplicateClientError(error) ? translateText("clients.alerts.duplicateTitle") : translateText("common.save"),
 					getErrorMessage(error) || translateText("clients.alerts.saveFailed"),
 				);
 			} finally {

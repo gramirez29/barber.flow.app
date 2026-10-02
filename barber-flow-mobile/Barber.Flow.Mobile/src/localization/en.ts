@@ -131,6 +131,7 @@
 		heroSubtitle:
 		"Configure application preferences, manage admin-only application users, and keep the experience aligned with your workflow.",
 		preferencesPanel: {
+			agendaDayView: "Hourly agenda view (beta)",
 			darkModeBody:
 				"Choose a manual theme or let the app follow system preferences across the full experience.",
 			darkModeTitle: "Dark Mode",
@@ -270,6 +271,9 @@
 			noAlertResponse: "No",
 			moveAppointmentDialogTitle: "Move Appointment",
 			noMoveAppointmentConfirmation: "Cannot move a completed or cancelled appointment, only Scheduled or Confirmed appointments.",
+			deleteAppointmentCta: "Delete appointment",
+			deleteAppointmentTitle: "Delete appointment",
+			deleteAppointmentMessage: "This action is permanent. Do you want to delete this appointment?",
 			areYouSureMoveAppointment: "You are about to move the appointment, are you sure you want to proceed?",
 			reassignDateTimeAppointment: "Reassign date and time",
 			moveThisAppointmentToOtherSchedule: "Move this appointment to another day or time.",
@@ -280,6 +284,10 @@
 			pastDateTimeConfirm: "Save anyway",
 			pastDateTimeReview: "Review",
 			moveAppointmentCta: "Move appointment",
+			moveSuccess: "The appointment was moved successfully.",
+			slotTakenTitle: "Time slot taken",
+			pastDateTimeMoveMessage: "The selected date and time have already passed. Do you want to move the appointment anyway?",
+			pastDateTimeMoveConfirm: "Move",
 		},
 	},
 	otp: {
@@ -315,6 +323,7 @@
 			removeClientMessage: "Remove client?",
 			removeFailed: "Remove failed",
 			saveFailed: "Save failed",
+			duplicateTitle: "Duplicate client",
 			searchFailed: "Search failed",
 			validation: "Please fix the required fields.",
 		},

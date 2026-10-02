@@ -131,6 +131,7 @@
 		version: "Versión",
 		workspaceSettings: "Ajustes del espacio",
 		preferencesPanel: {
+			agendaDayView: "Vista de agenda por horas (beta)",
 			darkModeBody:
 				"Elige un tema manual o deja que la aplicación siga las preferencias del sistema en toda la experiencia.",
 			darkModeTitle: "Modo oscuro",
@@ -270,6 +271,9 @@
 			noAlertResponse: "No",
 			moveAppointmentDialogTitle: "Mover cita",
 			noMoveAppointmentConfirmation: "No se puede mover una cita completada o cancelada, solo citas Programadas o Confirmadas",
+			deleteAppointmentCta: "Eliminar cita",
+			deleteAppointmentTitle: "Eliminar cita",
+			deleteAppointmentMessage: "Esta acción es permanente. ¿Desea eliminar esta cita?",
 			areYouSureMoveAppointment: "¿Usted va a mover la cita, ¿Está seguro de realizar esta acción?",
 			reassignDateTimeAppointment: "Reasignar fecha y hora",
 			moveThisAppointmentToOtherSchedule: "Mover esta cita a otro día u hora.",
@@ -280,6 +284,10 @@
 			pastDateTimeConfirm: "Registrar",
 			pastDateTimeReview: "Revisar",
 			moveAppointmentCta: "Mover cita",
+			moveSuccess: "La cita fue movida correctamente.",
+			slotTakenTitle: "Horario ocupado",
+			pastDateTimeMoveMessage: "La fecha y hora seleccionadas ya pasaron. ¿Desea mover la cita de todos modos?",
+			pastDateTimeMoveConfirm: "Mover",
 		},
 	},
 	otp: {
@@ -315,6 +323,7 @@
 			removeClientMessage: "¿Eliminar cliente?",
 			removeFailed: "No se pudo eliminar",
 			saveFailed: "No se pudo guardar",
+			duplicateTitle: "Cliente duplicado",
 			searchFailed: "No se pudo buscar",
 			validation: "Corrige los campos obligatorios.",
 		},
