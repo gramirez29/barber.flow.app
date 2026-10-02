@@ -20,7 +20,7 @@ import type { CalendarViewMode } from '@presentation/components/appointments';
 import { useAppointments } from '@presentation/hooks/useAppointments';
 import { useBarbers } from '@presentation/hooks/useBarbers';
 import { useAppointmentDurationsEnabled } from "@presentation/hooks/useAppointmentDurationsEnabled";
-import { DURATION_GRID, LEGACY_GRID } from "@shared/constants/agenda";
+import { DURATION_GRID, LEGACY_GRID, DEFAULT_DURATION_MINUTES } from "@shared/constants/agenda";
 import { getBusyRanges, getDefaultDurationForSlot, timeToMinutes } from "@shared/utils/agendaLayout";
 import { useFeatureFlags } from '@presentation/context/FeatureFlagsContext';
 import { useConfirmDialog } from '@presentation/context/ConfirmDialogContext';
@@ -247,7 +247,7 @@ export const AppointmentsPage: React.FC = () => {
       if (!confirmed) return;
     }
 
-    await resizeAppointment(appointment.id!, durationMinutes, newTime);
+    await resizeAppointment(appointment.id!, durationMinutes, newTime, appointment.durationMinutes ?? DEFAULT_DURATION_MINUTES);
     refreshCurrentRange();
   };
 

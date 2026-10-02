@@ -3,6 +3,7 @@ import { Appointment } from '@domain/entities/Appointment';
 import { DURATION_GRID, LEGACY_GRID } from '@shared/constants/agenda';
 import {
   durationToHeight,
+  formatDuration,
   formatTimeRange,
   getAppointmentDuration,
   getBusyRanges,
@@ -145,5 +146,15 @@ describe('espacio libre y duración de una cita nueva en un spot', () => {
 describe('formatTimeRange', () => {
   it('muestra inicio – fin', () => {
     expect(formatTimeRange(m('11:00'), 15)).toBe('11:00 – 11:15');
+  });
+});
+
+describe('formatDuration', () => {
+  it('formatea minutos y horas', () => {
+    expect(formatDuration(15)).toBe('15 min');
+    expect(formatDuration(45)).toBe('45 min');
+    expect(formatDuration(60)).toBe('1 h');
+    expect(formatDuration(90)).toBe('1 h 30 min');
+    expect(formatDuration(120)).toBe('2 h');
   });
 });

@@ -240,3 +240,11 @@ export const getDefaultDurationForSlot = (startMinutes: number, busy: BusyRange[
 /** "11:00 – 11:30" para la etiqueta en vivo al redimensionar. */
 export const formatTimeRange = (startMinutes: number, durationMinutes: number): string =>
   `${minutesToTime(startMinutes)} – ${minutesToTime(startMinutes + durationMinutes)}`;
+
+/** "15 min", "1 h", "1 h 30 min": duración legible para avisos y etiquetas. */
+export const formatDuration = (minutes: number): string => {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
+};
