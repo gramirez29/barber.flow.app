@@ -39,7 +39,7 @@ El flag de dispositivo de la agenda no basta: la regla de choque vive en el back
 
 **Con el ajuste apagado (por defecto) todo es idéntico a hoy:**
 - Regla de choque: hora exacta (sí **acotada al barbero**, ver §3: es un arreglo de bug, no depende del flag).
-- La duración guardada se **ignora** (se trata como 30 min) y la respuesta devuelve siempre 30.
+- La duración guardada se **ignora en las reglas** (se trata como 30 min). La respuesta devuelve la duración guardada (30 si no hay); **los clientes la ignoran** cuando el ajuste del barbero está apagado (decisión de implementación: resolver el flag por dueño en cada respuesta de lista no valía el costo).
 - `PATCH /resize/{id}` responde `400 { code: "FEATURE_DISABLED" }`.
 - La agenda sigue con spots de 30 min y sin puntos; el formulario no muestra el selector de duración.
 
@@ -82,7 +82,7 @@ Incluye el interruptor del admin en `ManageApplicationUsersForm` (mismo patrón 
 
 ## 7. Fases
 
-- [ ] **Fase 1 — Backend** (1.5–2 días): campo y ajuste `EnableAppointmentDurations`, DTOs/validator, regla de traslape acotada al dueño (condicional al flag), `resize`, update/move/recurrentes, tests. *Criterio:* `dotnet test` en verde; con el flag apagado el comportamiento es el de hoy (más el arreglo por barbero); con clientes viejos (sin duración) todo se comporta como 30 min.
+- [x] **Fase 1 — Backend (implementada 2026-10-02, 341 tests en verde: 146 Application / 127 Infrastructure / 68 Api)** (1.5–2 días): campo y ajuste `EnableAppointmentDurations`, DTOs/validator, regla de traslape acotada al dueño (condicional al flag), `resize`, update/move/recurrentes, tests. *Criterio:* `dotnet test` en verde; con el flag apagado el comportamiento es el de hoy (más el arreglo por barbero); con clientes viejos (sin duración) todo se comporta como 30 min.
 - [ ] **Fase 2 — Web, tras el ajuste y el flag** (2–2.5 días): interruptor del admin, spots de 15, modo edición, resize, formulario. *Criterio:* con el ajuste apagado la pantalla es idéntica a hoy; encendido, acortar/alargar/mover persiste tras recargar y los choques revierten el bloque.
 - [ ] **Fase 3 — Validación con el usuario en web.** Aquí se confirma el comportamiento real antes de portar.
 - [ ] **Fase 4 — Mobile** (~1.5 días): mismo diseño. *Requiere prueba en dispositivo real* (presión larga vs. scroll vs. arrastre de puntos en iOS/Android).

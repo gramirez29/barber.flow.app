@@ -35,6 +35,9 @@ public class Appointments
     /// <summary>Shared by every appointment created together as a recurring series; null otherwise.</summary>
     public string? SeriesId { get; set; }
 
+    /// <summary>Length in minutes (15..120, multiples of 15). null = 30. Only honored when the owner has EnableAppointmentDurations on.</summary>
+    public int? DurationMinutes { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

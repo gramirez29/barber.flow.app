@@ -12,5 +12,7 @@ public record AppointmentRequest(
     string? ServiceName,
     decimal? ServicePrice,
     string? Notes,
-    string? ShopId
+    string? ShopId,
+    // 15..120, multiples of 15. Omit to keep the stored value (update) or use 30 (create). Ignored unless the barber has the feature enabled.
+    int? DurationMinutes = null
 );

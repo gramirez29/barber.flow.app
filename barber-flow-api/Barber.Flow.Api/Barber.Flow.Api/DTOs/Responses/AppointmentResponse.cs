@@ -18,5 +18,7 @@ public record AppointmentResponse(
     DateTime UpdatedAt,
     string CreatedBy,
     string UpdatedBy,
-    string? SeriesId = null
+    string? SeriesId = null,
+    // Effective length in minutes (stored value, 30 when none). Clients ignore it when the barber has the feature off.
+    int DurationMinutes = 30
 );
