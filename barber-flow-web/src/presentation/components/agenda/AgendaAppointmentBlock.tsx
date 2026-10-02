@@ -24,6 +24,8 @@ const HANDLE_DOT_PX = 12;
 const EDGE_ZONE_PX = 10;
 /** Cuánto sobresale del bloque el indicador ↕ del borde (la mitad de su alto). */
 const GRIP_OVERHANG_PX = 8;
+/** Solo punteros con hover real (mouse/trackpad): en pantallas táctiles :hover se queda "pegado" tras tocar. */
+const HOVER_FINE = "@media (hover: hover) and (pointer: fine)";
 
 interface AgendaAppointmentBlockProps {
   appointment: Appointment;
@@ -141,8 +143,10 @@ export const AgendaAppointmentBlock: React.FC<AgendaAppointmentBlockProps> = ({
     cursor: 'ns-resize',
     touchAction: 'none' as const,
     zIndex: 2,
-    '&:hover': { backgroundColor: `${appColors.accent}55` },
-    '&:hover .agenda-grip': { opacity: 1, transform: 'translateX(-50%) scale(1.08)' },
+    [HOVER_FINE]: {
+      '&:hover': { backgroundColor: `${appColors.accent}55` },
+      '&:hover .agenda-grip': { opacity: 1, transform: 'translateX(-50%) scale(1.08)' },
+    },
   };
 
   // Indicador visible (escritorio): una pastilla con flechas ↕ a caballo sobre el borde, que aparece al pasar
@@ -214,8 +218,10 @@ export const AgendaAppointmentBlock: React.FC<AgendaAppointmentBlockProps> = ({
         pointerEvents: "auto",
         zIndex: isDragging ? 20 : selected || resizing ? 15 : 1,
         // Al pasar el mouse el bloque se eleva sobre sus vecinas y muestra los indicadores ↕ de los bordes.
-        "&:hover": { zIndex: isDragging ? 20 : 14 },
-        "&:hover .agenda-grip": { opacity: 0.85 },
+        [HOVER_FINE]: {
+          "&:hover": { zIndex: isDragging ? 20 : 14 },
+          "&:hover .agenda-grip": { opacity: 0.85 },
+        },
         transform: transform ? `translate3d(0, ${transform.y}px, 0)` : undefined,
         transition: isDragging || resizing ? 'none' : 'opacity 0.15s ease, box-shadow 0.15s ease',
         '&:focus-visible': { outline: `2px solid ${appColors.accent}`, outlineOffset: 1 },
@@ -237,7 +243,7 @@ export const AgendaAppointmentBlock: React.FC<AgendaAppointmentBlockProps> = ({
               : selected
                 ? `0 0 0 1px ${appColors.accent}`
                 : '0 2px 6px rgba(0,0,0,0.25)',
-          '&:hover': { borderColor: appColors.accent },
+          [HOVER_FINE]: { '&:hover': { borderColor: appColors.accent } },
         }}
       >
         <Box sx={{ width: 4, flexShrink: 0, backgroundColor: statusColor }} />
