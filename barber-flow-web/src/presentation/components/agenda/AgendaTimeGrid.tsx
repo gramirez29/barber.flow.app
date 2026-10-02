@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { useDroppable } from '@dnd-kit/core';
-import { AGENDA } from '@shared/constants/agenda';
+import { AGENDA, AgendaGrid, LEGACY_GRID } from '@shared/constants/agenda';
 import {
   AgendaRange,
   formatHourLabel,
@@ -14,17 +14,26 @@ import { appColors } from '@presentation/theme/appColors';
 
 interface AgendaSlotProps {
   startMinutes: number;
+  grid: AgendaGrid;
   onSelect: (time: string) => void;
 }
 
-/** Un spot de 30 min: clicable para agendar y destino válido para soltar una cita arrastrada. */
-const AgendaSlot: React.FC<AgendaSlotProps> = ({ startMinutes, onSelect }) => {
+/** Un spot (30 min con la grilla de siempre, 15 con la de duraciones): clicable para agendar y destino válido para soltar una cita arrastrada. */
+const AgendaSlot: React.FC<AgendaSlotProps> = ({ startMinutes, grid, onSelect }) => {
   const time = minutesToTime(startMinutes);
   const isHour = startMinutes % 60 === 0;
+  const isHalfHour = startMinutes % 30 === 0;
   const { setNodeRef, isOver } = useDroppable({ id: `slot-${time}` });
 
+  // Hora: línea sólida. Media hora: rayada. Cuartos (solo con spots de 15 min): punteada y más tenue.
+  const borderTop = isHour
+    ? `1px solid ${appColors.border}`
+    : isHalfHour
+      ? `1px dashed ${appColors.border}`
+      : `1px dotted ${appColors.border}80`;
+
   return (
-    <Box sx={{ display: 'flex', height: AGENDA.SLOT_HEIGHT_PX, flexShrink: 0 }}>
+    <Box sx={{ display: 'flex', height: grid.slotHeightPx, flexShrink: 0 }}>
       <Box sx={{ width: AGENDA.GUTTER_PX, flexShrink: 0, position: 'relative' }}>
         {isHour && (
           <Typography
@@ -58,7 +67,7 @@ const AgendaSlot: React.FC<AgendaSlotProps> = ({ startMinutes, onSelect }) => {
         sx={{
           flex: 1,
           cursor: 'pointer',
-          borderTop: isHour ? `1px solid ${appColors.border}` : `1px dashed ${appColors.border}`,
+          borderTop,
           backgroundColor: isOver ? `${appColors.accent}2E` : 'transparent',
           boxShadow: isOver ? `inset 0 0 0 1px ${appColors.accent}` : 'none',
           transition: 'background-color 0.12s ease',
@@ -75,21 +84,29 @@ interface AgendaTimeGridProps {
   /** Minutos desde medianoche de "ahora" si el día mostrado es hoy; null en otro caso. */
   nowMinutes: number | null;
   onSelectSlot: (time: string) => void;
+  /** Grilla de spots; por defecto la de siempre (30 min). */
+  grid?: AgendaGrid;
   /** Bloques de cita (absolutos sobre la grilla). */
   children?: React.ReactNode;
 }
 
-export const AgendaTimeGrid: React.FC<AgendaTimeGridProps> = ({ range, nowMinutes, onSelectSlot, children }) => {
-  const slots = getSlotStarts(range);
+export const AgendaTimeGrid: React.FC<AgendaTimeGridProps> = ({
+  range,
+  nowMinutes,
+  onSelectSlot,
+  grid = LEGACY_GRID,
+  children,
+}) => {
+  const slots = getSlotStarts(range, grid);
   const showNow = nowMinutes !== null && nowMinutes >= range.startMinutes && nowMinutes <= range.endMinutes;
 
   return (
     // pt: deja espacio para que la etiqueta de la primera hora no quede cortada.
     <Box sx={{ position: 'relative', pt: '10px', pb: '76px' }}>
-      <Box sx={{ position: 'relative', height: getGridHeight(range) }}>
+      <Box sx={{ position: 'relative', height: getGridHeight(range, grid) }}>
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
           {slots.map((start) => (
-            <AgendaSlot key={start} startMinutes={start} onSelect={onSelectSlot} />
+            <AgendaSlot key={start} startMinutes={start} grid={grid} onSelect={onSelectSlot} />
           ))}
         </Box>
 
@@ -114,7 +131,7 @@ export const AgendaTimeGrid: React.FC<AgendaTimeGridProps> = ({ range, nowMinute
               position: 'absolute',
               left: AGENDA.GUTTER_PX - 5,
               right: 0,
-              top: minutesToOffset(nowMinutes, range),
+              top: minutesToOffset(nowMinutes, range, grid),
               height: 2,
               backgroundColor: appColors.accentLight,
               pointerEvents: 'none',

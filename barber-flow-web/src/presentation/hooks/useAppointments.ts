@@ -241,6 +241,31 @@ export function useAppointments() {
   );
 
   /**
+   * Cambiar la duración de una cita (y, con `newTime`, también su inicio: punto superior de la agenda).
+   * Sin notificación de éxito: es un gesto frecuente y el bloque ya muestra el cambio.
+   */
+  const resizeAppointment = useCallback(
+    async (appointmentId: string, durationMinutes: number, newTime?: string) => {
+      try {
+        const updated = await appointmentApi.resize(appointmentId, durationMinutes, newTime);
+        setAppointments((prev) =>
+          prev.map((apt) => (apt.id === appointmentId ? updated : apt))
+        );
+        return updated;
+      } catch (error) {
+        const message = getErrorMessage(error, 'Error al cambiar la duración de la cita');
+        if (isSlotTakenError(error)) {
+          showNotification(message, 'warning', 6000);
+        } else {
+          showNotification(message, 'error');
+        }
+        throw error;
+      }
+    },
+    [appointmentApi, showNotification]
+  );
+
+  /**
    * Cambiar estado de cita (completed, cancelled)
    */
   const updateAppointmentStatus = useCallback(
@@ -292,6 +317,7 @@ export function useAppointments() {
     updateAppointment,
     deleteAppointment,
     moveAppointment,
+    resizeAppointment,
     updateAppointmentStatus,
     setSelectedAppointment,
   };

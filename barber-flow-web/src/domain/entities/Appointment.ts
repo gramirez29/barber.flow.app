@@ -14,6 +14,8 @@ export interface Appointment {
   notes?: string;
   shopId?: string;
   seriesId?: string;
+  /** Duración en minutos (15..120, múltiplos de 15). El backend la devuelve siempre (30 si no hay); solo cuenta si el barbero tiene el ajuste encendido. */
+  durationMinutes?: number;
 }
 
 export interface CreateAppointmentRequest {
@@ -24,6 +26,8 @@ export interface CreateAppointmentRequest {
   serviceName?: string;
   servicePrice?: number;
   notes?: string;
+  /** 15..120, múltiplos de 15. Solo cuenta si el barbero tiene el ajuste de duraciones encendido. */
+  durationMinutes?: number;
 }
 
 export interface UpdateAppointmentRequest extends CreateAppointmentRequest {

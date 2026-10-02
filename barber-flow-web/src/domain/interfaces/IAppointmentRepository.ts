@@ -17,6 +17,7 @@ export interface IAppointmentRepository {
   ): Promise<RecurringAppointmentsResult>;
   update(id: string, request: UpdateAppointmentRequest): Promise<Appointment>;
   move(id: string, newDate: string, newTime: string): Promise<Appointment>;
+  resize(id: string, durationMinutes: number, newTime?: string): Promise<Appointment>;
   delete(id: string): Promise<void>;
   search(query: string): Promise<Appointment[]>;
 }

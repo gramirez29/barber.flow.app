@@ -3,6 +3,8 @@ export interface BarberSettings {
   fixedDailyExpense: number;
   /** 0..20. 0 o ausente = citas recurrentes deshabilitadas. Solo la modifica el admin. */
   maxRecurringAppointments?: number;
+  /** Duración ajustable de citas (spots de 15 min, redimensionar). Solo la modifica el admin; ausente = apagado. */
+  enableAppointmentDurations?: boolean;
 }
 
 export interface Barber {

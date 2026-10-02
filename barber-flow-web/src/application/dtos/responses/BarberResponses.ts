@@ -2,6 +2,8 @@ export interface BarberSettingsResponse {
   commissionPercentage: number;
   fixedDailyExpense: number;
   maxRecurringAppointments?: number;
+  /** Duración ajustable de citas (spots de 15 min, redimensionar). Solo la modifica el admin; ausente = apagado. */
+  enableAppointmentDurations?: boolean;
 }
 
 export interface BarberResponse {
