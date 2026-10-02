@@ -26,6 +26,26 @@ Las citas siguen siendo de **30 min por defecto**, pero hay clientes que toman ~
 | D5 | Duraciones permitidas | El backend acepta múltiplos de 15 entre 15 y 120 (para crecer); la UI v1 ofrece **15 y 30** y el estiramiento llega hasta donde haya espacio libre. |
 | D6 | Selector de duración también en el formulario | Alternativa accesible a los gestos (teclado, lector de pantalla) y forma de ver/editar la duración sin la agenda. |
 | D7 | **Web primero, mobile después** | Igual que el plan de la agenda: se valida con el usuario en web antes de portar. La agenda sigue detrás del feature flag. |
+| D8 | **Feature flag por barbero, apagado por defecto** | `Barber.Settings.EnableAppointmentDurations` (bool), lo cambia **solo el admin** (mismo patrón que `MaxRecurringAppointments`). Permite activarlo solo para el usuario piloto y apagarlo sin desplegar si algo falla. Ver §3.1. |
+
+## 3.1 Feature flag por barbero (D8)
+
+El flag de dispositivo de la agenda no basta: la regla de choque vive en el backend y afecta a todos los clientes (lista y agenda). Por eso hay **dos capas**, y ambas deben estar encendidas para ver la función completa:
+
+| Capa | Dónde vive | Quién la cambia | Qué controla |
+|---|---|---|---|
+| **Ajuste del barbero** `EnableAppointmentDurations` | Backend (`Barber.Settings`) | El admin, desde Configuración → Usuarios de aplicación | Regla de choque por traslape, duración efectiva, endpoint `resize`, spots de 15 min, selector de duración en el formulario |
+| **Flag de dispositivo** de la agenda (ya existe) | `localStorage`/AsyncStorage | El propio usuario, en Configuración → Preferencias | Si se muestra la agenda por horas (y por tanto los gestos de redimensionar) |
+
+**Con el ajuste apagado (por defecto) todo es idéntico a hoy:**
+- Regla de choque: hora exacta (sí **acotada al barbero**, ver §3: es un arreglo de bug, no depende del flag).
+- La duración guardada se **ignora** (se trata como 30 min) y la respuesta devuelve siempre 30.
+- `PATCH /resize/{id}` responde `400 { code: "FEATURE_DISABLED" }`.
+- La agenda sigue con spots de 30 min y sin puntos; el formulario no muestra el selector de duración.
+
+**Reversible sin pérdida de datos:** `DurationMinutes` es un campo aditivo; si el admin apaga el ajuste después de usarlo, las citas acortadas a 15 min se ven de 30 (pueden quedar visualmente encimadas) y todo vuelve al encenderlo. Nada se borra ni se migra.
+
+**Cómo se lee en el cliente:** igual que la cantidad de citas recurrentes: `getBarberByUserName` del usuario logueado (web: `useBarbers`; mobile: `settingsService`). La cuenta `admin` (sin `Barber` vinculado) lo ve siempre apagado. En el backend, `AppointmentService` ya resuelve el `Barber` del dueño para las recurrentes.
 
 ## 3. Hallazgo importante (bug preexistente, se arregla en la Fase 1)
 
@@ -34,6 +54,7 @@ Las citas siguen siendo de **30 min por defecto**, pero hay clientes que toman ~
 ## 4. Backend (`barber-flow-api`) — Fase 1
 
 - **Modelo:** `Appointments.DurationMinutes` (`int?`). Constantes: default 30, paso 15, mínimo 15, máximo 120.
+- **Flag (D8):** `BarberSettings.EnableAppointmentDurations` (bool, default `false`) en entidad, DTOs y `BarberRequestValidator`; solo se cambia por `PUT /api/barbers/update/{id}` (ya exclusivo del admin). **Cuidado con el bug conocido de `Settings`:** el repositorio reemplaza el bloque completo, así que el diálogo de usuarios debe reenviar comisión, gasto fijo y tope de recurrentes ya cargados para no pisarlos (igual que se hizo con las recurrentes). `AppointmentService` lee el flag del dueño (`IBarberRepository.GetByUserNameAsync`) y, si está apagado, se comporta como hoy (§3.1).
 - **DTOs:** `AppointmentRequest` gana `int? DurationMinutes = null` al final (opcional: los clientes viejos y los tests posicionales siguen compilando). `AppointmentResponse` devuelve siempre la duración **efectiva** (`DurationMinutes ?? 30`). Validator: múltiplo de 15 en 15..120 cuando viene.
 - **Update (PUT):** si el request **no trae** duración se **conserva la existente** (si no, cada edición desde un cliente viejo la reiniciaría a 30; mismo patrón de bug que ya tuvimos con `Settings`). Se revalida el traslape **solo si cambió fecha, hora o duración** (marcar completada/cancelada una cita pasada nunca se bloquea).
 - **Move (PATCH):** conserva la duración y valida el traslape con ella.
@@ -41,9 +62,13 @@ Las citas siguen siendo de **30 min por defecto**, pero hay clientes que toman ~
 - **Regla de choque:** `HasConflictAsync` → `HasOverlapAsync(owner, date, startMinutes, durationMinutes, excludeId)`: trae las citas **no canceladas del dueño en esa fecha** y compara en memoria (`a.start < nuevoFin && nuevoInicio < a.fin`, con `a.duración = DurationMinutes ?? 30`). Mongo + InMemory. Mensaje: "Ya existe una cita entre 11:00 y 11:30."
 - **Citas recurrentes:** cada ocurrencia usa el mismo chequeo con la duración de la cita base.
 - **Datos existentes:** las citas que ya se traslapan (p. ej. 11:00 y 11:10 creadas con la regla vieja) **no se tocan**; la regla solo se aplica al crear o cambiar fecha/hora/duración.
+- **Tests con el flag:** apagado → choque exacto, duración ignorada (siempre 30), `resize` rechazado, y el reparto por barbero sigue funcionando; encendido → todo lo anterior. Un test confirma que apagar el flag no borra `DurationMinutes`.
 - **Tests:** reescribir los de `HasConflictAsync`/choque exacto y agregar: adyacentes OK (11:00–11:30 y 11:30), traslape de 15 bloqueado, acortar libera el spot, cancelada ignorada, **otro barbero ignorado**, legado null=30, update conserva duración, resize (válido, inválido, choque, con `time`), recurrentes con duración.
 
-## 5. Web (`barber-flow-web`) — Fase 2 (detrás del flag de la agenda)
+## 5. Web (`barber-flow-web`) — Fase 2 (detrás del ajuste del barbero **y** del flag de la agenda)
+
+- **Ajuste en Configuración → Usuarios de aplicación (`ApplicationUsersDialog`):** interruptor "Duración de citas ajustable" (oculto para la cuenta `admin`); solo envía `settings` si cambió, reenviando los valores ya cargados. **Lectura:** un hook pequeño (`useAppointmentDurationsEnabled`) con `getBarberByUserName`, como el de las recurrentes en `AppointmentsPage`.
+- **Ajuste apagado = agenda actual:** spots de 30 min, sin puntos ni bordes de redimensionar, formulario sin selector de duración.
 
 - **Constantes/lógica pura** (`shared/constants/agenda.ts`, `shared/utils/agendaLayout.ts` + tests): `SLOT_MINUTES = 15`, `SLOT_HEIGHT_PX = 32` (una cita de 30 min mide 64 px; con 26 px los puntos de una cita de 15 min no se podrían agarrar), duración por defecto 30. El fin de cada bloque pasa a `inicio + duración`; los carriles se calculan por traslape real (solo aparecerá con datos legados); el snapping del arrastre pasa a 15; funciones nuevas: `getResizeResult` (limita a rango visible, mínimo 15 y a la cita vecina) y `getFreeMinutesFrom` (para D4).
 - **Dominio/API:** `Appointment.durationMinutes`, DTOs y schemas Zod, `AppointmentApi.resize`, `useAppointments.resizeAppointment` (actualización optimista + rollback, `SLOT_TAKEN` como `warning`, igual que `moveAppointment`).
@@ -53,21 +78,25 @@ Las citas siguen siendo de **30 min por defecto**, pero hay clientes que toman ~
 
 ## 6. Mobile — Fase 4 (después de validar web)
 
-Portar `utils/agendaLayout.ts`, `AgendaDayView` (modo edición con `Gesture.Pan` sobre los puntos + el arrastre actual; la presión larga selecciona al activarse; scroll bloqueado mientras se arrastra), `appointmentService.resize`, tipos/store, selector de duración en el formulario y traducciones. Sin build nativo nuevo (gesture-handler y reanimated ya están).
+Incluye el interruptor del admin en `ManageApplicationUsersForm` (mismo patrón que `maxRecurringAppointments`) y la lectura del ajuste. Portar `utils/agendaLayout.ts`, `AgendaDayView` (modo edición con `Gesture.Pan` sobre los puntos + el arrastre actual; la presión larga selecciona al activarse; scroll bloqueado mientras se arrastra), `appointmentService.resize`, tipos/store, selector de duración en el formulario y traducciones. Sin build nativo nuevo (gesture-handler y reanimated ya están).
 
 ## 7. Fases
 
-- [ ] **Fase 1 — Backend** (1–1.5 días): campo, DTOs/validator, regla de traslape acotada al dueño, `resize`, update/move/recurrentes, tests. *Criterio:* `dotnet test` en verde; con clientes viejos (sin duración) todo se comporta como 30 min.
-- [ ] **Fase 2 — Web, tras el flag** (1.5–2 días): spots de 15, modo edición, resize, formulario. *Criterio:* acortar/alargar/mover persiste tras recargar; choques revierten el bloque.
+- [ ] **Fase 1 — Backend** (1.5–2 días): campo y ajuste `EnableAppointmentDurations`, DTOs/validator, regla de traslape acotada al dueño (condicional al flag), `resize`, update/move/recurrentes, tests. *Criterio:* `dotnet test` en verde; con el flag apagado el comportamiento es el de hoy (más el arreglo por barbero); con clientes viejos (sin duración) todo se comporta como 30 min.
+- [ ] **Fase 2 — Web, tras el ajuste y el flag** (2–2.5 días): interruptor del admin, spots de 15, modo edición, resize, formulario. *Criterio:* con el ajuste apagado la pantalla es idéntica a hoy; encendido, acortar/alargar/mover persiste tras recargar y los choques revierten el bloque.
 - [ ] **Fase 3 — Validación con el usuario en web.** Aquí se confirma el comportamiento real antes de portar.
 - [ ] **Fase 4 — Mobile** (~1.5 días): mismo diseño. *Requiere prueba en dispositivo real* (presión larga vs. scroll vs. arrastre de puntos en iOS/Android).
 - [ ] **Fase 5 — Documentación** (`claude.md` del backend, este plan, `CLAUDE.md` de web) y PR a `main`.
 
-Cada fase va en su propio PR a `develop`. La Fase 1 es retrocompatible, pero **cambia la regla de choque para todos los clientes** (lista y agenda), no solo para quien use la agenda por horas.
+Cada fase va en su propio PR a `develop`. Gracias al ajuste por barbero (D8), la Fase 1 **no cambia nada para nadie** hasta que el admin lo encienda para un barbero; el piloto es solo el usuario que lo pidió. Estimación total: ~5 a 6 días.
+
+**Respaldo:** antes de empezar se creó una copia de `main` (incluye el PR #108): rama `backup/main-2026-10-02` y etiqueta `main-backup-2026-10-02`, ambas en `bf423ce`.
 
 ## 8. Riesgos y notas
 
-- **Cambio de regla visible:** quien hoy apila citas a las 11:00 y 11:10 ya no podrá crear la segunda sin acortar la primera (decisión D2, aceptada). Las ya existentes se respetan.
+- **Cambio de regla visible (solo con el ajuste encendido):** quien hoy apila citas a las 11:00 y 11:10 ya no podrá crear la segunda sin acortar la primera (decisión D2, aceptada). Las ya existentes se respetan.
+- **Dos barberos, dos reglas:** como el choque ya se acota por dueño, un barbero con el ajuste encendido y otro apagado no se afectan entre sí.
+- **Admin:** la cuenta `admin` (sin `Barber`) siempre usa la regla actual; no puede probar la función con esa cuenta (para verificar en local hace falta un barbero de prueba, como con las recurrentes).
 - **Gestos en touch:** presión larga (selecciona/mueve), arrastre de puntos y scroll comparten el mismo bloque; solo se valida bien en dispositivo real.
 - **Cita de 15 min con spots de 32 px:** el bloque cabe una línea (cliente); el servicio solo se ve en bloques de 30 min o más.
 - **Fuera de alcance v1:** estirar a 45/60 desde la UI (el backend ya lo soporta), duración por servicio, horario configurable por barbería.
