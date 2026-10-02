@@ -243,6 +243,8 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
     const newTime = overId.slice('slot-'.length);
     if (newTime === appointment.time) return;
 
+    // Al soltar una cita en otro horario se sale del modo de edición (los puntos desaparecen).
+    setSelectedId(null);
     setPending((current) => ({ ...current, [id]: { ...current[id], time: newTime } }));
     try {
       await onMoveAppointment(appointment, newTime);
@@ -296,6 +298,8 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
   const handleResizeActiveChange = (active: boolean) => {
     // Al soltar el punto no debe abrirse el formulario de la cita.
     suppressClickUntil.current = active ? Number.MAX_SAFE_INTEGER : Date.now() + 300;
+    // Al soltar el punto (acortada, alargada o sin cambios) se sale del modo de edición: los puntos desaparecen.
+    if (!active) setSelectedId(null);
   };
 
   const addLabel = `Añadir el ${format(date, "d MMM", { locale: es }).replace('.', '')}`;
