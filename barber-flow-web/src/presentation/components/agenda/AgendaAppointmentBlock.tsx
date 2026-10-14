@@ -203,7 +203,9 @@ export const AgendaAppointmentBlock: React.FC<AgendaAppointmentBlockProps> = ({
       onClick={() => {
         if (!isClickSuppressed()) onClick(appointment);
       }}
-      aria-label={`${appointment.clientName}, ${formatTime(appointment.time)}`}
+      aria-label={`${appointment.clientName}, ${
+        grid.durationsEnabled ? formatTimeRange(startMinutes, durationMinutes) : formatTime(appointment.time)
+      }`}
       sx={{
         position: 'absolute',
         top: shownTop + 2,
@@ -274,7 +276,9 @@ export const AgendaAppointmentBlock: React.FC<AgendaAppointmentBlockProps> = ({
               {appointment.clientName}
             </Typography>
             <Typography sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1.25, color: appColors.accent, flexShrink: 0 }}>
-              {resizing ? formatTimeRange(shown.startMinutes, shown.durationMinutes) : formatTime(appointment.time)}
+              {resizing || grid.durationsEnabled
+                ? formatTimeRange(shown.startMinutes, shown.durationMinutes)
+                : formatTime(appointment.time)}
             </Typography>
           </Box>
           {!isCompact && (
