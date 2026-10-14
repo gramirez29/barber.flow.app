@@ -41,6 +41,18 @@ public static class AppointmentSchedule
 
     public static string FormatMinutes(int minutes) => $"{minutes / 60:00}:{minutes % 60:00}";
 
+    /// <summary>Minutes since midnight -> 12-hour clock for user-facing messages ("3:30 PM"); 1440 wraps to "12:00 AM".</summary>
+    public static string FormatMinutes12h(int minutes)
+    {
+        var hours = minutes / 60 % 24;
+        var hour12 = hours % 12 == 0 ? 12 : hours % 12;
+        return $"{hour12}:{minutes % 60:00} {(hours < 12 ? "AM" : "PM")}";
+    }
+
+    /// <summary>"HH:mm" -> "3:30 PM" for user-facing messages; text that is not a time is returned as is.</summary>
+    public static string FormatTime12h(string? time) =>
+        TryParseMinutes(time, out var minutes) ? FormatMinutes12h(minutes) : time ?? string.Empty;
+
     /// <summary>True when an appointment of <paramref name="durationMinutes"/> starting at <paramref name="startMinutes"/> fits in the day.</summary>
     public static bool FitsInDay(int startMinutes, int durationMinutes) => startMinutes + durationMinutes <= MinutesPerDay;
 

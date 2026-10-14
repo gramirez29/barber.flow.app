@@ -12,6 +12,7 @@ import {
   getAppointmentDuration,
   timeToMinutes,
 } from '@shared/utils/agendaLayout';
+import { formatTime } from '@shared/utils/formatters';
 import { appColors } from '@presentation/theme/appColors';
 import { APPOINTMENT_STATUS_COLORS } from '@presentation/theme/statusColors';
 
@@ -202,7 +203,9 @@ export const AgendaAppointmentBlock: React.FC<AgendaAppointmentBlockProps> = ({
       onClick={() => {
         if (!isClickSuppressed()) onClick(appointment);
       }}
-      aria-label={`${appointment.clientName}, ${appointment.time}`}
+      aria-label={`${appointment.clientName}, ${
+        grid.durationsEnabled ? formatTimeRange(startMinutes, durationMinutes) : formatTime(appointment.time)
+      }`}
       sx={{
         position: 'absolute',
         top: shownTop + 2,
@@ -273,7 +276,9 @@ export const AgendaAppointmentBlock: React.FC<AgendaAppointmentBlockProps> = ({
               {appointment.clientName}
             </Typography>
             <Typography sx={{ fontSize: 11, fontWeight: 700, lineHeight: 1.25, color: appColors.accent, flexShrink: 0 }}>
-              {resizing ? formatTimeRange(shown.startMinutes, shown.durationMinutes) : appointment.time}
+              {resizing || grid.durationsEnabled
+                ? formatTimeRange(shown.startMinutes, shown.durationMinutes)
+                : formatTime(appointment.time)}
             </Typography>
           </Box>
           {!isCompact && (

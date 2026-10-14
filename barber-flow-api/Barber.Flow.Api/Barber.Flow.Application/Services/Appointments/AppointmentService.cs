@@ -225,9 +225,13 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
         {
             if (await _repo.HasOverlapAsync(owner, date, start, duration, excludeId, cancellationToken))
             {
-                throw new AppointmentSchedulingException(
-                    $"Ya existe una cita el {date} entre {AppointmentSchedule.FormatMinutes(start)} y {AppointmentSchedule.FormatMinutes(start + duration)}.",
-                    AppointmentSchedulingException.SlotTakenCode);
+                // Name the appointment that blocks the slot; if it can't be resolved, fall back to the requested range.
+                var blocking = await _repo.FindOverlapAsync(owner, date, start, duration, excludeId, cancellationToken);
+                var message = blocking is not null && AppointmentSchedule.TryParseMinutes(blocking.Time, out var blockingStart)
+                    ? $"Ya existe una cita de {DescribeClient(blocking)} el {date} de {AppointmentSchedule.FormatMinutes12h(blockingStart)} a {AppointmentSchedule.FormatMinutes12h(blockingStart + (blocking.DurationMinutes ?? AppointmentSchedule.DefaultDurationMinutes))}."
+                    : $"Ya existe una cita el {date} entre {AppointmentSchedule.FormatMinutes12h(start)} y {AppointmentSchedule.FormatMinutes12h(start + duration)}.";
+
+                throw new AppointmentSchedulingException(message, AppointmentSchedulingException.SlotTakenCode);
             }
 
             return;
@@ -235,11 +239,17 @@ public class AppointmentService(IAppointmentRepository repo, IBarberRepository b
 
         if (await _repo.HasConflictAsync(owner, date, time, excludeId, cancellationToken))
         {
-            throw new AppointmentSchedulingException(
-                $"Ya existe una cita agendada el {date} a las {time}.",
-                AppointmentSchedulingException.SlotTakenCode);
+            var blocking = await _repo.FindConflictAsync(owner, date, time, excludeId, cancellationToken);
+            var message = blocking is not null
+                ? $"Ya existe una cita de {DescribeClient(blocking)} el {date} a las {AppointmentSchedule.FormatTime12h(time)}."
+                : $"Ya existe una cita agendada el {date} a las {AppointmentSchedule.FormatTime12h(time)}.";
+
+            throw new AppointmentSchedulingException(message, AppointmentSchedulingException.SlotTakenCode);
         }
     }
+
+    private static string DescribeClient(Domain.Entities.Appointments appointment) =>
+        string.IsNullOrWhiteSpace(appointment.ClientName) ? "otro cliente" : string.Join(' ', appointment.ClientName.Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
     private async Task<bool> AreDurationsEnabledAsync(string? owner, CancellationToken cancellationToken)
     {

@@ -10,6 +10,7 @@ import {
   minutesToOffset,
   minutesToTime,
 } from '@shared/utils/agendaLayout';
+import { formatTime } from '@shared/utils/formatters';
 import { appColors } from '@presentation/theme/appColors';
 
 interface AgendaSlotProps {
@@ -56,7 +57,7 @@ const AgendaSlot: React.FC<AgendaSlotProps> = ({ startMinutes, grid, onSelect })
         ref={setNodeRef}
         role="button"
         tabIndex={0}
-        aria-label={`Agendar cita a las ${time}`}
+        aria-label={`Agendar cita a las ${formatTime(time)}`}
         onClick={() => onSelect(time)}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {

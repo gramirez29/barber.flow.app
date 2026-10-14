@@ -82,9 +82,42 @@ public class AppointmentDurationTests
         var ex = await Assert.ThrowsAsync<AppointmentSchedulingException>(() => CreateSut().CreateAsync(Appointment("11:15")));
 
         Assert.Equal(AppointmentSchedulingException.SlotTakenCode, ex.Code);
-        Assert.Contains("11:15", ex.Message);
-        Assert.Contains("11:45", ex.Message);
+        Assert.Contains("11:15 AM", ex.Message);
+        Assert.Contains("11:45 AM", ex.Message);
         _repo.Verify(r => r.CreateAsync(It.IsAny<Barber.Flow.Domain.Entities.Appointments>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_FeatureOn_Overlap_NamesTheBlockingAppointment()
+    {
+        SetupBarber(true);
+        SetupOverlap(true);
+        var blocking = Appointment("15:00", duration: 60);
+        blocking.Id = "APT-0099";
+        blocking.ClientName = "Fallas ";
+        _repo.Setup(r => r.FindOverlapAsync(Owner, Date, 15 * 60 + 30, 30, null, It.IsAny<CancellationToken>())).ReturnsAsync(blocking);
+
+        var ex = await Assert.ThrowsAsync<AppointmentSchedulingException>(() => CreateSut().CreateAsync(Appointment("15:30")));
+
+        Assert.Equal(AppointmentSchedulingException.SlotTakenCode, ex.Code);
+        Assert.Contains("Fallas", ex.Message);
+        Assert.Contains("3:00 PM", ex.Message);
+        Assert.Contains("4:00 PM", ex.Message);
+    }
+
+    [Fact]
+    public async Task Create_FeatureOff_ExactConflict_NamesTheBlockingAppointment()
+    {
+        SetupBarber(false);
+        _repo.Setup(r => r.HasConflictAsync(Owner, Date, "15:30", null, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var blocking = Appointment("15:30");
+        blocking.ClientName = "Diego Montero";
+        _repo.Setup(r => r.FindConflictAsync(Owner, Date, "15:30", null, It.IsAny<CancellationToken>())).ReturnsAsync(blocking);
+
+        var ex = await Assert.ThrowsAsync<AppointmentSchedulingException>(() => CreateSut().CreateAsync(Appointment("15:30")));
+
+        Assert.Contains("Diego Montero", ex.Message);
+        Assert.Contains("3:30 PM", ex.Message);
     }
 
     [Theory]

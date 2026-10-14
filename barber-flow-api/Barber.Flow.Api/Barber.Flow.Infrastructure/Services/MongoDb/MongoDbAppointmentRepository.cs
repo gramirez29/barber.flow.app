@@ -197,6 +197,24 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
         return sameDay.Any(a => AppointmentSchedule.Overlaps(a.Time, a.DurationMinutes, startMinutes, durationMinutes));
     }
 
+    /// <inheritdoc/>
+    public async Task<Appointments?> FindConflictAsync(string? owner, string date, string time, string? excludeId, CancellationToken cancellation = default)
+    {
+        var filter = Builders<Appointments>.Filter.And(
+            BuildSameDayFilter(owner, date, excludeId),
+            Builders<Appointments>.Filter.Eq(a => a.Time, time));
+        return await _collection.Find(filter).FirstOrDefaultAsync(cancellation);
+    }
+
+    /// <inheritdoc/>
+    public async Task<Appointments?> FindOverlapAsync(string? owner, string date, int startMinutes, int durationMinutes, string? excludeId, CancellationToken cancellation = default)
+    {
+        var sameDay = await _collection.Find(BuildSameDayFilter(owner, date, excludeId)).ToListAsync(cancellation);
+        return sameDay
+            .OrderBy(a => a.Time)
+            .FirstOrDefault(a => AppointmentSchedule.Overlaps(a.Time, a.DurationMinutes, startMinutes, durationMinutes));
+    }
+
     // Active (non-cancelled) appointments of one owner on one date, optionally excluding one id.
     private static FilterDefinition<Appointments> BuildSameDayFilter(string? owner, string date, string? excludeId)
     {

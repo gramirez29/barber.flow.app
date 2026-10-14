@@ -1,4 +1,5 @@
 import { Appointment, AppointmentStatus } from '@domain/entities/Appointment';
+import { formatTime } from '@shared/utils/formatters';
 import {
   AGENDA,
   AgendaGrid,
@@ -237,9 +238,9 @@ export const getDefaultDurationForSlot = (startMinutes: number, busy: BusyRange[
   return free >= DEFAULT_DURATION_MINUTES ? DEFAULT_DURATION_MINUTES : Math.max(MIN_DURATION_MINUTES, free);
 };
 
-/** "11:00 – 11:30" para la etiqueta en vivo al redimensionar. */
+/** "11:00 AM – 11:30 AM" para la etiqueta en vivo al redimensionar y el rango de las tarjetas. */
 export const formatTimeRange = (startMinutes: number, durationMinutes: number): string =>
-  `${minutesToTime(startMinutes)} – ${minutesToTime(startMinutes + durationMinutes)}`;
+  `${formatTime(minutesToTime(startMinutes))} – ${formatTime(minutesToTime(startMinutes + durationMinutes))}`;
 
 /** "15 min", "1 h", "1 h 30 min": duración legible para avisos y etiquetas. */
 export const formatDuration = (minutes: number): string => {
