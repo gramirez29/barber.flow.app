@@ -8,12 +8,14 @@ interface AppointmentAgendaListProps {
   appointments: Appointment[];
   emptyMessage: string;
   onSelectAppointment: (appointment: Appointment) => void;
+  showDuration?: boolean;
 }
 
 export const AppointmentAgendaList: React.FC<AppointmentAgendaListProps> = ({
   appointments,
   emptyMessage,
   onSelectAppointment,
+  showDuration = false,
 }) => {
   if (appointments.length === 0) {
     return (
@@ -39,7 +41,12 @@ export const AppointmentAgendaList: React.FC<AppointmentAgendaListProps> = ({
   return (
     <Box sx={{ mt: 2 }}>
       {appointments.map((appointment) => (
-        <AppointmentCard key={appointment.id} appointment={appointment} onClick={onSelectAppointment} />
+        <AppointmentCard
+          key={appointment.id}
+          appointment={appointment}
+          onClick={onSelectAppointment}
+          showDuration={showDuration}
+        />
       ))}
     </Box>
   );

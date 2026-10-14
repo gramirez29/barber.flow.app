@@ -3,10 +3,15 @@ import { Box, Typography } from '@mui/material';
 import { Appointment, AppointmentStatus } from '@domain/entities/Appointment';
 import { APPOINTMENT_CONSTANTS } from '@shared/constants/appointments';
 import { appColors } from '@presentation/theme/appColors';
+import { DEFAULT_DURATION_MINUTES } from '@shared/constants/agenda';
+import { formatTimeRange, timeToMinutes } from '@shared/utils/agendaLayout';
+import { formatTime } from '@shared/utils/formatters';
 
 interface AppointmentCardProps {
   appointment: Appointment;
   onClick?: (appointment: Appointment) => void;
+  /** Con la duración ajustable activa se muestra el rango (3:00 PM – 4:00 PM) en vez de solo la hora de inicio. */
+  showDuration?: boolean;
 }
 
 // Mismo mapeo local usado en ClientAppointmentHistory (no forma parte de appColors).
@@ -17,7 +22,13 @@ const STATUS_BADGE_COLORS: Record<AppointmentStatus, string> = {
   cancelled: appColors.error,
 };
 
-export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, onClick }) => {
+export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, onClick, showDuration = false }) => {
+  const startMinutes = timeToMinutes(appointment.time);
+  const timeLabel =
+    showDuration && !Number.isNaN(startMinutes)
+      ? formatTimeRange(startMinutes, appointment.durationMinutes ?? DEFAULT_DURATION_MINUTES)
+      : formatTime(appointment.time);
+
   return (
     <Box
       onClick={() => onClick?.(appointment)}
@@ -60,7 +71,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
             }}
           >
             <Typography sx={{ fontSize: 13, fontWeight: 700, color: appColors.accent, whiteSpace: 'nowrap' }}>
-              {appointment.time}
+              {timeLabel}
             </Typography>
             <Box
               sx={{
