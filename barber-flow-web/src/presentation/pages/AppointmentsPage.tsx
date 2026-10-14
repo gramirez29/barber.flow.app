@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography, CircularProgress } from '@mui/material';
 import {
@@ -27,6 +27,8 @@ import { useConfirmDialog } from '@presentation/context/ConfirmDialogContext';
 import { AgendaDayView } from '@presentation/components/agenda';
 import { isPastAppointmentDateTime } from '@shared/validation/appointmentSchemas';
 import { useAuth } from '@presentation/context/AuthContext';
+import { isSlotTakenError } from '@shared/utils/errorUtils';
+import { formatTime } from '@shared/utils/formatters';
 import { CreateAppointmentFormData } from '@shared/validation/appointmentSchemas';
 import { Appointment, RecurrenceFrequency } from '@domain/entities/Appointment';
 import { appColors } from '@presentation/theme/appColors';
@@ -36,6 +38,9 @@ import heroImage from '@/assets/images/barber-flow-background-image.jpg';
 type ViewMode = CalendarViewMode;
 
 const toKey = (date: Date) => format(date, 'yyyy-MM-dd');
+
+// Al volver a la pestaña/app no se recarga la agenda si hace menos que esto (evita ráfagas de fetch).
+const STALE_AFTER_MS = 30_000;
 
 export const AppointmentsPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('day');
@@ -178,6 +183,33 @@ export const AppointmentsPage: React.FC = () => {
     }
   };
 
+  // Si el backend rechaza por horario ocupado, la lista en pantalla puede estar desactualizada (la cita que
+  // choca quizá se creó desde otra pestaña/dispositivo): se recarga para que el usuario la vea.
+  const refreshOnSlotTaken = (error: unknown) => {
+    if (isSlotTakenError(error)) refreshCurrentRange();
+  };
+
+  // Se recarga la agenda al volver a la pestaña/app tras un rato (Safari en iOS restaura pestañas sin recargar).
+  const refreshRef = useRef(refreshCurrentRange);
+  useEffect(() => {
+    refreshRef.current = refreshCurrentRange;
+  });
+  useEffect(() => {
+    let lastRefresh = Date.now();
+    const refreshIfStale = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (Date.now() - lastRefresh < STALE_AFTER_MS) return;
+      lastRefresh = Date.now();
+      refreshRef.current();
+    };
+    document.addEventListener('visibilitychange', refreshIfStale);
+    window.addEventListener('focus', refreshIfStale);
+    return () => {
+      document.removeEventListener('visibilitychange', refreshIfStale);
+      window.removeEventListener('focus', refreshIfStale);
+    };
+  }, []);
+
   const handleFormSubmit = async (data: CreateAppointmentFormData) => {
     const { price, paymentMethod, ...rest } = data;
     const request = {
@@ -186,25 +218,40 @@ export const AppointmentsPage: React.FC = () => {
       paymentMethodUsed: paymentMethod,
     };
 
-    if (editingAppointment) {
-      await updateAppointment(editingAppointment.id!, request);
-    } else {
-      await createAppointment(request);
+    try {
+      if (editingAppointment) {
+        await updateAppointment(editingAppointment.id!, request);
+      } else {
+        await createAppointment(request);
+      }
+    } catch (error) {
+      refreshOnSlotTaken(error);
+      throw error;
     }
     refreshCurrentRange();
   };
 
   const handleRecurringSubmit = async (data: CreateAppointmentFormData, frequency: RecurrenceFrequency) => {
     const { price, paymentMethod, ...rest } = data;
-    await createRecurringAppointments(
-      { ...rest, servicePrice: price, paymentMethodUsed: paymentMethod },
-      frequency
-    );
+    try {
+      await createRecurringAppointments(
+        { ...rest, servicePrice: price, paymentMethodUsed: paymentMethod },
+        frequency
+      );
+    } catch (error) {
+      refreshOnSlotTaken(error);
+      throw error;
+    }
     refreshCurrentRange();
   };
 
   const handleMove = async (appointmentId: string, newDate: string, newTime: string) => {
-    await moveAppointment(appointmentId, newDate, newTime);
+    try {
+      await moveAppointment(appointmentId, newDate, newTime);
+    } catch (error) {
+      refreshOnSlotTaken(error);
+      throw error;
+    }
     refreshCurrentRange();
     handleCloseForm();
   };
@@ -222,14 +269,19 @@ export const AppointmentsPage: React.FC = () => {
     if (isPastAppointmentDateTime(appointment.date, newTime)) {
       const confirmed = await confirm({
         title: 'Hora ya pasada',
-        message: `${newTime} ya pasó. ¿Mover la cita de todos modos?`,
+        message: `${formatTime(newTime)} ya pasó. ¿Mover la cita de todos modos?`,
         confirmText: 'Mover',
         cancelText: 'Cancelar',
       });
       if (!confirmed) return;
     }
 
-    await moveAppointment(appointment.id!, appointment.date, newTime);
+    try {
+      await moveAppointment(appointment.id!, appointment.date, newTime);
+    } catch (error) {
+      refreshOnSlotTaken(error);
+      throw error;
+    }
     refreshCurrentRange();
   };
 
@@ -240,14 +292,19 @@ export const AppointmentsPage: React.FC = () => {
     if (newTime && isPastAppointmentDateTime(appointment.date, newTime)) {
       const confirmed = await confirm({
         title: "Hora ya pasada",
-        message: `${newTime} ya pasó. ¿Cambiar la hora de inicio de todos modos?`,
+        message: `${formatTime(newTime)} ya pasó. ¿Cambiar la hora de inicio de todos modos?`,
         confirmText: "Cambiar",
         cancelText: "Cancelar",
       });
       if (!confirmed) return;
     }
 
-    await resizeAppointment(appointment.id!, durationMinutes, newTime, appointment.durationMinutes ?? DEFAULT_DURATION_MINUTES);
+    try {
+      await resizeAppointment(appointment.id!, durationMinutes, newTime, appointment.durationMinutes ?? DEFAULT_DURATION_MINUTES);
+    } catch (error) {
+      refreshOnSlotTaken(error);
+      throw error;
+    }
     refreshCurrentRange();
   };
 
@@ -387,6 +444,7 @@ export const AppointmentsPage: React.FC = () => {
               appointments={appointmentsForSelectedDay}
               emptyMessage={emptyMessage}
               onSelectAppointment={handleSelectAppointment}
+              showDuration={durationsEnabled}
             />
           )}
         </Box>

@@ -146,7 +146,7 @@ describe('espacio libre y duración de una cita nueva en un spot', () => {
 
 describe('formatTimeRange', () => {
   it('muestra inicio – fin', () => {
-    expect(formatTimeRange(m('11:00'), 15)).toBe('11:00 – 11:15');
+    expect(formatTimeRange(m('11:00'), 15)).toBe('11:00 AM – 11:15 AM');
   });
 });
 

@@ -95,6 +95,18 @@ public interface IAppointmentRepository
     Task<bool> HasOverlapAsync(string? owner, string date, int startMinutes, int durationMinutes, string? excludeId, CancellationToken cancellation = default);
 
     /// <summary>
+    /// Same rule as <see cref="HasConflictAsync"/>, but returns the appointment that holds the exact date and time
+    /// (so the error can name it), or null when there is none.
+    /// </summary>
+    Task<Entities.Appointments?> FindConflictAsync(string? owner, string date, string time, string? excludeId, CancellationToken cancellation = default);
+
+    /// <summary>
+    /// Same rule as <see cref="HasOverlapAsync"/>, but returns the first appointment that overlaps the range
+    /// (so the error can name it), or null when there is none.
+    /// </summary>
+    Task<Entities.Appointments?> FindOverlapAsync(string? owner, string date, int startMinutes, int durationMinutes, string? excludeId, CancellationToken cancellation = default);
+
+    /// <summary>
     /// Generates the next unique identifier for an appointment.
     /// </summary>
     /// <param name="cancellation">A token to monitor for cancellation requests.</param>

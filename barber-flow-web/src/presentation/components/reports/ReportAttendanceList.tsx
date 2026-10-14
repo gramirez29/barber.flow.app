@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/material';
 import { CompletedAppointmentReportItem } from '@domain/entities';
 import { appColors } from '@presentation/theme/appColors';
 import { APPOINTMENT_CONSTANTS } from '@shared/constants/appointments';
-import { formatCurrency } from '@shared/utils/formatters';
+import { formatCurrency, formatTime } from '@shared/utils/formatters';
 
 interface ReportAttendanceListProps {
   completedAppointments: CompletedAppointmentReportItem[];
@@ -85,7 +85,7 @@ export const ReportAttendanceList: React.FC<ReportAttendanceListProps> = ({
                   {appointment.clientName}
                 </Typography>
                 <Typography sx={{ fontSize: 13, color: appColors.textSecondary, mt: 0.25 }}>
-                  {appointment.time} · {appointment.serviceName ?? 'Servicio general'}
+                  {formatTime(appointment.time)} · {appointment.serviceName ?? 'Servicio general'}
                 </Typography>
                 <Typography sx={{ fontSize: 13, color: appColors.textSecondary, mt: 0.25 }}>
                   {getPaymentMethodLabel(appointment.paymentMethodUsed)}

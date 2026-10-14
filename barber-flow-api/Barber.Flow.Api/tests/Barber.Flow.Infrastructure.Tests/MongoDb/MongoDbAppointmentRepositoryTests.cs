@@ -284,6 +284,29 @@ public class MongoDbAppointmentRepositoryTests
     }
 
     [Fact]
+    public async Task FindOverlapAsync_ReturnsTheBlockingAppointment_OrNullWhenFree()
+    {
+        var sut = CreateSut();
+        var created = await sut.CreateAsync(WithDuration(BuildAppointment(date: "2032-02-5", time: "15:00"), 60));
+
+        var blocking = await sut.FindOverlapAsync("admin", "2032-02-5", 15 * 60 + 30, 30, null);
+
+        Assert.Equal(created.Id, blocking?.Id);
+        Assert.Null(await sut.FindOverlapAsync("admin", "2032-02-5", 16 * 60, 30, null));
+        Assert.Null(await sut.FindOverlapAsync("admin", "2032-02-5", 15 * 60 + 30, 30, created.Id));
+    }
+
+    [Fact]
+    public async Task FindConflictAsync_ReturnsTheAppointmentAtThatTime_OrNull()
+    {
+        var sut = CreateSut();
+        var created = await sut.CreateAsync(BuildAppointment(date: "2032-02-6", time: "15:30"));
+
+        Assert.Equal(created.Id, (await sut.FindConflictAsync("admin", "2032-02-6", "15:30", null))?.Id);
+        Assert.Null(await sut.FindConflictAsync("admin", "2032-02-6", "16:00", null));
+    }
+
+    [Fact]
     public async Task HasOverlapAsync_30MinuteAppointmentBlocksTheNext15MinuteSpot_ButNotTheNextHalfHour()
     {
         var sut = CreateSut();

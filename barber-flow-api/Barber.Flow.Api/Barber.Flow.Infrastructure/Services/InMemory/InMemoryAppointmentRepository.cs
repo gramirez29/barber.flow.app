@@ -215,6 +215,20 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
         return Task.FromResult(overlaps);
     }
 
+    public Task<Domain.Entities.Appointments?> FindConflictAsync(string? owner, string date, string time, string? excludeId, CancellationToken cancellation = default)
+    {
+        var found = ActiveOnDay(owner, date, excludeId).FirstOrDefault(a => a.Time == time);
+        return Task.FromResult(found);
+    }
+
+    public Task<Domain.Entities.Appointments?> FindOverlapAsync(string? owner, string date, int startMinutes, int durationMinutes, string? excludeId, CancellationToken cancellation = default)
+    {
+        var found = ActiveOnDay(owner, date, excludeId)
+            .OrderBy(a => a.Time)
+            .FirstOrDefault(a => AppointmentSchedule.Overlaps(a.Time, a.DurationMinutes, startMinutes, durationMinutes));
+        return Task.FromResult(found);
+    }
+
     // Non-cancelled appointments of one owner on one date, optionally excluding one id.
     private IEnumerable<Domain.Entities.Appointments> ActiveOnDay(string? owner, string date, string? excludeId) =>
         _store.Values.Where(a =>

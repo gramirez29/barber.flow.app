@@ -262,6 +262,29 @@ public class InMemoryAppointmentRepositoryTests
     }
 
     [Fact]
+    public async Task FindOverlapAsync_ReturnsTheBlockingAppointment_OrNullWhenFree()
+    {
+        var repo = new InMemoryAppointmentRepository();
+        var created = await repo.CreateAsync(WithDuration(BuildAppointment(date: "2032-01-5", time: "15:00"), 60));
+
+        var blocking = await repo.FindOverlapAsync("admin", "2032-01-5", 15 * 60 + 30, 30, null);
+
+        Assert.Equal(created.Id, blocking?.Id);
+        Assert.Null(await repo.FindOverlapAsync("admin", "2032-01-5", 16 * 60, 30, null));
+        Assert.Null(await repo.FindOverlapAsync("admin", "2032-01-5", 15 * 60 + 30, 30, created.Id));
+    }
+
+    [Fact]
+    public async Task FindConflictAsync_ReturnsTheAppointmentAtThatTime_OrNull()
+    {
+        var repo = new InMemoryAppointmentRepository();
+        var created = await repo.CreateAsync(BuildAppointment(date: "2032-01-6", time: "15:30"));
+
+        Assert.Equal(created.Id, (await repo.FindConflictAsync("admin", "2032-01-6", "15:30", null))?.Id);
+        Assert.Null(await repo.FindConflictAsync("admin", "2032-01-6", "16:00", null));
+    }
+
+    [Fact]
     public async Task HasOverlapAsync_AppointmentWithoutStoredDuration_CountsAs30Minutes()
     {
         var repo = new InMemoryAppointmentRepository();
