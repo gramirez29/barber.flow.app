@@ -1,4 +1,5 @@
 using Barber.Flow.Domain.Entities;
+using Barber.Flow.Domain.Exceptions;
 using Barber.Flow.Domain.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -17,7 +18,15 @@ public sealed class MongoDbClientRepository : IClientRepository
 
     public async Task<Client> CreateAsync(Client client, CancellationToken cancellation = default)
     {
-        await _collection.InsertOneAsync(client, cancellationToken: cancellation);
+        try
+        {
+            await _collection.InsertOneAsync(client, cancellationToken: cancellation);
+        }
+        catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+        {
+            throw new ClientPhoneConflictException(client.PhoneNormalized, ex);
+        }
+
         return client;
     }
 
@@ -27,6 +36,7 @@ public sealed class MongoDbClientRepository : IClientRepository
             .Set(c => c.FirstName, client.FirstName)
             .Set(c => c.LastName, client.LastName)
             .Set(c => c.Phone, client.Phone)
+            .Set(c => c.PhoneNormalized, client.PhoneNormalized)
             .Set(c => c.Email, client.Email)
             .Set(c => c.Address, client.Address)
             .Set(c => c.Birthday, client.Birthday)
@@ -37,11 +47,18 @@ public sealed class MongoDbClientRepository : IClientRepository
             .Set(c => c.ShopId, client.ShopId)
             .Set(c => c.UpdatedAt, DateTime.UtcNow);
 
-        return await _collection.FindOneAndUpdateAsync(
-            Builders<Client>.Filter.Eq(c => c.Id, id),
-            update,
-            new FindOneAndUpdateOptions<Client> { ReturnDocument = ReturnDocument.After },
-            cancellation);
+        try
+        {
+            return await _collection.FindOneAndUpdateAsync(
+                Builders<Client>.Filter.Eq(c => c.Id, id),
+                update,
+                new FindOneAndUpdateOptions<Client> { ReturnDocument = ReturnDocument.After },
+                cancellation);
+        }
+        catch (MongoCommandException ex) when (ex.Code == 11000 || ex.CodeName == "DuplicateKey")
+        {
+            throw new ClientPhoneConflictException(client.PhoneNormalized, ex);
+        }
     }
 
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellation = default)
