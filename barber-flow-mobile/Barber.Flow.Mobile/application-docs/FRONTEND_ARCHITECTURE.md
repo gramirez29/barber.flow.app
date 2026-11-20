@@ -211,7 +211,8 @@ export const PRIVACY_POLICY_URL
 2. Luego en `Constants.expoConfig.extra.BASE_URL` (configurado en `app.config.js`)
 3. Fallback automático según `APP_ENV`:
    - `development` → `http://192.168.68.55:7016` (IP local del desarrollador)
-   - `testing` / `production` → `https://barberflowapp-develop.up.railway.app`
+   - `testing` → `https://barberflowapp-develop.up.railway.app`
+   - `production` → `https://api.haircutsflowcr.com`
 
 > **Para un desarrollador nuevo:** Si corres la app en desarrollo y ves errores de conexión, cambia la IP en `config.ts` a la IP de tu máquina en la red local.
 
