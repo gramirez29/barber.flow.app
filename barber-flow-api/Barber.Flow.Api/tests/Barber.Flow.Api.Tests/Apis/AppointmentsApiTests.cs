@@ -369,4 +369,32 @@ public class AppointmentsApiTests : IClassFixture<ApiWebApplicationFactory>
 
         Assert.True((await response.Content.ReadFromJsonAsync<BarberResponse>())!.Settings!.EnableAppointmentDurations);
     }
+
+    [Fact]
+    public async Task NextAppointmentId_AsBarber_ReturnsForbidden()
+    {
+        var barber = await CreateAuthenticatedClientAsync("barber", "barber");
+
+        var response = await barber.GetAsync("/api/appointments/nextAppointmentId");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task NextAppointmentId_AsAdmin_ReturnsOk()
+    {
+        var admin = await CreateAuthenticatedClientAsync();
+
+        var response = await admin.GetAsync("/api/appointments/nextAppointmentId");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task NextAppointmentId_WithoutToken_ReturnsUnauthorized()
+    {
+        var response = await _factory.CreateClient().GetAsync("/api/appointments/nextAppointmentId");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
