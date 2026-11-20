@@ -5,7 +5,7 @@ import { appColors } from '@presentation/theme/appColors';
 
 const FAQS = [
   {
-    question: '¿Puedo usar HairCutsFlow desde el celular?',
+    question: '¿Puedo usar HairCutsFlow CR desde el celular?',
     answer:
       'Sí, la app funciona completa desde el navegador de tu celular o tablet, sin necesidad de instalar nada.',
   },
@@ -22,7 +22,7 @@ const FAQS = [
   {
     question: '¿Cómo recibo notificaciones de mis citas?',
     answer:
-      'HairCutsFlow te avisa dentro de la app sobre las citas de mañana y clientes que no agendan hace tiempo, para que no se te pase nada.',
+      'HairCutsFlow CR te avisa dentro de la app sobre las citas de mañana y clientes que no agendan hace tiempo, para que no se te pase nada.',
   },
 ];
 

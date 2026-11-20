@@ -33,7 +33,7 @@ export const LandingFinalCta: React.FC = () => {
             ¿Listo para organizar tu barbería?
           </Typography>
           <Typography sx={{ color: appColors.textSecondary, fontSize: 13 }}>
-            Iniciá sesión y empezá a usar HairCutsFlow hoy mismo.
+            Iniciá sesión y empezá a usar HairCutsFlow CR hoy mismo.
           </Typography>
         </Box>
         <Button

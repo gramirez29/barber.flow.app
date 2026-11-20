@@ -74,7 +74,7 @@ export const LandingHero: React.FC = () => {
                 whiteSpace: 'nowrap',
               }}
             >
-              HAIRCUTSFLOW
+              HAIRCUTSFLOW CR
             </Typography>
           </Box>
 

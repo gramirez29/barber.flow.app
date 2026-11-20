@@ -190,7 +190,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ open, onClose }) =
               color: appColors.accent,
             }}
           >
-            Barber Flow
+            HairCutsFlow CR
           </Typography>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1.5 }}>

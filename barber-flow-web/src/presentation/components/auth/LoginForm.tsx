@@ -153,7 +153,7 @@ export const LoginForm: React.FC = () => {
                   letterSpacing: '3px',
                 }}
               >
-                BARBER FLOW
+                HAIRCUTSFLOW CR
               </Typography>
             </Box>
 
