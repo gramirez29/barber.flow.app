@@ -7,7 +7,7 @@ const PRIVACY_POLICY_URL =
 const URL_BY_ENV = {
 	development: "http://192.168.0.9:7016",
 	testing:     "https://barberflowapp-develop.up.railway.app",
-	production:  "https://barberflowapp-develop.up.railway.app",
+	production:  "https://api.haircutsflowcr.com",
 };
 
 const BASE_URL = URL_BY_ENV[APP_ENV] ?? URL_BY_ENV.development;
