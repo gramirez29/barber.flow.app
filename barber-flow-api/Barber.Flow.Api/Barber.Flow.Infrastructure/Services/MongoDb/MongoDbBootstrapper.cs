@@ -217,6 +217,33 @@ public sealed class MongoDbBootstrapper : IHostedService
                 new CreateIndexOptions { Name = "idx_barbers_createdBy" }),
         };
         await barbers.Indexes.CreateManyAsync(barberIndexes, cancellationToken);
+
+        // The username is the tenant identity (appointments/clients are owned by it, and barber
+        // lookups resolve it case-insensitively), so two barbers must never share one. The
+        // case-insensitive collation makes "Jaden01" and "jaden01" collide here too. Partial so
+        // legacy barbers with a blank username are exempt. Created separately and swallowing a
+        // duplicate-key failure (same approach as the users.Email index): an environment that
+        // already holds duplicates must keep booting until they're cleaned up by hand.
+        try
+        {
+            await barbers.Indexes.CreateOneAsync(
+                new CreateIndexModel<BarberEntity>(
+                    Builders<BarberEntity>.IndexKeys.Ascending(b => b.UserName),
+                    new CreateIndexOptions<BarberEntity>
+                    {
+                        Name = "uq_barbers_userName",
+                        Unique = true,
+                        Collation = new Collation("en", strength: CollationStrength.Secondary),
+                        PartialFilterExpression = Builders<BarberEntity>.Filter.Gt(b => b.UserName, string.Empty),
+                    }),
+                cancellationToken: cancellationToken);
+        }
+        catch (MongoCommandException ex) when (ex.CodeName == "DuplicateKey" || ex.Code == 11000)
+        {
+            _logger.LogError(ex,
+                "Could not create the unique barbers.UserName index - two barbers already share a username. " +
+                "Duplicates are only blocked by the service-level check until they are cleaned up by hand.");
+        }
     }
 
     /// <summary>
@@ -249,13 +276,7 @@ public sealed class MongoDbBootstrapper : IHostedService
     {
         // Users collection indexes
         var users = _database.GetCollection<User>("users");
-        var userIndexes = new List<CreateIndexModel<User>>
-        {
-            new(
-                Builders<User>.IndexKeys.Ascending(u => u.UserName),
-                new CreateIndexOptions { Name = "idx_users_userName", Unique = true }),
-        };
-        await users.Indexes.CreateManyAsync(userIndexes, cancellationToken);
+        await EnsureUniqueUserNameIndexAsync(users, cancellationToken);
 
         // Email is looked up by the OTP password-recovery flow (AuthService), which assumes it
         // resolves to exactly one account - two users sharing an email let a reset silently land
@@ -287,6 +308,49 @@ public sealed class MongoDbBootstrapper : IHostedService
             _logger.LogError(ex,
                 "Could not create a unique index on users.Email - duplicate emails already exist. " +
                 "Password recovery may resolve to the wrong account until these are cleaned up manually.");
+        }
+    }
+
+    /// <summary>
+    /// Guarantees one account per username, ignoring case. Every lookup (login, password reset, barber
+    /// settings) already matches usernames case-insensitively, so a case-sensitive unique index let
+    /// "Jaden01" and "jaden01" coexist as two accounts that all those lookups then confuse. The old
+    /// case-sensitive index (<c>idx_users_userName</c>) is replaced by a case-insensitive one, but only
+    /// after the new one was built successfully: if case-variant duplicates already exist the new index
+    /// can't be created, so the old one is kept and an error is logged instead of leaving no guard at all.
+    /// </summary>
+    private async Task EnsureUniqueUserNameIndexAsync(IMongoCollection<User> users, CancellationToken cancellationToken)
+    {
+        const string legacyName = "idx_users_userName";
+        var keys = Builders<User>.IndexKeys.Ascending(u => u.UserName);
+
+        try
+        {
+            await users.Indexes.CreateOneAsync(
+                new CreateIndexModel<User>(keys, new CreateIndexOptions
+                {
+                    Name = "uq_users_userName_ci",
+                    Unique = true,
+                    Collation = new Collation("en", strength: CollationStrength.Secondary),
+                }),
+                cancellationToken: cancellationToken);
+
+            var existingNames = (await users.Indexes.List(cancellationToken).ToListAsync(cancellationToken))
+                .Select(i => i["name"].AsString);
+            if (existingNames.Contains(legacyName))
+            {
+                await users.Indexes.DropOneAsync(legacyName, cancellationToken);
+            }
+        }
+        catch (MongoCommandException ex) when (ex.CodeName == "DuplicateKey" || ex.Code == 11000)
+        {
+            _logger.LogError(ex,
+                "Could not create the case-insensitive unique users.UserName index - usernames that differ only in case " +
+                "already exist. Keeping the case-sensitive index until they are cleaned up by hand.");
+
+            await users.Indexes.CreateOneAsync(
+                new CreateIndexModel<User>(keys, new CreateIndexOptions { Name = legacyName, Unique = true }),
+                cancellationToken: cancellationToken);
         }
     }
 

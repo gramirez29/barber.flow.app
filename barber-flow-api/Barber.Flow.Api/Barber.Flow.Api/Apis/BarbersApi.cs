@@ -4,6 +4,7 @@ using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Auth;
 using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Application.Services.Users;
+using Barber.Flow.Domain.Exceptions;
 using Barber.Flow.Domain.Interfaces;
 using Barber.Flow.Domain.ValueObjects;
 using FluentValidation;
@@ -93,6 +94,14 @@ public static class BarbersApi
             {
                 return TypedResults.Conflict(new { message = "Ya existe una cuenta con ese correo electrónico." });
             }
+
+            // Same reason as the email check: the User insert below would be rejected by its unique
+            // username index only after the Barber (and its shop) already exist.
+            var existingUserWithUserName = await userRepository.GetByUserNameAsync(request.UserName, cancellationToken);
+            if (existingUserWithUserName != null)
+            {
+                return DuplicateUserName(request.UserName);
+            }
         }
 
         var barber = new Domain.Entities.Barber
@@ -113,7 +122,15 @@ public static class BarbersApi
             UpdatedBy = userId ?? string.Empty
         };
 
-        var created = await barberService.CreateAsync(barber, cancellationToken);
+        Domain.Entities.Barber created;
+        try
+        {
+            created = await barberService.CreateAsync(barber, cancellationToken);
+        }
+        catch (BarberUserNameConflictException ex)
+        {
+            return DuplicateUserName(ex.UserName);
+        }
 
         if (!string.IsNullOrWhiteSpace(request.Password))
         {
@@ -183,7 +200,16 @@ public static class BarbersApi
             UpdatedBy = userId ?? string.Empty
         };
 
-        var updated = await barberService.UpdateAsync(id, barber, cancellationToken);
+        Domain.Entities.Barber? updated;
+        try
+        {
+            updated = await barberService.UpdateAsync(id, barber, cancellationToken);
+        }
+        catch (BarberUserNameConflictException ex)
+        {
+            return DuplicateUserName(ex.UserName);
+        }
+
         if (updated == null) return TypedResults.NotFound();
 
         if (!string.IsNullOrWhiteSpace(request.Password))
@@ -253,6 +279,13 @@ public static class BarbersApi
         var ok = await barberService.DeleteAsync(id, cancellationToken);
         return ok ? TypedResults.NoContent() : TypedResults.NotFound();
     }
+
+    private static IResult DuplicateUserName(string? userName) =>
+        TypedResults.Conflict(new
+        {
+            message = $"Ya existe una cuenta con el usuario '{userName}'.",
+            code = BarberUserNameConflictException.ErrorCode,
+        });
 
     private static async Task<IResult> NextIdAsync(IBarberService barberService, HttpContext httpContext)
     {

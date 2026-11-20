@@ -1,5 +1,6 @@
 using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Domain.Entities;
+using Barber.Flow.Domain.Exceptions;
 using Barber.Flow.Domain.Interfaces;
 using Moq;
 using BarberEntity = Barber.Flow.Domain.Entities.Barber;
@@ -215,5 +216,86 @@ public class BarberServiceTests
         var result = await CreateSut().GetNextIdAsync();
 
         Assert.Equal("CRB-0007", result);
+    }
+
+    [Fact]
+    public async Task CreateAsync_UserNameTakenByAnotherBarber_ThrowsBeforeCreatingAnyShop()
+    {
+        _repo.Setup(r => r.GetByUserNameAsync("JADEN01", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BarberEntity { Id = "CRB-0001", UserName = "jaden01" });
+
+        await Assert.ThrowsAsync<BarberUserNameConflictException>(
+            () => CreateSut().CreateAsync(new BarberEntity { UserName = "JADEN01", BarberName = "Otro", CreatedBy = "admin" }));
+
+        _shopRepo.Verify(s => s.CreateAsync(It.IsAny<BarberShop>()), Times.Never);
+        _repo.Verify(r => r.CreateAsync(It.IsAny<BarberEntity>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_BlankUserName_SkipsTheUniquenessCheck()
+    {
+        _shopRepo.Setup(s => s.CreateAsync(It.IsAny<BarberShop>())).ReturnsAsync(new BarberShop { Id = "SHOP-0001" });
+        _repo.Setup(r => r.CreateAsync(It.IsAny<BarberEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BarberEntity b, CancellationToken _) => b);
+
+        await CreateSut().CreateAsync(new BarberEntity { UserName = "  ", BarberName = "Sin usuario", CreatedBy = "admin" });
+
+        _repo.Verify(r => r.GetByUserNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_StoreRejectsRacingUserName_DeletesTheJustCreatedShopAndRethrows()
+    {
+        _shopRepo.Setup(s => s.CreateAsync(It.IsAny<BarberShop>())).ReturnsAsync(new BarberShop { Id = "SHOP-0009" });
+        _repo.Setup(r => r.CreateAsync(It.IsAny<BarberEntity>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new BarberUserNameConflictException("jaden01"));
+
+        await Assert.ThrowsAsync<BarberUserNameConflictException>(
+            () => CreateSut().CreateAsync(new BarberEntity { UserName = "jaden01", BarberName = "Otro", CreatedBy = "admin" }));
+
+        _shopRepo.Verify(s => s.DeleteAsync("SHOP-0009", "admin"), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_RenameToUserNameOfAnotherBarber_Throws()
+    {
+        _repo.Setup(r => r.GetByIdAsync("CRB-0002", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BarberEntity { Id = "CRB-0002", UserName = "segundo" });
+        _repo.Setup(r => r.GetByUserNameAsync("jaden01", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BarberEntity { Id = "CRB-0001", UserName = "jaden01" });
+
+        await Assert.ThrowsAsync<BarberUserNameConflictException>(
+            () => CreateSut().UpdateAsync("CRB-0002", new BarberEntity { UserName = "jaden01" }));
+
+        _repo.Verify(r => r.UpdateAsync(It.IsAny<string>(), It.IsAny<BarberEntity>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SameUserNameIgnoringCase_DoesNotRunTheUniquenessCheck()
+    {
+        // Also keeps a barber that already shares a username (created before the rule) editable.
+        _repo.Setup(r => r.GetByIdAsync("CRB-0001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BarberEntity { Id = "CRB-0001", UserName = "jaden01" });
+        _repo.Setup(r => r.UpdateAsync("CRB-0001", It.IsAny<BarberEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, BarberEntity b, CancellationToken _) => b);
+
+        var result = await CreateSut().UpdateAsync("CRB-0001", new BarberEntity { UserName = "Jaden01", BarberName = "Nuevo nombre" });
+
+        Assert.NotNull(result);
+        _repo.Verify(r => r.GetByUserNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_RenameToFreeUserName_Succeeds()
+    {
+        _repo.Setup(r => r.GetByIdAsync("CRB-0001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BarberEntity { Id = "CRB-0001", UserName = "viejo" });
+        _repo.Setup(r => r.GetByUserNameAsync("nuevo", It.IsAny<CancellationToken>())).ReturnsAsync((BarberEntity?)null);
+        _repo.Setup(r => r.UpdateAsync("CRB-0001", It.IsAny<BarberEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, BarberEntity b, CancellationToken _) => b);
+
+        var result = await CreateSut().UpdateAsync("CRB-0001", new BarberEntity { UserName = "nuevo" });
+
+        Assert.Equal("nuevo", result!.UserName);
     }
 }

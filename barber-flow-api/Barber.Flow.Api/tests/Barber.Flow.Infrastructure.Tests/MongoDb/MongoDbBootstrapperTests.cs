@@ -182,6 +182,141 @@ public class MongoDbBootstrapperTests
             () => repo.UpdateAsync(other.Id, patch));
     }
 
+    private static BarberEntity BuildBarber(string id, string userName) =>
+        new() { Id = id, UserName = userName, BarberName = userName, CreatedBy = "admin", ShopId = "SHOP-" + id };
+
+    [Fact]
+    public async Task BarberUserNameIndex_ExactDuplicate_IsRejected()
+    {
+        var database = _fixture.CreateDatabase();
+        await CreateSut(database).StartAsync(CancellationToken.None);
+        var repo = new MongoDbBarberRepository(database);
+        await repo.CreateAsync(BuildBarber("CRB-0001", "jaden01"));
+
+        await Assert.ThrowsAsync<Barber.Flow.Domain.Exceptions.BarberUserNameConflictException>(
+            () => repo.CreateAsync(BuildBarber("CRB-0002", "jaden01")));
+    }
+
+    [Fact]
+    public async Task BarberUserNameIndex_DuplicateDifferingOnlyInCase_IsRejected()
+    {
+        var database = _fixture.CreateDatabase();
+        await CreateSut(database).StartAsync(CancellationToken.None);
+        var repo = new MongoDbBarberRepository(database);
+        await repo.CreateAsync(BuildBarber("CRB-0001", "Jaden01"));
+
+        await Assert.ThrowsAsync<Barber.Flow.Domain.Exceptions.BarberUserNameConflictException>(
+            () => repo.CreateAsync(BuildBarber("CRB-0002", "jaden01")));
+    }
+
+    [Fact]
+    public async Task BarberUserNameIndex_BlankUserNames_AreExempt()
+    {
+        var database = _fixture.CreateDatabase();
+        await CreateSut(database).StartAsync(CancellationToken.None);
+        var repo = new MongoDbBarberRepository(database);
+
+        await repo.CreateAsync(BuildBarber("CRB-0001", ""));
+        await repo.CreateAsync(BuildBarber("CRB-0002", ""));
+
+        Assert.Equal(2, await database.GetCollection<BarberEntity>("barbers").CountDocumentsAsync(FilterDefinition<BarberEntity>.Empty));
+    }
+
+    [Fact]
+    public async Task BarberUserNameIndex_RenamingToAnotherBarbersUserName_IsRejected()
+    {
+        var database = _fixture.CreateDatabase();
+        await CreateSut(database).StartAsync(CancellationToken.None);
+        var repo = new MongoDbBarberRepository(database);
+        await repo.CreateAsync(BuildBarber("CRB-0001", "primero"));
+        await repo.CreateAsync(BuildBarber("CRB-0002", "segundo"));
+
+        await Assert.ThrowsAsync<Barber.Flow.Domain.Exceptions.BarberUserNameConflictException>(
+            () => repo.UpdateAsync("CRB-0002", BuildBarber("CRB-0002", "Primero")));
+    }
+
+    private static async Task<List<string>> IndexNamesAsync<T>(IMongoCollection<T> collection) =>
+        (await collection.Indexes.List().ToListAsync()).Select(i => i["name"].AsString).ToList();
+
+    [Fact]
+    public async Task UserNameIndex_DuplicateDifferingOnlyInCase_IsRejected()
+    {
+        var database = _fixture.CreateDatabase();
+        await CreateSut(database).StartAsync(CancellationToken.None);
+        var users = database.GetCollection<User>("users");
+        await users.InsertOneAsync(new User { UserName = "Jaden01", Password = "x", Email = "a@example.com" });
+
+        var ex = await Assert.ThrowsAsync<MongoWriteException>(
+            () => users.InsertOneAsync(new User { UserName = "jaden01", Password = "x", Email = "b@example.com" }));
+
+        Assert.Equal(ServerErrorCategory.DuplicateKey, ex.WriteError.Category);
+    }
+
+    [Fact]
+    public async Task StartAsync_LegacyCaseSensitiveUserNameIndex_IsReplacedByCaseInsensitiveOne()
+    {
+        var database = _fixture.CreateDatabase();
+        var users = database.GetCollection<User>("users");
+        // What an existing deployment has today: the old case-sensitive unique index.
+        await users.Indexes.CreateOneAsync(new CreateIndexModel<User>(
+            Builders<User>.IndexKeys.Ascending(u => u.UserName),
+            new CreateIndexOptions { Name = "idx_users_userName", Unique = true }));
+
+        await CreateSut(database).StartAsync(CancellationToken.None);
+
+        var names = await IndexNamesAsync(users);
+        Assert.Contains("uq_users_userName_ci", names);
+        Assert.DoesNotContain("idx_users_userName", names);
+    }
+
+    [Fact]
+    public async Task StartAsync_CalledTwiceWithMigratedUserNameIndex_IsStable()
+    {
+        var database = _fixture.CreateDatabase();
+        var sut = CreateSut(database);
+
+        await sut.StartAsync(CancellationToken.None);
+        await sut.StartAsync(CancellationToken.None);
+
+        var names = await IndexNamesAsync(database.GetCollection<User>("users"));
+        Assert.Contains("uq_users_userName_ci", names);
+        Assert.DoesNotContain("idx_users_userName", names);
+    }
+
+    [Fact]
+    public async Task StartAsync_PreexistingCaseVariantUserNames_KeepsTheLegacyIndexAndBoots()
+    {
+        var database = _fixture.CreateDatabase();
+        var users = database.GetCollection<User>("users");
+        await users.Indexes.CreateOneAsync(new CreateIndexModel<User>(
+            Builders<User>.IndexKeys.Ascending(u => u.UserName),
+            new CreateIndexOptions { Name = "idx_users_userName", Unique = true }));
+        await users.InsertManyAsync(new[]
+        {
+            new User { UserName = "Jaden01", Password = "x", Email = "a@example.com" },
+            new User { UserName = "jaden01", Password = "x", Email = "b@example.com" },
+        });
+
+        await CreateSut(database).StartAsync(CancellationToken.None);
+
+        var names = await IndexNamesAsync(users);
+        Assert.Contains("idx_users_userName", names);
+        Assert.DoesNotContain("uq_users_userName_ci", names);
+    }
+
+    [Fact]
+    public async Task StartAsync_PreexistingDuplicateBarberUserNames_DoesNotThrow()
+    {
+        var database = _fixture.CreateDatabase();
+        var barbers = database.GetCollection<BarberEntity>("barbers");
+        // Created before the rule existed: the unique index can't be built, but the app must still boot.
+        await barbers.InsertManyAsync(new[] { BuildBarber("CRB-0001", "jaden01"), BuildBarber("CRB-0002", "Jaden01") });
+
+        await CreateSut(database).StartAsync(CancellationToken.None);
+
+        Assert.Equal(2, await barbers.CountDocumentsAsync(FilterDefinition<BarberEntity>.Empty));
+    }
+
     [Fact]
     public async Task StartAsync_PreexistingDuplicatePhones_DoesNotThrowAndLeavesThemEditable()
     {
