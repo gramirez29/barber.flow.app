@@ -283,8 +283,12 @@ public static class AppointmentsApi
         return ok ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
-    private static async Task<IResult> NextAppointmentIdAsync(IAppointmentService appointmentService)
+    private static async Task<IResult> NextAppointmentIdAsync(IAppointmentService appointmentService, HttpContext httpContext)
     {
+        // The counter is global to the whole platform, so exposing it to a barber would reveal
+        // how many appointments every other tenant has created. No frontend uses this endpoint.
+        if (!httpContext.User.IsAdmin()) return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
+
         var id = await appointmentService.GetNextIdAsync();
         return TypedResults.Ok(new { nextId = id });
     }
