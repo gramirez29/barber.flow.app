@@ -108,4 +108,106 @@ public class BarbersApiTests : IClassFixture<ApiWebApplicationFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
+
+    // Creates a barber (+ linked login) as admin and returns it, so tests can act as that barber.
+    private async Task<BarberResponse> CreateBarberAsAdminAsync(string userName, string email)
+    {
+        var admin = await CreateAuthenticatedClientAsync("admin", "password");
+        var request = BuildRequest() with { UserName = userName, UserEmail = email, BarberName = userName, Password = "secret123" };
+        var response = await admin.PostAsJsonAsync("/api/barbers/create", request);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<BarberResponse>())!;
+    }
+
+    [Fact]
+    public async Task Search_AsAdmin_ReturnsAllBarbers()
+    {
+        await CreateBarberAsAdminAsync("tenant-a-admin-view", "a-admin-view@example.com");
+        await CreateBarberAsAdminAsync("tenant-b-admin-view", "b-admin-view@example.com");
+        var admin = await CreateAuthenticatedClientAsync("admin", "password");
+
+        var list = await admin.GetFromJsonAsync<List<BarberResponse>>("/api/barbers/search");
+
+        Assert.Contains(list!, b => b.UserName == "tenant-a-admin-view");
+        Assert.Contains(list!, b => b.UserName == "tenant-b-admin-view");
+    }
+
+    [Fact]
+    public async Task Search_AsBarber_ReturnsOnlyOwnRecord()
+    {
+        await CreateBarberAsAdminAsync("tenant-a-search", "a-search@example.com");
+        await CreateBarberAsAdminAsync("tenant-b-search", "b-search@example.com");
+        var barberA = await CreateAuthenticatedClientAsync("tenant-a-search", "secret123");
+
+        var list = await barberA.GetFromJsonAsync<List<BarberResponse>>("/api/barbers/search");
+
+        var only = Assert.Single(list!);
+        Assert.Equal("tenant-a-search", only.UserName);
+    }
+
+    [Fact]
+    public async Task Search_AsBarber_CannotEnumerateOthersEvenWithQuery()
+    {
+        await CreateBarberAsAdminAsync("tenant-a-enum", "a-enum@example.com");
+        await CreateBarberAsAdminAsync("tenant-b-enum", "b-enum@example.com");
+        var barberA = await CreateAuthenticatedClientAsync("tenant-a-enum", "secret123");
+
+        var list = await barberA.GetFromJsonAsync<List<BarberResponse>>("/api/barbers/search?query=tenant-b-enum");
+
+        Assert.DoesNotContain(list!, b => b.UserName == "tenant-b-enum");
+    }
+
+    [Fact]
+    public async Task GetById_AsBarber_OwnRecord_ReturnsOk()
+    {
+        var own = await CreateBarberAsAdminAsync("tenant-a-getown", "a-getown@example.com");
+        var barberA = await CreateAuthenticatedClientAsync("tenant-a-getown", "secret123");
+
+        var response = await barberA.GetAsync($"/api/barbers/getById/{own.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetById_AsBarber_OtherBarbersRecord_ReturnsNotFound()
+    {
+        await CreateBarberAsAdminAsync("tenant-a-getother", "a-getother@example.com");
+        var other = await CreateBarberAsAdminAsync("tenant-b-getother", "b-getother@example.com");
+        var barberA = await CreateAuthenticatedClientAsync("tenant-a-getother", "secret123");
+
+        var response = await barberA.GetAsync($"/api/barbers/getById/{other.Id}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetById_AsAdmin_AnyBarber_ReturnsOk()
+    {
+        var other = await CreateBarberAsAdminAsync("tenant-b-getadmin", "b-getadmin@example.com");
+        var admin = await CreateAuthenticatedClientAsync("admin", "password");
+
+        var response = await admin.GetAsync($"/api/barbers/getById/{other.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task NextId_AsBarber_ReturnsForbidden()
+    {
+        var barber = await CreateAuthenticatedClientAsync("barber", "barber");
+
+        var response = await barber.GetAsync("/api/barbers/nextId");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task NextId_AsAdmin_ReturnsOk()
+    {
+        var admin = await CreateAuthenticatedClientAsync("admin", "password");
+
+        var response = await admin.GetAsync("/api/barbers/nextId");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
 }
