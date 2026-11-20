@@ -1,4 +1,5 @@
 using Barber.Flow.Api.DTOs.Requests;
+using Barber.Flow.Api.Extensions;
 using Barber.Flow.Api.DTOs.Responses;
 using Barber.Flow.Application.Services.Auth;
 using Barber.Flow.Application.Services.Barbers;
@@ -199,17 +200,41 @@ public static class BarbersApi
         [FromQuery] int? pageSize,
         IBarberService barberService,
         IUserRepository userRepository,
+        HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var list = await barberService.FindAsync(query, page, pageSize);
-        var mapped = await Task.WhenAll(list.Select(b => MapAsync(b, userRepository, cancellationToken)));
+        var caller = AppointmentsApi.ResolveCaller(httpContext);
+        if (caller.IsAdmin)
+        {
+            var all = await barberService.FindAsync(query, page, pageSize);
+            var mappedAll = await Task.WhenAll(all.Select(b => MapAsync(b, userRepository, cancellationToken)));
+            return TypedResults.Ok(mappedAll);
+        }
+
+        // A non-admin only ever sees their own barber record (clients look themselves up by
+        // username to read their settings). The query/paging are ignored on purpose: honoring
+        // them would let a barber enumerate the other tenants' accounts.
+        if (string.IsNullOrEmpty(caller.UserName)) return TypedResults.Ok(Array.Empty<BarberResponse>());
+
+        var candidates = await barberService.FindAsync(caller.UserName, null, null);
+        var own = candidates.Where(b => string.Equals(b.UserName, caller.UserName, StringComparison.OrdinalIgnoreCase));
+        var mapped = await Task.WhenAll(own.Select(b => MapAsync(b, userRepository, cancellationToken)));
         return TypedResults.Ok(mapped);
     }
 
-    private static async Task<IResult> GetBarberAsync(string id, IBarberService barberService, IUserRepository userRepository, CancellationToken cancellationToken = default)
+    private static async Task<IResult> GetBarberAsync(string id, IBarberService barberService, IUserRepository userRepository, HttpContext httpContext, CancellationToken cancellationToken = default)
     {
         var b = await barberService.GetByIdAsync(id);
-        return b == null ? TypedResults.NotFound() : TypedResults.Ok(await MapAsync(b, userRepository, cancellationToken));
+        if (b == null) return TypedResults.NotFound();
+
+        // Same 404-not-403 convention as appointments/clients: don't reveal that another
+        // tenant's barber exists.
+        var caller = AppointmentsApi.ResolveCaller(httpContext);
+        var isOwn = !string.IsNullOrEmpty(caller.UserName)
+                    && string.Equals(b.UserName, caller.UserName, StringComparison.OrdinalIgnoreCase);
+        if (!caller.IsAdmin && !isOwn) return TypedResults.NotFound();
+
+        return TypedResults.Ok(await MapAsync(b, userRepository, cancellationToken));
     }
 
     private static async Task<IResult> DeleteBarberAsync(string id, IBarberService barberService, HttpContext httpContext, CancellationToken cancellationToken = default)
@@ -229,8 +254,12 @@ public static class BarbersApi
         return ok ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
-    private static async Task<IResult> NextIdAsync(IBarberService barberService)
+    private static async Task<IResult> NextIdAsync(IBarberService barberService, HttpContext httpContext)
     {
+        // Only used to pre-fill the admin's "create barber" form; for anyone else it would
+        // just leak how many barbers exist on the platform.
+        if (!httpContext.User.IsAdmin()) return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
+
         var id = await barberService.GetNextIdAsync();
         return TypedResults.Ok(new { nextId = id });
     }

@@ -93,6 +93,14 @@ Plan y decisiones en `barber-flow-web/AGENDA_DURATION_PLAN.md`. Todo es **opt-in
 - **Pendiente (no es de esta fase):** `UpdateAppointmentAsync`/`CreateAppointmentAsync` no mapean `ClientId` del request (en Mongo el update lo deja en `null`); anotado para revisar aparte.
 - 341 tests backend en verde (146 Application / 127 Infrastructure / 68 Api).
 
+## Aislamiento de `/api/barbers` entre barberos (2026-11)
+Hallazgo de la auditoría multi-tenant: `search`/`getById`/`nextId` solo exigían estar autenticado, así que cualquier barbero podía listar a todos los barberos de la plataforma (nombre, teléfono, correo, comisión, `UserId`, `IsBlocked`). Ahora:
+- **`GET /search`:** el admin ve todos; un barbero recibe **solo su propio registro** (se ignoran `query` y paginación a propósito para que no pueda enumerar a otros). Los clientes lo buscan por su username y filtran coincidencia exacta, así que siguen funcionando.
+- **`GET /getById/{id}`:** el admin ve cualquiera; un barbero solo el suyo, y `404` (no `403`) si es de otro, igual que citas/clientes.
+- **`GET /nextId`:** solo admin (`403` al resto); solo alimenta el formulario de crear barbero y revelaba cuántos barberos existen.
+- Pendiente menor: `GET /api/appointments/nextAppointmentId` usa un contador global compartido por todos los barberos (revela volumen de citas de la plataforma).
+- Tests nuevos en `BarbersApiTests` (8); 355 tests backend en verde (148 Application / 131 Infrastructure / 76 Api).
+
 ## Short-Term Development Roadmap (Pending)
 1. [x] Configure the initial MongoDB dependency injection pipeline in Program.cs and bind appsettings.json.
 2. [x] Audit existing domain models (User.cs, Client.cs, Appointments.cs) to ensure alignment with MongoDB NoSQL structures.
