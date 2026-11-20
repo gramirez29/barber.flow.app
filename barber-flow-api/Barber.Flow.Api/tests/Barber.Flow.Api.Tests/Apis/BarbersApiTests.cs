@@ -202,6 +202,46 @@ public class BarbersApiTests : IClassFixture<ApiWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Create_WithUserNameAlreadyUsedByAnotherBarber_ReturnsConflictWithCode()
+    {
+        await CreateBarberAsAdminAsync("dup-username", "dup1@example.com");
+        var admin = await CreateAuthenticatedClientAsync("admin", "password");
+        // Different casing and no password: only the barber-level check can catch this one.
+        var request = BuildRequest() with { UserName = "DUP-Username", UserEmail = "dup2@example.com", Password = null };
+
+        var response = await admin.PostAsJsonAsync("/api/barbers/create", request);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("BARBER_DUPLICATE_USERNAME", body);
+    }
+
+    [Fact]
+    public async Task Create_WithUserNameOfExistingLoginAccount_ReturnsConflict()
+    {
+        // The seeded "barber" login has no Barber record, so only the user-level check catches it.
+        var admin = await CreateAuthenticatedClientAsync("admin", "password");
+        var request = BuildRequest() with { UserName = "barber", UserEmail = "barber-dup@example.com", Password = "secret123" };
+
+        var response = await admin.PostAsJsonAsync("/api/barbers/create", request);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_RenamingToAnotherBarbersUserName_ReturnsConflict()
+    {
+        await CreateBarberAsAdminAsync("rename-target", "rename-target@example.com");
+        var second = await CreateBarberAsAdminAsync("rename-source", "rename-source@example.com");
+        var admin = await CreateAuthenticatedClientAsync("admin", "password");
+        var request = BuildRequest() with { UserName = "rename-target", UserEmail = "rename-source@example.com", BarberName = "rename-source", Password = null };
+
+        var response = await admin.PutAsJsonAsync($"/api/barbers/update/{second.Id}", request);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
     public async Task NextId_AsAdmin_ReturnsOk()
     {
         var admin = await CreateAuthenticatedClientAsync("admin", "password");

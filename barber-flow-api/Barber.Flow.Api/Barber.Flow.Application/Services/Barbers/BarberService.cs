@@ -1,4 +1,5 @@
 using Barber.Flow.Domain.Entities;
+using Barber.Flow.Domain.Exceptions;
 using Barber.Flow.Domain.Interfaces;
 
 namespace Barber.Flow.Application.Services.Barbers;
@@ -8,8 +9,23 @@ public class BarberService(IBarberRepository repo, IBarberShopRepository shopRep
     private readonly IBarberRepository _repo = repo;
     private readonly IBarberShopRepository _shopRepo = shopRepo;
 
+    // Case-insensitive, same as IBarberRepository.GetByUserNameAsync. Blank usernames are not compared.
+    private async Task EnsureUserNameIsFreeAsync(string? userName, string? excludeId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(userName)) return;
+
+        var other = await _repo.GetByUserNameAsync(userName, cancellationToken);
+        if (other is not null && other.Id != excludeId)
+        {
+            throw new BarberUserNameConflictException(userName);
+        }
+    }
+
     public async Task<Domain.Entities.Barber> CreateAsync(Domain.Entities.Barber barber, CancellationToken cancellationToken = default)
     {
+        // Checked before anything is written so a rejected username never leaves an orphaned BarberShop.
+        await EnsureUserNameIsFreeAsync(barber.UserName, excludeId: null, cancellationToken);
+
         // Every barber always gets their own BarberShop, even if they didn't name one explicitly,
         // so ShopId is never null - it's the tenant boundary used to isolate each barber's
         // appointments/clients from every other barber's.
@@ -23,7 +39,17 @@ public class BarberService(IBarberRepository repo, IBarberShopRepository shopRep
         });
         barber.ShopId = shop.Id;
 
-        return await _repo.CreateAsync(barber, cancellationToken);
+        try
+        {
+            return await _repo.CreateAsync(barber, cancellationToken);
+        }
+        catch (BarberUserNameConflictException)
+        {
+            // The unique index caught a username that raced past the check above: don't leave the
+            // shop we just created pointing at no barber.
+            await _shopRepo.DeleteAsync(shop.Id, barber.CreatedBy);
+            throw;
+        }
     }
 
     public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
@@ -47,6 +73,13 @@ public class BarberService(IBarberRepository repo, IBarberShopRepository shopRep
         if (existing == null)
         {
             return null;
+        }
+
+        // Only when the username actually changes, so a barber that already shares a username with
+        // another (created before this rule) can still be edited.
+        if (!string.Equals(barber.UserName?.Trim(), existing.UserName?.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            await EnsureUserNameIsFreeAsync(barber.UserName, excludeId: id, cancellationToken);
         }
 
         // Settings are written by two different screens (the admin's user dialog and the barber's

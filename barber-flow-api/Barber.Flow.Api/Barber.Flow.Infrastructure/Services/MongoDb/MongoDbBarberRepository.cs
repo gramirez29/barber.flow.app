@@ -1,3 +1,4 @@
+using Barber.Flow.Domain.Exceptions;
 using Barber.Flow.Domain.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -25,7 +26,15 @@ public sealed class MongoDbBarberRepository : IBarberRepository
 
         barber.CreatedAt = DateTime.UtcNow;
         barber.UpdatedAt = barber.CreatedAt;
-        await _collection.InsertOneAsync(barber, cancellationToken: cancellation);
+        try
+        {
+            await _collection.InsertOneAsync(barber, cancellationToken: cancellation);
+        }
+        catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+        {
+            throw new BarberUserNameConflictException(barber.UserName, ex);
+        }
+
         return barber;
     }
 
@@ -46,11 +55,18 @@ public sealed class MongoDbBarberRepository : IBarberRepository
             .Set(b => b.UpdatedAt, DateTime.UtcNow)
             .Set(b => b.UpdatedBy, barber.UpdatedBy);
 
-        return await _collection.FindOneAndUpdateAsync(
-            Builders<BarberEntity>.Filter.Eq(b => b.Id, id),
-            update,
-            new FindOneAndUpdateOptions<BarberEntity> { ReturnDocument = ReturnDocument.After },
-            cancellation);
+        try
+        {
+            return await _collection.FindOneAndUpdateAsync(
+                Builders<BarberEntity>.Filter.Eq(b => b.Id, id),
+                update,
+                new FindOneAndUpdateOptions<BarberEntity> { ReturnDocument = ReturnDocument.After },
+                cancellation);
+        }
+        catch (MongoCommandException ex) when (ex.Code == 11000 || ex.CodeName == "DuplicateKey")
+        {
+            throw new BarberUserNameConflictException(barber.UserName, ex);
+        }
     }
 
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellation = default)
