@@ -115,6 +115,58 @@ public sealed class MongoDbBootstrapper : IHostedService
                 .Ascending(c => c.CreatedBy), new CreateIndexOptions { Name = "idx_clients_phone_createdBy" }),
         };
         await clients.Indexes.CreateManyAsync(clientIndexes, cancellationToken);
+
+        await BackfillClientPhoneNormalizedAsync(clients, cancellationToken);
+
+        // One phone per barber, enforced by the store so two simultaneous creates can't both pass
+        // ClientService's in-memory check. Partial: clients without digits (null) are exempt, and
+        // different barbers may share a number. Created separately and swallowing a duplicate-key
+        // failure (same approach as the users.Email index): environments that already hold
+        // duplicate phones (allowed before this rule, see ClientService) must keep booting; the
+        // index simply isn't enforced until the user deletes the duplicates by hand.
+        try
+        {
+            await clients.Indexes.CreateOneAsync(
+                new CreateIndexModel<Client>(
+                    Builders<Client>.IndexKeys.Ascending(c => c.CreatedBy).Ascending(c => c.PhoneNormalized),
+                    new CreateIndexOptions<Client>
+                    {
+                        Name = "uq_clients_createdBy_phoneNormalized",
+                        Unique = true,
+                        PartialFilterExpression = Builders<Client>.Filter.Type(c => c.PhoneNormalized, BsonType.String),
+                    }),
+                cancellationToken: cancellationToken);
+        }
+        catch (MongoCommandException ex) when (ex.CodeName == "DuplicateKey" || ex.Code == 11000)
+        {
+            _logger.LogError(ex,
+                "Could not create the unique (CreatedBy, PhoneNormalized) index on clients - some barber already has " +
+                "duplicate phones. Simultaneous duplicate creates are not blocked until those are deleted by hand.");
+        }
+    }
+
+    /// <summary>
+    /// Idempotent backfill of <see cref="Client.PhoneNormalized"/> for clients created before the field
+    /// existed (the unique index needs it). Matches both a missing and a null field; clients whose phone
+    /// has no digits legitimately stay null and are simply skipped (a cheap re-read on each startup).
+    /// </summary>
+    private static async Task BackfillClientPhoneNormalizedAsync(IMongoCollection<Client> clients, CancellationToken cancellationToken)
+    {
+        var pending = await clients
+            .Find(Builders<Client>.Filter.Eq(c => c.PhoneNormalized, null))
+            .Project(c => new { c.Id, c.Phone })
+            .ToListAsync(cancellationToken);
+
+        var writes = pending
+            .Select(c => (c.Id, Normalized: PhoneNormalizer.Normalize(c.Phone)))
+            .Where(c => c.Normalized is not null)
+            .Select(c => (WriteModel<Client>)new UpdateOneModel<Client>(
+                Builders<Client>.Filter.Eq(x => x.Id, c.Id),
+                Builders<Client>.Update.Set(x => x.PhoneNormalized, c.Normalized)))
+            .ToList();
+        if (writes.Count == 0) return;
+
+        await clients.BulkWriteAsync(writes, cancellationToken: cancellationToken);
     }
 
     /// <summary>

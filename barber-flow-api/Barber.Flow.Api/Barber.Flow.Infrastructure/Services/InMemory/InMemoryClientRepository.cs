@@ -58,6 +58,7 @@ public class InMemoryClientRepository : IClientRepository
         existing.FirstName = client.FirstName;
         existing.LastName = client.LastName;
         existing.Phone = client.Phone;
+        existing.PhoneNormalized = client.PhoneNormalized;
         existing.Email = client.Email;
         existing.Address = client.Address;
         existing.Birthday = client.Birthday;

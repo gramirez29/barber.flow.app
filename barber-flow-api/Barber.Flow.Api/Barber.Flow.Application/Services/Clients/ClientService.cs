@@ -1,5 +1,7 @@
 ﻿using Barber.Flow.Domain.Entities;
+using Barber.Flow.Domain.Exceptions;
 using Barber.Flow.Domain.Interfaces;
+using Barber.Flow.Domain.ValueObjects;
 
 namespace Barber.Flow.Application.Services.Clients;
 
@@ -41,7 +43,27 @@ public class ClientService(IClientRepository repo, IBarberRepository barberRepo)
             client.ShopId = barber?.ShopId;
         }
 
-        return await _repo.CreateAsync(client, cancellationToken);
+        client.PhoneNormalized = PhoneNormalizer.Normalize(client.Phone);
+
+        try
+        {
+            return await _repo.CreateAsync(client, cancellationToken);
+        }
+        catch (ClientPhoneConflictException ex)
+        {
+            throw await ToDuplicateExceptionAsync(client.CreatedBy, ex.PhoneNormalized, excludeId: client.Id, ex, cancellationToken);
+        }
+    }
+
+    // The store's unique index caught a duplicate that raced past the in-memory check above:
+    // translate it into the same exception (with the existing client) callers already handle.
+    private async Task<Exception> ToDuplicateExceptionAsync(string owner, string? phoneNormalized, string? excludeId, Exception original, CancellationToken cancellationToken)
+    {
+        var ownClients = await _repo.FindAsync(createdBy: owner, cancellation: cancellationToken);
+        var existing = ownClients.FirstOrDefault(c =>
+            c.Id != excludeId && PhoneNormalizer.Normalize(c.Phone) == phoneNormalized);
+
+        return existing is not null ? new ClientDuplicateException(existing) : original;
     }
 
     public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
@@ -76,7 +98,15 @@ public class ClientService(IClientRepository repo, IBarberRepository barberRepo)
 
         // ShopId is set at creation time and must not be reassigned by whoever edits the client later.
         client.ShopId = existing.ShopId;
+        client.PhoneNormalized = PhoneNormalizer.Normalize(client.Phone);
 
-        return await _repo.UpdateAsync(id, client, cancellationToken);
+        try
+        {
+            return await _repo.UpdateAsync(id, client, cancellationToken);
+        }
+        catch (ClientPhoneConflictException ex)
+        {
+            throw await ToDuplicateExceptionAsync(existing.CreatedBy, ex.PhoneNormalized, excludeId: id, ex, cancellationToken);
+        }
     }
 }
