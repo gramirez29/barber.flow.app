@@ -276,8 +276,8 @@ export const PRIVACY_POLICY_SECTIONS: PolicySection[] = [
       {
         type: 'paragraph',
         text: {
-          en: 'We retain your data for as long as your account is active. When you delete your account, all associated personal data is permanently erased from our servers. Anonymized or aggregated data that cannot identify you may be retained for internal analysis.',
-          es: 'Conservamos tus datos mientras tu cuenta esté activa. Cuando eliminas tu cuenta, todos los datos personales asociados son borrados permanentemente de nuestros servidores. Los datos anonimizados o agregados que no puedan identificarte pueden conservarse para análisis interno.',
+          en: 'We retain your data for as long as your account is active. When you delete your account, all associated personal data is permanently erased from our servers.',
+          es: 'Conservamos tus datos mientras tu cuenta esté activa. Cuando eliminas tu cuenta, todos los datos personales asociados son borrados permanentemente de nuestros servidores.',
         },
       },
     ],
