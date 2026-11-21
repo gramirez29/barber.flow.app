@@ -47,7 +47,7 @@ const appointmentObjectSchema = z.object({
       'Las notas no pueden exceder 500 caracteres'
     ),
   paymentMethod: z
-    .enum(['cash', 'sinpeMovil', 'transfer'], {
+    .enum(['cash', 'card', 'sinpeMovil', 'transfer'], {
       errorMap: () => ({ message: 'Método de pago inválido' }),
     })
     .optional(),

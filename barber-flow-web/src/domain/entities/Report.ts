@@ -1,5 +1,5 @@
 export interface PaymentMethodBreakdownItem {
-  paymentMethod: string; // 'cash' | 'sinpeMovil' | 'transfer'
+  paymentMethod: string; // 'cash' | 'card' | 'sinpeMovil' | 'transfer'
   label: string;
   total: number;
   appointmentCount: number;
