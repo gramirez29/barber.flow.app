@@ -76,7 +76,7 @@ const FREQUENCY_OPTIONS: { value: RecurrenceFrequency; label: string; plural: st
 ];
 
 const STATUS_OPTIONS: AppointmentStatus[] = ['scheduled', 'confirmed', 'completed', 'cancelled'];
-const PAYMENT_OPTIONS: AppointmentPaymentMethod[] = ['cash', 'sinpeMovil', 'transfer'];
+const PAYMENT_OPTIONS: AppointmentPaymentMethod[] = ['cash', 'card', 'sinpeMovil', 'transfer'];
 
 // Normaliza valores previos a la migración de PaymentMethod (p. ej. 'sinpe_movil', 'none')
 // para que citas antiguas sigan siendo editables sin fallar la validación del enum actual.
