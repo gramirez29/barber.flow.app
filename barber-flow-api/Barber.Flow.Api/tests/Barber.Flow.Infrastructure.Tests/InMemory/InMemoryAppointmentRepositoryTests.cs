@@ -370,4 +370,55 @@ public class InMemoryAppointmentRepositoryTests
         Assert.Equal(0, deleted);
         Assert.NotNull(await repo.GetByIdAsync(appointment.Id));
     }
+
+    // 120 appointments for one owner: 4 a day across the first 30 days of January 2033.
+    private static async Task<InMemoryAppointmentRepository> SeedMonthAsync(string owner)
+    {
+        var repo = new InMemoryAppointmentRepository();
+        for (var day = 1; day <= 30; day++)
+        {
+            foreach (var time in new[] { "09:00", "10:00", "11:00", "12:00" })
+            {
+                var appointment = BuildAppointment(date: $"2033-01-{day:D2}", time: time);
+                appointment.CreatedBy = owner;
+                await repo.CreateAsync(appointment);
+            }
+        }
+
+        return repo;
+    }
+
+    [Fact]
+    public async Task FindAsync_DateRangeWithoutPaging_ReturnsEveryAppointmentInTheRange()
+    {
+        var repo = await SeedMonthAsync("range-owner");
+
+        var result = (await repo.FindAsync(date: "2033-01-01", endDate: "2033-01-30", createdBy: "range-owner")).ToList();
+
+        Assert.Equal(120, result.Count);
+        Assert.Equal("2033-01-30", result[^1].Date);
+    }
+
+    [Fact]
+    public async Task FindAsync_ExplicitPaging_StillPaginatesWithoutOverlap()
+    {
+        var repo = await SeedMonthAsync("paged-owner");
+
+        var page1 = (await repo.FindAsync(date: "2033-01-01", endDate: "2033-01-30", page: 1, pageSize: 50, createdBy: "paged-owner")).ToList();
+        var page2 = (await repo.FindAsync(date: "2033-01-01", endDate: "2033-01-30", page: 2, pageSize: 50, createdBy: "paged-owner")).ToList();
+        var page3 = (await repo.FindAsync(date: "2033-01-01", endDate: "2033-01-30", page: 3, pageSize: 50, createdBy: "paged-owner")).ToList();
+
+        Assert.Equal([50, 50, 20], [page1.Count, page2.Count, page3.Count]);
+        Assert.Equal(120, page1.Concat(page2).Concat(page3).Select(a => a.Id).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task FindAsync_WithoutDateOrPaging_KeepsTheDefaultPageOf50()
+    {
+        var repo = await SeedMonthAsync("default-owner");
+
+        var result = await repo.FindAsync(createdBy: "default-owner");
+
+        Assert.Equal(50, result.Count());
+    }
 }

@@ -174,11 +174,10 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
         if (!string.IsNullOrWhiteSpace(createdBy))
             list = list.Where(a => a.CreatedBy == createdBy);
 
-        list = list.OrderBy(a => a.Date).ThenBy(a => a.Time);
+        list = list.OrderBy(a => a.Date).ThenBy(a => a.Time).ThenBy(a => a.Id, StringComparer.Ordinal);
 
-        var ps = Math.Clamp(pageSize ?? 50, 1, 100);
-        var pg = Math.Max(0, (page ?? 1) - 1);
-        list = list.Skip(pg * ps).Take(ps);
+        var (skip, take) = AppointmentSearchLimits.Resolve(!string.IsNullOrWhiteSpace(date), page, pageSize);
+        list = list.Skip(skip).Take(take);
 
         return Task.FromResult(list);
     }
