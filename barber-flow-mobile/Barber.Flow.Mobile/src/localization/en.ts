@@ -583,6 +583,7 @@
 		delayedClientMessage: "%{name} has not visited in %{days} days.",
 		delayedClientsEmptyTitle: "No delayed clients",
 		delayedClientsTitle: "Needs Attention",
+		showMore: "Show more (%{count} remaining)",
 		disabledBody: "Enable notifications in Settings to restore the summary feed and unread badge counts.",
 		disabledTitle: "Notifications are disabled",
 		heroEyebrow: "Daily summary",

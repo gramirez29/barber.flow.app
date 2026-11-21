@@ -169,6 +169,7 @@ export const NotificationScreen = () => {
                                 emptyBody={translateText("notifications.delayedClientsEmptyBody")}
                                 emptyTitle={translateText("notifications.delayedClientsEmptyTitle")}
                                 items={delayedNotifications}
+                                pageSize={10}
                                 onDismiss={(notificationId) => void handleDismiss(notificationId)}
                                 onItemPress={(item) => void handleNotificationPress(item)}
                                 title={translateText("notifications.delayedClientsTitle")}
