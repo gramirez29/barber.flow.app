@@ -416,4 +416,79 @@ public class MongoDbAppointmentRepositoryTests
         Assert.Equal(0, deleted);
         Assert.NotNull(await sut.GetByIdAsync(appointment.Id));
     }
+
+    // 120 appointments for one owner: 4 a day across the first 30 days of January 2033.
+    private static async Task<MongoDbAppointmentRepository> SeedMonthAsync(MongoDbAppointmentRepository sut, string owner)
+    {
+        for (var day = 1; day <= 30; day++)
+        {
+            foreach (var time in new[] { "09:00", "10:00", "11:00", "12:00" })
+            {
+                await sut.CreateAsync(BuildAppointment(date: $"2033-01-{day:D2}", time: time, createdBy: owner));
+            }
+        }
+
+        return sut;
+    }
+
+    [Fact]
+    public async Task FindAsync_DateRangeWithoutPaging_ReturnsEveryAppointmentInTheRange()
+    {
+        // Regression: a range used to be cut to its first 50 appointments (the oldest), silently
+        // dropping the later days from calendars, notifications and reports.
+        var sut = await SeedMonthAsync(CreateSut(), "range-owner");
+
+        var result = (await sut.FindAsync(date: "2033-01-01", endDate: "2033-01-30", createdBy: "range-owner")).ToList();
+
+        Assert.Equal(120, result.Count);
+        Assert.Equal("2033-01-30", result[^1].Date);
+        Assert.Equal(result.OrderBy(a => a.Date).ThenBy(a => a.Time).Select(a => a.Id), result.Select(a => a.Id));
+    }
+
+    [Fact]
+    public async Task FindAsync_SingleDateWithoutPaging_ReturnsAllOfThatDay()
+    {
+        var sut = CreateSut();
+        for (var minute = 0; minute < 60; minute++)
+        {
+            await sut.CreateAsync(BuildAppointment(date: "2033-02-01", time: $"09:{minute:D2}", createdBy: "day-owner"));
+        }
+
+        var result = await sut.FindAsync(date: "2033-02-01", createdBy: "day-owner");
+
+        Assert.Equal(60, result.Count());
+    }
+
+    [Fact]
+    public async Task FindAsync_ExplicitPaging_StillPaginatesWithoutOverlap()
+    {
+        var sut = await SeedMonthAsync(CreateSut(), "paged-owner");
+
+        var page1 = (await sut.FindAsync(date: "2033-01-01", endDate: "2033-01-30", page: 1, pageSize: 50, createdBy: "paged-owner")).ToList();
+        var page2 = (await sut.FindAsync(date: "2033-01-01", endDate: "2033-01-30", page: 2, pageSize: 50, createdBy: "paged-owner")).ToList();
+        var page3 = (await sut.FindAsync(date: "2033-01-01", endDate: "2033-01-30", page: 3, pageSize: 50, createdBy: "paged-owner")).ToList();
+
+        Assert.Equal([50, 50, 20], [page1.Count, page2.Count, page3.Count]);
+        Assert.Equal(120, page1.Concat(page2).Concat(page3).Select(a => a.Id).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task FindAsync_PageSizeAboveTheMaximum_IsCappedAt100()
+    {
+        var sut = await SeedMonthAsync(CreateSut(), "cap-owner");
+
+        var result = await sut.FindAsync(date: "2033-01-01", endDate: "2033-01-30", page: 1, pageSize: 10000, createdBy: "cap-owner");
+
+        Assert.Equal(100, result.Count());
+    }
+
+    [Fact]
+    public async Task FindAsync_WithoutDateOrPaging_KeepsTheDefaultPageOf50()
+    {
+        var sut = await SeedMonthAsync(CreateSut(), "default-owner");
+
+        var result = await sut.FindAsync(createdBy: "default-owner");
+
+        Assert.Equal(50, result.Count());
+    }
 }
