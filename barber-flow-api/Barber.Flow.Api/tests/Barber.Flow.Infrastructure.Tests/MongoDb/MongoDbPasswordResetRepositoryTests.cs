@@ -87,4 +87,23 @@ public class MongoDbPasswordResetRepositoryTests
         Assert.Null(await sut.GetValidTokenAsync(userId, "222222"));
         Assert.NotNull(await sut.GetValidTokenAsync(otherUserId, "333333"));
     }
+
+    [Fact]
+    public async Task DeleteAllForUserAsync_RemovesOnlyThatUsersCodes()
+    {
+        var database = _fixture.CreateDatabase();
+        var sut = new MongoDbPasswordResetRepository(database);
+        var userId = Guid.NewGuid().ToString();
+        var otherUserId = Guid.NewGuid().ToString();
+        await sut.SaveTokenAsync(BuildToken(userId, otp: "111111"));
+        await sut.SaveTokenAsync(BuildToken(userId, otp: "222222"));
+        await sut.SaveTokenAsync(BuildToken(otherUserId, otp: "333333"));
+
+        await sut.DeleteAllForUserAsync(userId);
+
+        var remaining = await database.GetCollection<PasswordResetToken>("password_reset_tokens")
+            .CountDocumentsAsync(MongoDB.Driver.FilterDefinition<PasswordResetToken>.Empty);
+        Assert.Equal(1, remaining);
+        Assert.NotNull(await sut.GetValidTokenAsync(otherUserId, "333333"));
+    }
 }

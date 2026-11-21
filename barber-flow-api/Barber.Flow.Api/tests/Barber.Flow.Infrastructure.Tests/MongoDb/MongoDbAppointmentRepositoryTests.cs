@@ -386,4 +386,34 @@ public class MongoDbAppointmentRepositoryTests
         Assert.Equal(45, updated!.DurationMinutes);
         Assert.Equal(45, (await sut.GetByIdAsync(created.Id))!.DurationMinutes);
     }
+
+    [Fact]
+    public async Task DeleteByCreatorAsync_RemovesOnlyThatOwnersAppointments()
+    {
+        var sut = CreateSut();
+        var mine1 = await sut.CreateAsync(BuildAppointment(date: "2032-03-01", time: "09:00", createdBy: "barbero-a"));
+        var mine2 = await sut.CreateAsync(BuildAppointment(date: "2032-03-01", time: "10:00", createdBy: "barbero-a"));
+        var other = await sut.CreateAsync(BuildAppointment(date: "2032-03-01", time: "09:00", createdBy: "barbero-b"));
+
+        var deleted = await sut.DeleteByCreatorAsync("barbero-a");
+
+        Assert.Equal(2, deleted);
+        Assert.Null(await sut.GetByIdAsync(mine1.Id));
+        Assert.Null(await sut.GetByIdAsync(mine2.Id));
+        Assert.NotNull(await sut.GetByIdAsync(other.Id));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task DeleteByCreatorAsync_BlankOwner_DeletesNothing(string owner)
+    {
+        var sut = CreateSut();
+        var appointment = await sut.CreateAsync(BuildAppointment(date: "2032-03-02", time: "09:00"));
+
+        var deleted = await sut.DeleteByCreatorAsync(owner);
+
+        Assert.Equal(0, deleted);
+        Assert.NotNull(await sut.GetByIdAsync(appointment.Id));
+    }
 }

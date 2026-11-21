@@ -41,6 +41,11 @@ public class MongoDbRefreshTokenRepository : IRefreshTokenRepository
         return await _collection.Find(filter).FirstOrDefaultAsync();
     }
 
+    public async Task DeleteAllForUserAsync(string userId)
+    {
+        await _collection.DeleteManyAsync(Builders<RefreshToken>.Filter.Eq(t => t.UserId, userId));
+    }
+
     public async Task RevokeAsync(string tokenId)
     {
         var filter = Builders<RefreshToken>.Filter.Eq(t => t.Id, tokenId);

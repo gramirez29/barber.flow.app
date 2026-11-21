@@ -69,6 +69,17 @@ public sealed class MongoDbClientRepository : IClientRepository
         return result.DeletedCount > 0;
     }
 
+    public async Task<long> DeleteByCreatorAsync(string createdBy, CancellationToken cancellation = default)
+    {
+        // Guard against an empty filter value ever matching documents it shouldn't.
+        if (string.IsNullOrWhiteSpace(createdBy)) return 0;
+
+        var result = await _collection.DeleteManyAsync(
+            Builders<Client>.Filter.Eq(c => c.CreatedBy, createdBy),
+            cancellation);
+        return result.DeletedCount;
+    }
+
     public async Task<Client?> GetByIdAsync(string id, CancellationToken cancellation = default)
     {
         return await _collection

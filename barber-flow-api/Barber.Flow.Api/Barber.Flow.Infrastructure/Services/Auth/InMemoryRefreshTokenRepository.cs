@@ -30,6 +30,12 @@ public class InMemoryRefreshTokenRepository : IRefreshTokenRepository
         return Task.FromResult(found);
     }
 
+    public Task DeleteAllForUserAsync(string userId)
+    {
+        _tokens.RemoveAll(t => t.UserId == userId);
+        return Task.CompletedTask;
+    }
+
     public Task RevokeAsync(string tokenId)
     {
         var token = _tokens.FirstOrDefault(t => t.Id == tokenId);

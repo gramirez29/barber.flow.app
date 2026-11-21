@@ -87,4 +87,21 @@ public class MongoDbRefreshTokenRepositoryTests
         Assert.NotNull(stored);
         Assert.NotEqual("plaintext-token-value", stored!.Token);
     }
+
+    [Fact]
+    public async Task DeleteAllForUserAsync_RemovesOnlyThatUsersTokens()
+    {
+        var sut = CreateSut();
+        var userId = Guid.NewGuid().ToString();
+        var otherUserId = Guid.NewGuid().ToString();
+        await sut.SaveTokenAsync(BuildToken(userId, "mine-1"));
+        await sut.SaveTokenAsync(BuildToken(userId, "mine-2"));
+        await sut.SaveTokenAsync(BuildToken(otherUserId, "theirs"));
+
+        await sut.DeleteAllForUserAsync(userId);
+
+        Assert.Null(await sut.GetValidTokenAsync("mine-1"));
+        Assert.Null(await sut.GetValidTokenAsync("mine-2"));
+        Assert.NotNull(await sut.GetValidTokenAsync("theirs"));
+    }
 }

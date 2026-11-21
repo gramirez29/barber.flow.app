@@ -1,5 +1,6 @@
 using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.DTOs.Responses;
+using Barber.Flow.Application.Services.Accounts;
 using Barber.Flow.Application.Services.Users;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
@@ -66,7 +67,7 @@ public static class UsersApi
 
     private static async Task<IResult> DeleteSelfAsync(
         HttpContext context,
-        IUserService userService,
+        IAccountDeletionService accountDeletionService,
         CancellationToken cancellationToken)
     {
         var role = context.User.FindFirst(ClaimTypes.Role)?.Value;
@@ -77,8 +78,15 @@ public static class UsersApi
         if (string.IsNullOrWhiteSpace(userId))
             return TypedResults.Unauthorized();
 
-        var deleted = await userService.DeleteAsync(userId, cancellationToken);
-        return deleted ? TypedResults.NoContent() : TypedResults.NotFound();
+        // Deletes the whole account (profile, shop, clients, appointments, tokens), as the privacy
+        // policy promises - not just the login record.
+        var result = await accountDeletionService.DeleteByUserIdAsync(userId, cancellationToken);
+        return result.Outcome switch
+        {
+            AccountDeletionOutcome.Deleted => TypedResults.NoContent(),
+            AccountDeletionOutcome.Forbidden => TypedResults.Forbid(),
+            _ => TypedResults.NotFound(),
+        };
     }
 
     private static async Task<IResult> GetMyStatusAsync(

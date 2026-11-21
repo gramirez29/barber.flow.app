@@ -110,6 +110,19 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
     public Task<bool> DeleteAsync(string id, CancellationToken cancellation = default)
         => Task.FromResult(_store.TryRemove(id, out _));
 
+    public Task<long> DeleteByCreatorAsync(string createdBy, CancellationToken cancellation = default)
+    {
+        if (string.IsNullOrWhiteSpace(createdBy)) return Task.FromResult(0L);
+
+        long deleted = 0;
+        foreach (var appointment in _store.Values.Where(a => a.CreatedBy == createdBy).ToList())
+        {
+            if (_store.TryRemove(appointment.Id, out _)) deleted++;
+        }
+
+        return Task.FromResult(deleted);
+    }
+
     public Task<Domain.Entities.Appointments?> GetByIdAsync(string id, CancellationToken cancellation = default)
     {
         _store.TryGetValue(id, out var appointment);

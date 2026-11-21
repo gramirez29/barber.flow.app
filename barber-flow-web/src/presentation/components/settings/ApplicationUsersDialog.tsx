@@ -72,7 +72,7 @@ const emptyFormValues: CreateBarberFormData = {
 
 export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ open, onClose }) => {
   const { searchBarbers, createBarber, updateBarber, deleteBarber, setBlocked } = useBarbers();
-  const { confirm } = useConfirmDialog();
+  const { confirmTwice } = useConfirmDialog();
 
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -221,12 +221,28 @@ export const ApplicationUsersDialog: React.FC<ApplicationUsersDialogProps> = ({ 
 
   const handleDelete = async () => {
     if (mode !== 'edit' || !editingId) return;
-    const confirmed = await confirm({
-      title: 'Eliminar usuario de aplicación',
-      message: '¿Eliminar este usuario de aplicación? Esta acción no se puede deshacer.',
-      confirmText: 'Eliminar',
-      destructive: true,
-    });
+    // Deleting a barber also deletes their login, shop, clients and appointments: ask twice.
+    const who = form.values.barberName.trim() || form.values.userName.trim() || 'este usuario';
+    const confirmed = await confirmTwice(
+      {
+        title: `¿Eliminar a ${who}?`,
+        message: 'Se eliminará su acceso a la aplicación junto con todos sus datos.',
+        confirmText: 'Continuar',
+        cancelText: 'Cancelar',
+      },
+      {
+        title: 'Última advertencia',
+        message: `Esta acción es PERMANENTE e IRREVERSIBLE. Se borrará todo lo de ${who} y no se podrá recuperar:`,
+        details: [
+          'Su perfil y su barbería',
+          'Todos sus clientes',
+          'Todas sus citas y su historial',
+          'Su acceso a la aplicación',
+        ],
+        confirmText: 'Sí, eliminar todo definitivamente',
+        cancelText: 'No, conservar',
+      }
+    );
     if (!confirmed) return;
 
     setLoading(true);

@@ -59,6 +59,7 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 	};
 
 	const handleDeleteAccount = () => {
+		// Two-step verification: deleting the account wipes everything and cannot be undone.
 		showAlert(
 			translateText("drawer.deleteAccountTitle"),
 			translateText("drawer.deleteAccountMessage"),
@@ -67,10 +68,32 @@ export const AppDrawerContent = (props: DrawerContentComponentProps) => {
 				{
 					text: translateText("drawer.deleteAccountConfirm"),
 					style: "destructive",
-					onPress: async () => {
-						props.navigation.closeDrawer();
-						await authService.deleteSelf();
-						clearUser();
+					onPress: () => {
+						showAlert(
+							translateText("drawer.deleteAccountFinalTitle"),
+							translateText("drawer.deleteAccountFinalMessage"),
+							[
+								{ text: translateText("drawer.deleteAccountFinalCancel"), style: "cancel" },
+								{
+									text: translateText("drawer.deleteAccountFinalConfirm"),
+									style: "destructive",
+									onPress: async () => {
+										props.navigation.closeDrawer();
+										await authService.deleteSelf();
+										clearUser();
+									},
+								},
+							],
+							{
+								variant: "danger",
+								details: [
+									translateText("drawer.deleteAccountItemProfile"),
+									translateText("drawer.deleteAccountItemClients"),
+									translateText("drawer.deleteAccountItemAppointments"),
+									translateText("drawer.deleteAccountItemAccess"),
+								],
+							},
+						);
 					},
 				},
 			],
