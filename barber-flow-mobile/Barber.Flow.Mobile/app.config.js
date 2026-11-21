@@ -2,7 +2,7 @@ const APP_ENV = process.env.APP_ENV ?? "development";
 
 const PRIVACY_POLICY_URL =
 	process.env.PRIVACY_POLICY_URL ??
-	"https://barberflowapp-develop.up.railway.app/privacy-policy";
+	"https://www.haircutsflowcr.com/privacy-policy";
 
 const URL_BY_ENV = {
 	development: "http://192.168.0.9:7016",

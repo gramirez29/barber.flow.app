@@ -10,3 +10,4 @@ export * from './SettingsPage';
 export * from './ForgotPasswordPage';
 export * from './VerifyOtpPage';
 export * from './ResetPasswordPage';
+export * from './PrivacyPolicyPage';

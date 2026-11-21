@@ -36,4 +36,4 @@ export const ADMIN_USERNAME =
 export const PRIVACY_POLICY_URL =
 	(process.env.PRIVACY_POLICY_URL as string | undefined) ??
 	expoExtra?.PRIVACY_POLICY_URL ??
-	"https://barberflowapp-develop.up.railway.app/privacy-policy";
+	"https://www.haircutsflowcr.com/privacy-policy";
