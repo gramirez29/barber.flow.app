@@ -9,6 +9,10 @@ on:
     branches:
       - main
       - develop
+      # Long-lived feature branches branched off develop: their PRs run the build + tests too.
+      # Deliberately NOT added to `push` above: a push here would run the deploy job and
+      # publish the feature branch to the Railway `develop` environment.
+      - 'feature/**'
 
 jobs:
   build:
