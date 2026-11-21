@@ -26,6 +26,8 @@ export const API_ENDPOINTS = {
   },
   REPORTS: {
     DAILY: '/api/reports/daily',
+    WEEKLY: '/api/reports/weekly',
+    MONTHLY: '/api/reports/monthly',
   },
 };
 
