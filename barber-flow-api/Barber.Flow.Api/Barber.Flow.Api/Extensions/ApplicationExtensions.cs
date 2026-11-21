@@ -115,6 +115,7 @@ public static class ApplicationExtensions
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAccountDeletionService, AccountDeletionService>();
 
+        services.AddSingleton(TimeProvider.System);
         services.AddScoped<IReportService, ReportService>();
 
         services.AddScoped<IAppointmentService, AppointmentService>();
