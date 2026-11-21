@@ -578,6 +578,7 @@
 		delayedClientMessage: "%{name} no ha visitado en %{days} días.",
 		delayedClientsEmptyTitle: "No hay clientes atrasados",
 		delayedClientsTitle: "Requieren atención",
+		showMore: "Ver más (%{count} restantes)",
 		disabledBody: "Activa las notificaciones en Ajustes para restaurar el resumen y el contador de no leídas.",
 		disabledTitle: "Las notificaciones están desactivadas",
 		heroEyebrow: "Resumen diario",

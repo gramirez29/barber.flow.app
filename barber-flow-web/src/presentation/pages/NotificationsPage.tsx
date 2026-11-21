@@ -75,6 +75,7 @@ export const NotificationsPage: React.FC = () => {
               title="Requieren atención"
               description="Clientes que no han visitado recientemente y no tienen una cita futura."
               items={delayedNotifications}
+              pageSize={10}
               emptyTitle="No hay clientes atrasados"
               emptyBody="Los recordatorios de clientes atrasados aparecerán aquí cuando un cliente supere el umbral actual de seguimiento."
               onOpen={handleOpen}
