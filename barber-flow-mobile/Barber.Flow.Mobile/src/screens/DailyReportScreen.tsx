@@ -3,6 +3,7 @@ import type { DrawerParamList } from "../navigation/DrawerNavigator";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { Ionicons } from "@expo/vector-icons";
 import {
 	useNavigation,
 	DrawerActions,
@@ -18,6 +19,15 @@ import { calculateDailyReportSummary } from "../features/reports/dailyReport";
 import { useTranslation } from "../context/LanguageContext";
 import { getIntlLocale } from "../localization/i18n";
 import { settingsService } from "../services/settingsService";
+import { PeriodReportView } from "../components/reports/PeriodReportView";
+import {
+	REPORT_PERIODS,
+	type ReportPeriod,
+	formatMonthLabel,
+	formatWeekLabel,
+	shiftAnchor,
+} from "../features/reports/reportPeriods";
+import { usePeriodReport } from "../features/reports/usePeriodReport";
 import {
 	DEFAULT_REPORT_CALCULATION_SETTINGS,
 	type ReportCalculationSettings,
@@ -65,9 +75,21 @@ export const DailyReportScreen = () => {
 	const [reportSettings, setReportSettings] =
 		useState<ReportCalculationSettings>(DEFAULT_REPORT_CALCULATION_SETTINGS);
 	const [isDatePickerVisible, setDatePickerVisible] = useState(false);
+	// Daily is computed on the device from the appointments; weekly and monthly come from the backend.
+	const [period, setPeriod] = useState<ReportPeriod>("daily");
+	const {
+		error: periodError,
+		isLoading: isPeriodLoading,
+		reload: reloadPeriodReport,
+		report: periodReport,
+	} = usePeriodReport(period, selectedDate);
 
 	useFocusEffect(
 		useCallback(() => {
+			if (period !== "daily") {
+				return undefined;
+			}
+
 			let active = true;
 
 			const load = async () => {
@@ -85,7 +107,7 @@ export const DailyReportScreen = () => {
 			return () => {
 				active = false;
 			};
-		}, [selectedDate, fetchAppointmentsByDateRange]),
+		}, [period, selectedDate, fetchAppointmentsByDateRange]),
 	);
 
 	const report = useMemo(
@@ -94,6 +116,32 @@ export const DailyReportScreen = () => {
 		[appointments, reportSettings, selectedDate],
 	);
 	const locale = getIntlLocale(language);
+	const todayKey = () => format(new Date(), "yyyy-MM-dd");
+	const isDaily = period === "daily";
+
+	const periodTexts = {
+		daily: {
+			subtitle: translateText("dailyReport.heroSubtitle"),
+			title: translateText("dailyReport.heroTitle"),
+		},
+		monthly: {
+			subtitle: translateText("dailyReport.heroSubtitleMonthly"),
+			title: translateText("dailyReport.heroTitleMonthly"),
+		},
+		weekly: {
+			subtitle: translateText("dailyReport.heroSubtitleWeekly"),
+			title: translateText("dailyReport.heroTitleWeekly"),
+		},
+	}[period];
+
+	const periodChipLabel = (option: ReportPeriod) =>
+		translateText(
+			option === "daily"
+				? "dailyReport.periodDaily"
+				: option === "weekly"
+					? "dailyReport.periodWeekly"
+					: "dailyReport.periodMonthly",
+		);
 
 	const metricCards = [
 		{
@@ -132,13 +180,69 @@ export const DailyReportScreen = () => {
 						<Text style={styles.eyebrow}>
 							{translateText("dailyReport.heroEyebrow")}
 						</Text>
-						<Text style={styles.heroTitle}>
-							{translateText("dailyReport.heroTitle")}
-						</Text>
-						<Text style={styles.heroSubtitle}>
-							{translateText("dailyReport.heroSubtitle")}
-						</Text>
+						<Text style={styles.heroTitle}>{periodTexts.title}</Text>
+						<Text style={styles.heroSubtitle}>{periodTexts.subtitle}</Text>
 
+						{/* Day · Week · Month */}
+						<View accessibilityRole="tablist" style={styles.periodChips}>
+							{REPORT_PERIODS.map((option) => {
+								const active = option === period;
+								return (
+									<Pressable
+										accessibilityRole="tab"
+										accessibilityState={{ selected: active }}
+										key={option}
+										onPress={() => setPeriod(option)}
+										style={[styles.periodChip, active && styles.periodChipActive]}
+									>
+										<Text style={[styles.periodChipText, active && styles.periodChipTextActive]}>
+											{periodChipLabel(option)}
+										</Text>
+									</Pressable>
+								);
+							})}
+						</View>
+
+						{!isDaily ? (
+							<View style={styles.heroActions}>
+								<View style={styles.dateSelector}>
+									<Text style={styles.dateSelectorLabel}>
+										{translateText(
+											period === "weekly" ? "dailyReport.selectedWeek" : "dailyReport.selectedMonth",
+										)}
+									</Text>
+									<Text style={styles.dateSelectorValue}>
+										{period === "weekly"
+											? formatWeekLabel(selectedDate, locale)
+											: formatMonthLabel(selectedDate, locale)}
+									</Text>
+								</View>
+
+								<View style={styles.heroButtons}>
+									<Pressable
+										accessibilityLabel={translateText("dailyReport.previousPeriod")}
+										onPress={() => setSelectedDate(shiftAnchor(period, selectedDate, -1))}
+										style={styles.btnSecondary}
+									>
+										<Ionicons color={theme.colors.textPrimary} name="chevron-back" size={18} />
+									</Pressable>
+									<Pressable
+										accessibilityLabel={translateText("dailyReport.nextPeriod")}
+										onPress={() => setSelectedDate(shiftAnchor(period, selectedDate, 1))}
+										style={styles.btnSecondary}
+									>
+										<Ionicons color={theme.colors.textPrimary} name="chevron-forward" size={18} />
+									</Pressable>
+									<Pressable onPress={() => setSelectedDate(todayKey())} style={styles.btnPrimary}>
+										<Text style={styles.btnPrimaryText}>
+											{translateText(period === "weekly" ? "dailyReport.thisWeek" : "dailyReport.thisMonth")}
+										</Text>
+									</Pressable>
+								</View>
+							</View>
+						) : null}
+
+						{isDaily ? (
 						<View style={styles.heroActions}>
 							<Pressable
 								onPress={() => setDatePickerVisible(true)}
@@ -171,6 +275,7 @@ export const DailyReportScreen = () => {
 								</Pressable>
 							</View>
 						</View>
+						) : null}
 
 						<View style={styles.formulaRow}>
 							<View style={styles.formulaPill}>
@@ -192,6 +297,20 @@ export const DailyReportScreen = () => {
 						</View>
 					</View>
 
+					{!isDaily ? (
+						<PeriodReportView
+							error={periodError}
+							isLoading={isPeriodLoading}
+							onRetry={() => void reloadPeriodReport()}
+							onSelectDay={(date) => {
+								setSelectedDate(date);
+								setPeriod("daily");
+							}}
+							period={period}
+							report={periodReport}
+						/>
+					) : (
+					<>
 					{/* ─── Metrics grid ───────────────────────────────────── */}
 					<View style={styles.metricsGrid}>
 						{metricCards.map((card) => (
@@ -327,6 +446,8 @@ export const DailyReportScreen = () => {
 							</View>
 						)}
 					</View>
+					</>
+					)}
 				</ScrollView>
 
 				<DateTimePickerModal
@@ -401,6 +522,34 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
 		fontSize: 13,
 		lineHeight: 18,
 		marginBottom: 4,
+	},
+	// ─── Period chips (Day · Week · Month) ────────────────────────────
+	periodChips: {
+		flexDirection: "row",
+		gap: 8,
+		marginTop: 8,
+	},
+	periodChip: {
+		alignItems: "center",
+		backgroundColor: theme.colors.surfaceElevated,
+		borderColor: theme.colors.border,
+		borderRadius: 14,
+		borderWidth: 1,
+		flex: 1,
+		paddingVertical: 10,
+	},
+	periodChipActive: {
+		backgroundColor: theme.colors.accent + "1f", // 12% opacity, same as the clients page-size chips
+		borderColor: theme.colors.accent,
+	},
+	periodChipText: {
+		color: theme.colors.textSecondary,
+		fontSize: 13,
+		fontWeight: "600",
+	},
+	periodChipTextActive: {
+		color: theme.colors.accent,
+		fontWeight: "700",
 	},
 	// ─── Hero actions ─────────────────────────────────────────────────
 	heroActions: {

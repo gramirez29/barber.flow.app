@@ -38,6 +38,101 @@ public sealed class MongoDbReportRepository : IReportRepository
         _ => "none",
     };
 
+    // One entry per payment method, always all of them, so the breakdown reconciles with the gross revenue.
+    private static List<PaymentMethodBreakdown> BuildPaymentBreakdown(IReadOnlyCollection<(string PaymentMethod, decimal Price)> sales) =>
+        PaymentMethods
+            .Select(method =>
+            {
+                var salesForMethod = sales.Where(sale => sale.PaymentMethod == method.PaymentMethod).ToArray();
+                return new PaymentMethodBreakdown
+                {
+                    PaymentMethod = method.PaymentMethod,
+                    Label = method.Label,
+                    Total = salesForMethod.Sum(sale => sale.Price),
+                    AppointmentCount = salesForMethod.Length,
+                };
+            })
+            .ToList();
+
+    public async Task<PeriodReport> GetPeriodReportAsync(
+        string periodType,
+        DateOnly from,
+        DateOnly to,
+        DateOnly today,
+        string? requestingUserName = null,
+        CancellationToken cancellationToken = default)
+    {
+        var barber = string.IsNullOrWhiteSpace(requestingUserName)
+            ? null
+            : await _barberRepository.GetByUserNameAsync(requestingUserName, cancellationToken);
+
+        // Same scoping and defaults as the daily report: a linked barber only sees their own
+        // appointments and uses their own settings; the admin (no linked Barber) sees everything.
+        // The search is not paginated when it has a date range, so the whole period comes back.
+        var completedAppointments = (await _appointmentRepository.FindAsync(
+            date: from.ToString("yyyy-MM-dd"),
+            endDate: to.ToString("yyyy-MM-dd"),
+            status: "completed",
+            createdBy: barber != null ? requestingUserName : null,
+            cancellation: cancellationToken)).ToList();
+
+        var commissionPercentage = barber?.Settings?.CommissionPercentage ?? DefaultCommissionPercentage;
+        var fixedDailyExpense = barber?.Settings?.FixedDailyExpense ?? DefaultFixedDailyExpense;
+
+        var salesByDay = completedAppointments
+            .Select(appointment => (
+                Date: DateOnly.TryParseExact(appointment.Date, "yyyy-MM-dd", out var parsed) ? parsed : (DateOnly?)null,
+                Price: appointment.ServicePrice ?? 0m,
+                Method: NormalizePaymentMethod(appointment.PaymentMethodUsed)))
+            .Where(sale => sale.Date.HasValue)
+            .GroupBy(sale => sale.Date!.Value)
+            .ToDictionary(group => group.Key, group => group.ToList());
+
+        var days = new List<PeriodReportDay>();
+        for (var date = from; date <= to; date = date.AddDays(1))
+        {
+            salesByDay.TryGetValue(date, out var sales);
+            var dayGross = sales?.Sum(sale => sale.Price) ?? 0m;
+
+            // Rounded per day, exactly like the daily report, so the period total always equals the
+            // sum of its days to the cent.
+            var dayCommission = Math.Round(dayGross * (commissionPercentage / 100m), 2, MidpointRounding.AwayFromZero);
+            var dayExpense = date <= today ? fixedDailyExpense : 0m;
+
+            days.Add(new PeriodReportDay
+            {
+                Date = date,
+                TotalCustomersServed = sales?.Count ?? 0,
+                GrossRevenue = dayGross,
+                CommissionAmount = dayCommission,
+                FixedExpense = dayExpense,
+                NetProfit = dayGross - dayCommission - dayExpense,
+            });
+        }
+
+        var allSales = salesByDay.Values.SelectMany(daySales => daySales).ToList();
+        var grossRevenue = days.Sum(day => day.GrossRevenue);
+        var commissionAmount = days.Sum(day => day.CommissionAmount);
+        var fixedExpenseTotal = days.Sum(day => day.FixedExpense);
+
+        return new PeriodReport
+        {
+            PeriodType = periodType,
+            From = from,
+            To = to,
+            CountedDays = days.Count(day => day.Date <= today),
+            TotalCustomersServed = allSales.Count,
+            GrossRevenue = grossRevenue,
+            CommissionAmount = commissionAmount,
+            FixedDailyExpense = fixedDailyExpense,
+            FixedExpenseTotal = fixedExpenseTotal,
+            NetProfit = grossRevenue - commissionAmount - fixedExpenseTotal,
+            PaymentMethodBreakdown = BuildPaymentBreakdown(allSales.Select(sale => (sale.Method, sale.Price)).ToList()),
+            Days = days,
+            GeneratedAt = DateTime.UtcNow,
+        };
+    }
+
     public async Task<DailyReport> GetDailyReportAsync(DateOnly reportDate, string? requestingUserName = null, CancellationToken cancellationToken = default)
     {
         var dateKey = reportDate.ToString("yyyy-MM-dd");
@@ -75,19 +170,8 @@ public sealed class MongoDbReportRepository : IReportRepository
             .OrderBy(item => item.Time)
             .ToList();
 
-        var paymentMethodBreakdown = PaymentMethods
-            .Select(method =>
-            {
-                var itemsForMethod = reportItems.Where(item => item.PaymentMethodUsed == method.PaymentMethod).ToArray();
-                return new PaymentMethodBreakdown
-                {
-                    PaymentMethod = method.PaymentMethod,
-                    Label = method.Label,
-                    Total = itemsForMethod.Sum(item => item.ServicePrice),
-                    AppointmentCount = itemsForMethod.Length,
-                };
-            })
-            .ToList();
+        var paymentMethodBreakdown = BuildPaymentBreakdown(
+            reportItems.Select(item => (item.PaymentMethodUsed, item.ServicePrice)).ToList());
 
         var grossRevenue = reportItems.Sum(item => item.ServicePrice);
         var commissionAmount = Math.Round(grossRevenue * (commissionPercentage / 100m), 2, MidpointRounding.AwayFromZero);

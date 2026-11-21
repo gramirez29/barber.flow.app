@@ -22,12 +22,14 @@ export const APPOINTMENT_CONSTANTS = {
   // Payment Methods
   PAYMENT_METHODS: {
     CASH: 'cash',
+    CARD: 'card',
     SINPE_MOVIL: 'sinpeMovil',
     TRANSFER: 'transfer',
   } as const,
 
   PAYMENT_METHOD_LABELS: {
     cash: 'Efectivo',
+    card: 'Tarjeta crédito/débito',
     sinpeMovil: 'SINPE Móvil',
     transfer: 'Transferencia',
     none: 'No especificado',

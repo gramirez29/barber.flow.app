@@ -25,3 +25,28 @@ export interface DailyReportResponse {
   completedAppointments: CompletedAppointmentReportItemResponse[];
   generatedAt: string;
 }
+
+export interface PeriodReportDayResponse {
+  date: string;
+  totalCustomersServed: number;
+  grossRevenue: number;
+  commissionAmount: number;
+  fixedExpense: number;
+  netProfit: number;
+}
+
+export interface PeriodReportResponse {
+  periodType: 'weekly' | 'monthly';
+  from: string;
+  to: string;
+  countedDays: number;
+  totalCustomersServed: number;
+  grossRevenue: number;
+  commissionAmount: number;
+  fixedDailyExpense: number;
+  fixedExpenseTotal: number;
+  netProfit: number;
+  paymentMethodBreakdown: PaymentMethodBreakdownResponse[];
+  days: PeriodReportDayResponse[];
+  generatedAt: string;
+}
