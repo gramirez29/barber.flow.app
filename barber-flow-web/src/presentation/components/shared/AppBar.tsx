@@ -9,7 +9,7 @@ interface AppBarProps {
   title?: string;
 }
 
-export const AppBar: React.FC<AppBarProps> = ({ onMenuClick, title = 'Barber Flow' }) => {
+export const AppBar: React.FC<AppBarProps> = ({ onMenuClick, title = 'HairCutsFlow CR' }) => {
   const { isDark, setMode } = useThemeContext();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));

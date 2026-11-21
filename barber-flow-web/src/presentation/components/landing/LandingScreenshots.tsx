@@ -8,9 +8,9 @@ import screenshotReportes from '@/assets/images/landing/screenshot-reportes.jpg'
 
 // Real screenshots captured from the app with fictitious demo data — never real client data.
 const SCREENSHOTS = [
-  { src: screenshotCitas, alt: 'Agenda de citas de HairCutsFlow', title: 'Citas' },
-  { src: screenshotClientes, alt: 'Base de clientes de HairCutsFlow', title: 'Clientes' },
-  { src: screenshotReportes, alt: 'Reporte de cierre diario de HairCutsFlow', title: 'Reportes' },
+  { src: screenshotCitas, alt: 'Agenda de citas de HairCutsFlow CR', title: 'Citas' },
+  { src: screenshotClientes, alt: 'Base de clientes de HairCutsFlow CR', title: 'Clientes' },
+  { src: screenshotReportes, alt: 'Reporte de cierre diario de HairCutsFlow CR', title: 'Reportes' },
 ];
 
 export const LandingScreenshots: React.FC = () => {
@@ -37,7 +37,7 @@ export const LandingScreenshots: React.FC = () => {
             mb: 1,
           }}
         >
-          Así se ve HairCutsFlow
+          Así se ve HairCutsFlow CR
         </Typography>
         <Typography
           sx={{

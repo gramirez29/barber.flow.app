@@ -6,10 +6,10 @@ import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import { appColors } from '@presentation/theme/appColors';
 
 const DEVELOPER_NAME = 'Guillermo Ramirez';
-const CONTACT_EMAIL = 'g.raba29@gmail.com';
+const CONTACT_EMAIL = 'barber.flow.cr@gmail.com';
 const CONTACT_PHONE = '(506) 7018-9220';
 const PRIVACY_POLICY_URL =
-  import.meta.env.VITE_PRIVACY_POLICY_URL || 'https://barberflowapp-develop.up.railway.app/privacy-policy';
+  import.meta.env.VITE_PRIVACY_POLICY_URL || 'https://www.haircutsflowcr.com/privacy-policy';
 
 const linkSx = {
   display: 'flex',
@@ -69,7 +69,7 @@ export const Footer: React.FC = () => {
               <ContentCutIcon sx={{ fontSize: 13, color: appColors.onAccent }} />
             </Box>
             <Typography sx={{ color: appColors.accent, fontSize: 12, fontWeight: 800, letterSpacing: '1.5px' }}>
-              HAIRCUTSFLOW
+              HAIRCUTSFLOW CR
             </Typography>
           </Box>
 
@@ -99,7 +99,7 @@ export const Footer: React.FC = () => {
           }}
         >
           <Typography sx={{ fontSize: 11, color: appColors.textSecondary }}>
-            © {year} HairCutsFlow. Todos los derechos reservados.
+            © {year} HairCutsFlow CR. Todos los derechos reservados.
           </Typography>
           <Typography sx={{ fontSize: 11, color: appColors.textSecondary }}>
             Desarrollado por {DEVELOPER_NAME}

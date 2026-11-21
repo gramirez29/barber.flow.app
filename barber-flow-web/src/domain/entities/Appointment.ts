@@ -1,5 +1,5 @@
 export type AppointmentStatus = 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
-export type AppointmentPaymentMethod = 'cash' | 'sinpeMovil' | 'transfer';
+export type AppointmentPaymentMethod = 'cash' | 'card' | 'sinpeMovil' | 'transfer';
 
 export interface Appointment {
   id?: string;

@@ -1,5 +1,7 @@
 using Barber.Flow.Application.Services.Clients;
+using Barber.Flow.Domain.ValueObjects;
 using Barber.Flow.Domain.Entities;
+using Barber.Flow.Domain.Exceptions;
 using Barber.Flow.Domain.Interfaces;
 using Moq;
 using BarberEntity = Barber.Flow.Domain.Entities.Barber;
@@ -51,6 +53,79 @@ public class ClientServiceTests
 
         Assert.Equal("SHOP-0002", result.ShopId);
         _barberRepo.Verify(b => b.GetByUserNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_StoresNormalizedPhone()
+    {
+        var client = new Client { FirstName = "Juan", CreatedBy = "barber1", Phone = "+506 8888-0000" };
+        _repo.Setup(r => r.FindAsync(null, null, null, null, "barber1", It.IsAny<CancellationToken>())).ReturnsAsync(new List<Client>());
+        _repo.Setup(r => r.CreateAsync(It.IsAny<Client>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Client c, CancellationToken _) => c);
+
+        var result = await CreateSut().CreateAsync(client);
+
+        Assert.Equal("88880000", result.PhoneNormalized);
+    }
+
+    [Fact]
+    public async Task CreateAsync_StoreRejectsRacingDuplicate_ThrowsClientDuplicateExceptionWithExistingClient()
+    {
+        // Two simultaneous creates both pass the in-memory check; the store's unique index
+        // rejects the loser and the service must surface it like any other duplicate (409).
+        var existing = new Client { Id = "winner", FirstName = "Ana", LastName = "Mora", Phone = "8888-0000", CreatedBy = "barber1" };
+        var client = new Client { Id = "loser", FirstName = "Ana", Phone = "88880000", CreatedBy = "barber1" };
+        _repo.SetupSequence(r => r.FindAsync(null, null, null, null, "barber1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Client>())
+            .ReturnsAsync(new List<Client> { existing });
+        _repo.Setup(r => r.CreateAsync(It.IsAny<Client>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ClientPhoneConflictException("88880000"));
+
+        var ex = await Assert.ThrowsAsync<ClientDuplicateException>(() => CreateSut().CreateAsync(client));
+
+        Assert.Same(existing, ex.ExistingClient);
+    }
+
+    [Fact]
+    public async Task CreateAsync_StoreRejectsButExistingNotFound_RethrowsStoreConflict()
+    {
+        var client = new Client { Id = "loser", Phone = "88880000", CreatedBy = "barber1" };
+        _repo.Setup(r => r.FindAsync(null, null, null, null, "barber1", It.IsAny<CancellationToken>())).ReturnsAsync(new List<Client>());
+        _repo.Setup(r => r.CreateAsync(It.IsAny<Client>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ClientPhoneConflictException("88880000"));
+
+        await Assert.ThrowsAsync<ClientPhoneConflictException>(() => CreateSut().CreateAsync(client));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_StoresNormalizedPhone()
+    {
+        var existing = new Client { Id = "1", Phone = "8888-0000", CreatedBy = "barber1" };
+        _repo.Setup(r => r.GetByIdAsync("1", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _repo.Setup(r => r.FindAsync(null, null, null, null, "barber1", It.IsAny<CancellationToken>())).ReturnsAsync(new List<Client> { existing });
+        _repo.Setup(r => r.UpdateAsync("1", It.IsAny<Client>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, Client c, CancellationToken _) => c);
+
+        var result = await CreateSut().UpdateAsync("1", new Client { Phone = "7777 1111" });
+
+        Assert.Equal("77771111", result!.PhoneNormalized);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_StoreRejectsRacingDuplicate_ThrowsClientDuplicateException()
+    {
+        var existing = new Client { Id = "1", Phone = "8888-0000", CreatedBy = "barber1" };
+        var other = new Client { Id = "2", FirstName = "Otro", Phone = "7777-1111", CreatedBy = "barber1" };
+        _repo.Setup(r => r.GetByIdAsync("1", It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _repo.SetupSequence(r => r.FindAsync(null, null, null, null, "barber1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Client> { existing })
+            .ReturnsAsync(new List<Client> { existing, other });
+        _repo.Setup(r => r.UpdateAsync("1", It.IsAny<Client>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ClientPhoneConflictException("77771111"));
+
+        var ex = await Assert.ThrowsAsync<ClientDuplicateException>(() => CreateSut().UpdateAsync("1", new Client { Phone = "7777-1111" }));
+
+        Assert.Same(other, ex.ExistingClient);
     }
 
     [Fact]

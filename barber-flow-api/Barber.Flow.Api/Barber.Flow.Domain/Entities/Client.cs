@@ -10,6 +10,12 @@ public class Client
 
     public string Phone { get; set; } = string.Empty; // "0000-0000"
 
+    /// <summary>
+    /// Digits-only form of <see cref="Phone"/> (see <c>PhoneNormalizer</c>), null when the phone has no digits.
+    /// Exists so the store can enforce one phone per owner with a unique index.
+    /// </summary>
+    public string? PhoneNormalized { get; set; }
+
     public string? Address { get; set; }
 
     public string? Email { get; set; }

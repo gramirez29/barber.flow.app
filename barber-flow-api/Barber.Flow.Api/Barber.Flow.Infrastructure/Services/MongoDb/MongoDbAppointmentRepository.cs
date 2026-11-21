@@ -68,6 +68,17 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
     }
 
     /// <inheritdoc/>
+    public async Task<long> DeleteByCreatorAsync(string createdBy, CancellationToken cancellation = default)
+    {
+        // Guard against an empty filter value ever matching documents it shouldn't.
+        if (string.IsNullOrWhiteSpace(createdBy)) return 0;
+
+        var result = await _collection.DeleteManyAsync(
+            Builders<Appointments>.Filter.Eq(a => a.CreatedBy, createdBy),
+            cancellation);
+        return result.DeletedCount;
+    }
+
     public async Task<Appointments?> GetByIdAsync(string id, CancellationToken cancellation = default)
     {
         return await _collection
@@ -130,16 +141,17 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
             ? Builders<Appointments>.Filter.And(filters)
             : Builders<Appointments>.Filter.Empty;
 
+        // Id is the final tie-breaker: Mongo doesn't guarantee tie order across separate Skip/Limit
+        // queries, so without a unique last key paginated pages could overlap or drop a document.
         var findCursor = _collection
             .Find(filter)
-            .Sort(Builders<Appointments>.Sort.Ascending(a => a.Date).Ascending(a => a.Time));
+            .Sort(Builders<Appointments>.Sort.Ascending(a => a.Date).Ascending(a => a.Time).Ascending(a => a.Id));
 
-        var ps = Math.Clamp(pageSize ?? 50, 1, 100);
-        var pg = Math.Max(0, (page ?? 1) - 1);
+        var (skip, take) = AppointmentSearchLimits.Resolve(!string.IsNullOrWhiteSpace(date), page, pageSize);
 
         return await findCursor
-            .Skip(pg * ps)
-            .Limit(ps)
+            .Skip(skip)
+            .Limit(take)
             .ToListAsync(cancellation);
     }
 

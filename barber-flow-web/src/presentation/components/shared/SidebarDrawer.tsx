@@ -105,7 +105,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ open, onClose }) =
   const { user, logout } = useAuth();
   const { isSafeModeEnabled } = useAdminAccess();
   const { unreadCount } = useNotificationInbox();
-  const { confirm } = useConfirmDialog();
+  const { confirm, confirmTwice } = useConfirmDialog();
   const { showNotification } = useNotification();
 
   const authApi = useMemo(() => new AuthApi(new AxiosHttpClient()), []);
@@ -142,13 +142,27 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ open, onClose }) =
   };
 
   const handleDeleteAccount = async () => {
-    const confirmed = await confirm({
-      title: 'Eliminar cuenta',
-      message: 'Esta acción es permanente e irreversible. Se eliminarán todos tus datos.',
-      confirmText: 'Eliminar',
-      cancelText: 'Cancelar',
-      destructive: true,
-    });
+    // Two-step verification: this wipes the whole account and cannot be undone.
+    const confirmed = await confirmTwice(
+      {
+        title: '¿Eliminar tu cuenta?',
+        message: 'Vas a eliminar tu cuenta de HairCutsFlow CR junto con todos tus datos.',
+        confirmText: 'Continuar',
+        cancelText: 'Cancelar',
+      },
+      {
+        title: 'Última advertencia',
+        message: 'Esta acción es PERMANENTE e IRREVERSIBLE. No hay forma de recuperar tus datos después. Se borrará:',
+        details: [
+          'Tu perfil y tu barbería',
+          'Todos tus clientes',
+          'Todas tus citas y su historial',
+          'Tu acceso a la aplicación',
+        ],
+        confirmText: 'Sí, eliminar todo definitivamente',
+        cancelText: 'No, conservar mi cuenta',
+      }
+    );
     if (!confirmed) return;
 
     try {
@@ -190,7 +204,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ open, onClose }) =
               color: appColors.accent,
             }}
           >
-            Barber Flow
+            HairCutsFlow CR
           </Typography>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1.5 }}>

@@ -198,8 +198,8 @@ En **App Store Connect → Tu App → Privacy**:
 
 ## 8. Pendientes
 
-- [ ] **Privacy Policy URL** — el archivo HTML ya está creado en el backend (`wwwroot/privacy-policy/index.html`) y `UseStaticFiles()` ya está habilitado. La URL quedará activa automáticamente al desplegar el backend:
-  - **URL a registrar en las tiendas:** `https://barberflowapp-develop.up.railway.app/privacy-policy/`
+- [ ] **Privacy Policy URL** — la página oficial (bilingüe EN/ES) vive en la web de producción como ruta pública `/privacy-policy` (`barber-flow-web`, `PrivacyPolicyPage`; contenido en `src/shared/content/privacyPolicy.ts`). Queda activa al desplegar la web a `main`. La copia estática del backend (`wwwroot/privacy-policy/index.html`) quedó como respaldo antiguo y no es la URL a registrar:
+  - **URL a registrar en las tiendas:** `https://www.haircutsflowcr.com/privacy-policy`
   - Esta misma URL va en App Store Connect → App Information → Privacy Policy URL
   - Y en Google Play Console → App content → Privacy Policy
 - [ ] **Screenshots** — tomar capturas en simulador o dispositivo real

@@ -5,7 +5,7 @@ import { appColors } from '@presentation/theme/appColors';
 const APP_VERSION = '1.0.0';
 const DEVELOPER_NAME = 'Guillermo Ramirez';
 const PRIVACY_POLICY_URL =
-  import.meta.env.VITE_PRIVACY_POLICY_URL || 'https://barberflowapp-develop.up.railway.app/privacy-policy';
+  import.meta.env.VITE_PRIVACY_POLICY_URL || 'https://www.haircutsflowcr.com/privacy-policy';
 
 export const AboutCard: React.FC = () => {
   return (
@@ -30,7 +30,7 @@ export const AboutCard: React.FC = () => {
         Acerca de
       </Typography>
       <Typography sx={{ fontSize: 20, fontWeight: 700, color: appColors.textPrimary, mb: 2 }}>
-        Barber Flow Web
+        HairCutsFlow CR Web
       </Typography>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1.5, borderBottom: `1px solid ${appColors.border}` }}>

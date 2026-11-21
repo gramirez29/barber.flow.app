@@ -277,30 +277,57 @@ export const SettingsScreen = () => {
 
 		const barberId = values.barberId;
 
+		const deleteApplicationUser = async () => {
+			setApplicationUserLoading(true);
+
+			try {
+				await settingsService.deleteApplicationUser(barberId);
+				showAlert(
+					translateText("common.delete"),
+					translateText("settings.alerts.applicationUserDeleted", { id: barberId }),
+				);
+				await handleResetApplicationUser();
+			} catch (error: unknown) {
+				showAlert(
+					translateText("common.delete"),
+					getErrorMessage(error) || translateText("settings.alerts.deleteFailed"),
+				);
+			} finally {
+				setApplicationUserLoading(false);
+			}
+		};
+
+		// Two-step verification: deleting a barber also deletes their login, shop, clients and appointments.
 		showAlert(translateText("common.delete"), translateText("settings.alerts.confirmDeleteUser", { id: barberId }), [
 			{ text: translateText("common.cancel"), style: "cancel" },
 			{
-				onPress: async () => {
-					setApplicationUserLoading(true);
-
-					try {
-						await settingsService.deleteApplicationUser(barberId);
-						showAlert(
-							translateText("common.delete"),
-							translateText("settings.alerts.applicationUserDeleted", { id: barberId }),
-						);
-						await handleResetApplicationUser();
-					} catch (error: unknown) {
-						showAlert(
-							translateText("common.delete"),
-							getErrorMessage(error) || translateText("settings.alerts.deleteFailed"),
-						);
-					} finally {
-						setApplicationUserLoading(false);
-					}
+				onPress: () => {
+					showAlert(
+						translateText("settings.alerts.deleteUserFinalTitle"),
+						translateText("settings.alerts.deleteUserFinalMessage", { id: barberId }),
+						[
+							{ text: translateText("settings.alerts.deleteUserFinalCancel"), style: "cancel" },
+							{
+								onPress: () => {
+									void deleteApplicationUser();
+								},
+								style: "destructive",
+								text: translateText("settings.alerts.deleteUserFinalConfirm"),
+							},
+						],
+						{
+							variant: "danger",
+							details: [
+								translateText("settings.alerts.deleteUserItemProfile"),
+								translateText("settings.alerts.deleteUserItemClients"),
+								translateText("settings.alerts.deleteUserItemAppointments"),
+								translateText("settings.alerts.deleteUserItemAccess"),
+							],
+						},
+					);
 				},
 				style: "destructive",
-				text: translateText("common.delete"),
+				text: translateText("settings.alerts.deleteUserContinue"),
 			},
 		]);
 	};

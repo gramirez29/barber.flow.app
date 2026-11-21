@@ -52,6 +52,10 @@ app.UseExceptionHandler(errorApp =>
 // Procesar headers de Railway antes que cualquier otro middleware
 app.UseForwardedHeaders();
 
+// Maps a folder request ("/privacy-policy/") to the index.html inside it, and redirects the bare
+// folder path ("/privacy-policy") to the trailing-slash form. Without this only the full file path
+// (".../index.html") worked, so every link to the privacy policy (apps, stores) answered 404.
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
 // IMPORTANTE: UseCors debe ir ANTES de UseAuthorization y UseEndpoints

@@ -14,6 +14,7 @@ import {
   ResetPasswordPage,
   LandingPage,
   BlockedPage,
+  PrivacyPolicyPage,
 } from '@presentation/pages';
 import { ProtectedRoute, OperationalRoute, AppBar, SidebarDrawer, Footer } from '@presentation/components/shared';
 import { useAuth } from '@presentation/context/AuthContext';
@@ -48,6 +49,9 @@ export const Router: React.FC = () => {
   return (
     <Routes>
       {/* Public Routes */}
+      {/* Official privacy policy URL (www.haircutsflowcr.com/privacy-policy): public on every host, with or without session */}
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}

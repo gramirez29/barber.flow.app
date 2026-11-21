@@ -1,8 +1,11 @@
 using Barber.Flow.Api.DTOs.Requests;
+using Barber.Flow.Api.Extensions;
 using Barber.Flow.Api.DTOs.Responses;
+using Barber.Flow.Application.Services.Accounts;
 using Barber.Flow.Application.Services.Auth;
 using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Application.Services.Users;
+using Barber.Flow.Domain.Exceptions;
 using Barber.Flow.Domain.Interfaces;
 using Barber.Flow.Domain.ValueObjects;
 using FluentValidation;
@@ -92,6 +95,14 @@ public static class BarbersApi
             {
                 return TypedResults.Conflict(new { message = "Ya existe una cuenta con ese correo electrónico." });
             }
+
+            // Same reason as the email check: the User insert below would be rejected by its unique
+            // username index only after the Barber (and its shop) already exist.
+            var existingUserWithUserName = await userRepository.GetByUserNameAsync(request.UserName, cancellationToken);
+            if (existingUserWithUserName != null)
+            {
+                return DuplicateUserName(request.UserName);
+            }
         }
 
         var barber = new Domain.Entities.Barber
@@ -112,7 +123,15 @@ public static class BarbersApi
             UpdatedBy = userId ?? string.Empty
         };
 
-        var created = await barberService.CreateAsync(barber, cancellationToken);
+        Domain.Entities.Barber created;
+        try
+        {
+            created = await barberService.CreateAsync(barber, cancellationToken);
+        }
+        catch (BarberUserNameConflictException ex)
+        {
+            return DuplicateUserName(ex.UserName);
+        }
 
         if (!string.IsNullOrWhiteSpace(request.Password))
         {
@@ -182,7 +201,16 @@ public static class BarbersApi
             UpdatedBy = userId ?? string.Empty
         };
 
-        var updated = await barberService.UpdateAsync(id, barber, cancellationToken);
+        Domain.Entities.Barber? updated;
+        try
+        {
+            updated = await barberService.UpdateAsync(id, barber, cancellationToken);
+        }
+        catch (BarberUserNameConflictException ex)
+        {
+            return DuplicateUserName(ex.UserName);
+        }
+
         if (updated == null) return TypedResults.NotFound();
 
         if (!string.IsNullOrWhiteSpace(request.Password))
@@ -199,20 +227,44 @@ public static class BarbersApi
         [FromQuery] int? pageSize,
         IBarberService barberService,
         IUserRepository userRepository,
+        HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        var list = await barberService.FindAsync(query, page, pageSize);
-        var mapped = await Task.WhenAll(list.Select(b => MapAsync(b, userRepository, cancellationToken)));
+        var caller = AppointmentsApi.ResolveCaller(httpContext);
+        if (caller.IsAdmin)
+        {
+            var all = await barberService.FindAsync(query, page, pageSize);
+            var mappedAll = await Task.WhenAll(all.Select(b => MapAsync(b, userRepository, cancellationToken)));
+            return TypedResults.Ok(mappedAll);
+        }
+
+        // A non-admin only ever sees their own barber record (clients look themselves up by
+        // username to read their settings). The query/paging are ignored on purpose: honoring
+        // them would let a barber enumerate the other tenants' accounts.
+        if (string.IsNullOrEmpty(caller.UserName)) return TypedResults.Ok(Array.Empty<BarberResponse>());
+
+        var candidates = await barberService.FindAsync(caller.UserName, null, null);
+        var own = candidates.Where(b => string.Equals(b.UserName, caller.UserName, StringComparison.OrdinalIgnoreCase));
+        var mapped = await Task.WhenAll(own.Select(b => MapAsync(b, userRepository, cancellationToken)));
         return TypedResults.Ok(mapped);
     }
 
-    private static async Task<IResult> GetBarberAsync(string id, IBarberService barberService, IUserRepository userRepository, CancellationToken cancellationToken = default)
+    private static async Task<IResult> GetBarberAsync(string id, IBarberService barberService, IUserRepository userRepository, HttpContext httpContext, CancellationToken cancellationToken = default)
     {
         var b = await barberService.GetByIdAsync(id);
-        return b == null ? TypedResults.NotFound() : TypedResults.Ok(await MapAsync(b, userRepository, cancellationToken));
+        if (b == null) return TypedResults.NotFound();
+
+        // Same 404-not-403 convention as appointments/clients: don't reveal that another
+        // tenant's barber exists.
+        var caller = AppointmentsApi.ResolveCaller(httpContext);
+        var isOwn = !string.IsNullOrEmpty(caller.UserName)
+                    && string.Equals(b.UserName, caller.UserName, StringComparison.OrdinalIgnoreCase);
+        if (!caller.IsAdmin && !isOwn) return TypedResults.NotFound();
+
+        return TypedResults.Ok(await MapAsync(b, userRepository, cancellationToken));
     }
 
-    private static async Task<IResult> DeleteBarberAsync(string id, IBarberService barberService, HttpContext httpContext, CancellationToken cancellationToken = default)
+    private static async Task<IResult> DeleteBarberAsync(string id, IAccountDeletionService accountDeletionService, HttpContext httpContext, CancellationToken cancellationToken = default)
     {
         var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
@@ -225,12 +277,30 @@ public static class BarbersApi
             return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        var ok = await barberService.DeleteAsync(id, cancellationToken);
-        return ok ? TypedResults.NoContent() : TypedResults.NotFound();
+        // Removes the barber together with its login account, shop, clients and appointments. Deleting
+        // only the Barber record used to leave a working login (and all the data) behind.
+        var result = await accountDeletionService.DeleteBarberAsync(id, cancellationToken);
+        return result.Outcome switch
+        {
+            AccountDeletionOutcome.Deleted => TypedResults.NoContent(),
+            AccountDeletionOutcome.Forbidden => TypedResults.StatusCode(StatusCodes.Status403Forbidden),
+            _ => TypedResults.NotFound(),
+        };
     }
 
-    private static async Task<IResult> NextIdAsync(IBarberService barberService)
+    private static IResult DuplicateUserName(string? userName) =>
+        TypedResults.Conflict(new
+        {
+            message = $"Ya existe una cuenta con el usuario '{userName}'.",
+            code = BarberUserNameConflictException.ErrorCode,
+        });
+
+    private static async Task<IResult> NextIdAsync(IBarberService barberService, HttpContext httpContext)
     {
+        // Only used to pre-fill the admin's "create barber" form; for anyone else it would
+        // just leak how many barbers exist on the platform.
+        if (!httpContext.User.IsAdmin()) return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
+
         var id = await barberService.GetNextIdAsync();
         return TypedResults.Ok(new { nextId = id });
     }

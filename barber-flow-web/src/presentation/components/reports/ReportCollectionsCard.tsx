@@ -4,9 +4,12 @@ import { PaymentMethodBreakdownItem } from '@domain/entities';
 import { appColors } from '@presentation/theme/appColors';
 import { APPOINTMENT_CONSTANTS } from '@shared/constants/appointments';
 import { formatCurrency } from '@shared/utils/formatters';
+import { PERIOD_COPY, ReportPeriod } from '@shared/utils/reportPeriods';
 
 interface ReportCollectionsCardProps {
   paymentMethodBreakdown: PaymentMethodBreakdownItem[];
+  /** Periodo mostrado, para el texto de ayuda. Diario por defecto. */
+  period?: ReportPeriod;
 }
 
 const getPaymentMethodLabel = (paymentMethod: string): string =>
@@ -16,6 +19,7 @@ const getPaymentMethodLabel = (paymentMethod: string): string =>
 
 export const ReportCollectionsCard: React.FC<ReportCollectionsCardProps> = ({
   paymentMethodBreakdown,
+  period = 'daily',
 }) => {
   return (
     <Box
@@ -41,8 +45,8 @@ export const ReportCollectionsCard: React.FC<ReportCollectionsCardProps> = ({
         Desglose por método de pago
       </Typography>
       <Typography sx={{ fontSize: 13, color: appColors.textSecondary, mt: 0.5, mb: 2 }}>
-        Revisa cómo se pagaron las ventas completadas del día para conciliar caja y cobros
-        digitales.
+        Revisa cómo se pagaron las ventas completadas {PERIOD_COPY[period].ofPeriod} para conciliar caja y
+        cobros digitales.
       </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>

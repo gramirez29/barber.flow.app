@@ -1,4 +1,4 @@
-namespace Barber.Flow.Application.Services.Clients;
+namespace Barber.Flow.Domain.ValueObjects;
 
 public static class PhoneNormalizer
 {

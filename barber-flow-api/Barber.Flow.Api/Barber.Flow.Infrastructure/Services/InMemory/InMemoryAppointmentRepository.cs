@@ -110,6 +110,19 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
     public Task<bool> DeleteAsync(string id, CancellationToken cancellation = default)
         => Task.FromResult(_store.TryRemove(id, out _));
 
+    public Task<long> DeleteByCreatorAsync(string createdBy, CancellationToken cancellation = default)
+    {
+        if (string.IsNullOrWhiteSpace(createdBy)) return Task.FromResult(0L);
+
+        long deleted = 0;
+        foreach (var appointment in _store.Values.Where(a => a.CreatedBy == createdBy).ToList())
+        {
+            if (_store.TryRemove(appointment.Id, out _)) deleted++;
+        }
+
+        return Task.FromResult(deleted);
+    }
+
     public Task<Domain.Entities.Appointments?> GetByIdAsync(string id, CancellationToken cancellation = default)
     {
         _store.TryGetValue(id, out var appointment);
@@ -161,11 +174,10 @@ public class InMemoryAppointmentRepository : IAppointmentRepository
         if (!string.IsNullOrWhiteSpace(createdBy))
             list = list.Where(a => a.CreatedBy == createdBy);
 
-        list = list.OrderBy(a => a.Date).ThenBy(a => a.Time);
+        list = list.OrderBy(a => a.Date).ThenBy(a => a.Time).ThenBy(a => a.Id, StringComparer.Ordinal);
 
-        var ps = Math.Clamp(pageSize ?? 50, 1, 100);
-        var pg = Math.Max(0, (page ?? 1) - 1);
-        list = list.Skip(pg * ps).Take(ps);
+        var (skip, take) = AppointmentSearchLimits.Resolve(!string.IsNullOrWhiteSpace(date), page, pageSize);
+        list = list.Skip(skip).Take(take);
 
         return Task.FromResult(list);
     }

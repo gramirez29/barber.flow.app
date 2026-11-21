@@ -114,4 +114,34 @@ public class InMemoryClientRepositoryTests
         Assert.Contains(all, c => c.Id == created.Id);
         Assert.True(all.Count() > 1);
     }
+
+    [Fact]
+    public async Task DeleteByCreatorAsync_RemovesOnlyThatOwnersClients()
+    {
+        var repo = new InMemoryClientRepository();
+        var mine = BuildClient("DeleteMine", "Test", "0000-0201");
+        var other = BuildClient("DeleteOther", "Test", "0000-0202");
+        mine.CreatedBy = "barbero-a";
+        other.CreatedBy = "barbero-b";
+        await repo.CreateAsync(mine);
+        await repo.CreateAsync(other);
+
+        var deleted = await repo.DeleteByCreatorAsync("barbero-a");
+
+        Assert.Equal(1, deleted);
+        Assert.Null(await repo.GetByIdAsync(mine.Id));
+        Assert.NotNull(await repo.GetByIdAsync(other.Id));
+    }
+
+    [Fact]
+    public async Task DeleteByCreatorAsync_BlankOwner_DeletesNothing()
+    {
+        var repo = new InMemoryClientRepository();
+        var before = (await repo.FindAsync()).Count();
+
+        var deleted = await repo.DeleteByCreatorAsync("  ");
+
+        Assert.Equal(0, deleted);
+        Assert.Equal(before, (await repo.FindAsync()).Count());
+    }
 }

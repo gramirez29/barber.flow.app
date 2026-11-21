@@ -19,9 +19,11 @@ export const APP_ENV =
 	"development";
 
 const BASE_URL_DEFAULT =
-	APP_ENV === "testing" || APP_ENV === "production"
-		? "https://barberflowapp-develop.up.railway.app"
-		: "http://192.168.68.55:7016";
+	APP_ENV === "production"
+		? "https://api.haircutsflowcr.com"
+		: APP_ENV === "testing"
+			? "https://barberflowapp-develop.up.railway.app"
+			: "http://192.168.68.55:7016";
 
 export const BASE_URL =
 	(process.env.BARBERFLOW_API_URL as string | undefined) ?? expoExtra?.BASE_URL ?? BASE_URL_DEFAULT;
@@ -34,4 +36,4 @@ export const ADMIN_USERNAME =
 export const PRIVACY_POLICY_URL =
 	(process.env.PRIVACY_POLICY_URL as string | undefined) ??
 	expoExtra?.PRIVACY_POLICY_URL ??
-	"https://barberflowapp-develop.up.railway.app/privacy-policy";
+	"https://www.haircutsflowcr.com/privacy-policy";

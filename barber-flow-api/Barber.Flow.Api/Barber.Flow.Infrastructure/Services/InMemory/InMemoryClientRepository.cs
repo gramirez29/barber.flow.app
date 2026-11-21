@@ -58,6 +58,7 @@ public class InMemoryClientRepository : IClientRepository
         existing.FirstName = client.FirstName;
         existing.LastName = client.LastName;
         existing.Phone = client.Phone;
+        existing.PhoneNormalized = client.PhoneNormalized;
         existing.Email = client.Email;
         existing.Address = client.Address;
         existing.Birthday = client.Birthday;
@@ -75,6 +76,19 @@ public class InMemoryClientRepository : IClientRepository
     public Task<bool> DeleteAsync(string id, CancellationToken ct = default)
     {
         return Task.FromResult(_store.TryRemove(id, out _));
+    }
+
+    public Task<long> DeleteByCreatorAsync(string createdBy, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(createdBy)) return Task.FromResult(0L);
+
+        long deleted = 0;
+        foreach (var client in _store.Values.Where(c => c.CreatedBy == createdBy).ToList())
+        {
+            if (_store.TryRemove(client.Id, out _)) deleted++;
+        }
+
+        return Task.FromResult(deleted);
     }
 
     public Task<Client?> GetByIdAsync(string id, CancellationToken ct = default)

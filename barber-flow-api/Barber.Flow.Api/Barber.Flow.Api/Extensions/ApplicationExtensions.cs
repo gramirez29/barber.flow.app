@@ -1,4 +1,5 @@
-﻿using Barber.Flow.Application.Services.Appointments;
+﻿using Barber.Flow.Application.Services.Accounts;
+using Barber.Flow.Application.Services.Appointments;
 using Barber.Flow.Application.Services.Auth;
 using Barber.Flow.Application.Services.Sample.Queries;
 using Barber.Flow.Domain.Interfaces;
@@ -112,7 +113,9 @@ public static class ApplicationExtensions
 
         services.AddSingleton<IUserTokenBuilder, UserTokenBuilder>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IAccountDeletionService, AccountDeletionService>();
 
+        services.AddSingleton(TimeProvider.System);
         services.AddScoped<IReportService, ReportService>();
 
         services.AddScoped<IAppointmentService, AppointmentService>();
