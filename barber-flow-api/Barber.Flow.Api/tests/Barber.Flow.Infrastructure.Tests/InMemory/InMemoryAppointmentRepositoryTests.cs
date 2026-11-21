@@ -340,4 +340,34 @@ public class InMemoryAppointmentRepositoryTests
         Assert.Equal(45, updated!.DurationMinutes);
         Assert.Equal(45, (await repo.GetByIdAsync(created.Id))!.DurationMinutes);
     }
+
+    [Fact]
+    public async Task DeleteByCreatorAsync_RemovesOnlyThatOwnersAppointments()
+    {
+        var repo = new InMemoryAppointmentRepository();
+        var mine = BuildAppointment(date: "2032-03-01", time: "09:00");
+        var other = BuildAppointment(date: "2032-03-01", time: "10:00");
+        mine.CreatedBy = "barbero-a";
+        other.CreatedBy = "barbero-b";
+        await repo.CreateAsync(mine);
+        await repo.CreateAsync(other);
+
+        var deleted = await repo.DeleteByCreatorAsync("barbero-a");
+
+        Assert.Equal(1, deleted);
+        Assert.Null(await repo.GetByIdAsync(mine.Id));
+        Assert.NotNull(await repo.GetByIdAsync(other.Id));
+    }
+
+    [Fact]
+    public async Task DeleteByCreatorAsync_BlankOwner_DeletesNothing()
+    {
+        var repo = new InMemoryAppointmentRepository();
+        var appointment = await repo.CreateAsync(BuildAppointment(date: "2032-03-02", time: "09:00"));
+
+        var deleted = await repo.DeleteByCreatorAsync("");
+
+        Assert.Equal(0, deleted);
+        Assert.NotNull(await repo.GetByIdAsync(appointment.Id));
+    }
 }

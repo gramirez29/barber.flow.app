@@ -68,6 +68,17 @@ public sealed class MongoDbAppointmentRepository : IAppointmentRepository
     }
 
     /// <inheritdoc/>
+    public async Task<long> DeleteByCreatorAsync(string createdBy, CancellationToken cancellation = default)
+    {
+        // Guard against an empty filter value ever matching documents it shouldn't.
+        if (string.IsNullOrWhiteSpace(createdBy)) return 0;
+
+        var result = await _collection.DeleteManyAsync(
+            Builders<Appointments>.Filter.Eq(a => a.CreatedBy, createdBy),
+            cancellation);
+        return result.DeletedCount;
+    }
+
     public async Task<Appointments?> GetByIdAsync(string id, CancellationToken cancellation = default)
     {
         return await _collection

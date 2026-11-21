@@ -78,6 +78,19 @@ public class InMemoryClientRepository : IClientRepository
         return Task.FromResult(_store.TryRemove(id, out _));
     }
 
+    public Task<long> DeleteByCreatorAsync(string createdBy, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(createdBy)) return Task.FromResult(0L);
+
+        long deleted = 0;
+        foreach (var client in _store.Values.Where(c => c.CreatedBy == createdBy).ToList())
+        {
+            if (_store.TryRemove(client.Id, out _)) deleted++;
+        }
+
+        return Task.FromResult(deleted);
+    }
+
     public Task<Client?> GetByIdAsync(string id, CancellationToken ct = default)
     {
         _store.TryGetValue(id, out var client);

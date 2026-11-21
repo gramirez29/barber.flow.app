@@ -1,6 +1,7 @@
 using Barber.Flow.Api.DTOs.Requests;
 using Barber.Flow.Api.Extensions;
 using Barber.Flow.Api.DTOs.Responses;
+using Barber.Flow.Application.Services.Accounts;
 using Barber.Flow.Application.Services.Auth;
 using Barber.Flow.Application.Services.Barbers;
 using Barber.Flow.Application.Services.Users;
@@ -263,7 +264,7 @@ public static class BarbersApi
         return TypedResults.Ok(await MapAsync(b, userRepository, cancellationToken));
     }
 
-    private static async Task<IResult> DeleteBarberAsync(string id, IBarberService barberService, HttpContext httpContext, CancellationToken cancellationToken = default)
+    private static async Task<IResult> DeleteBarberAsync(string id, IAccountDeletionService accountDeletionService, HttpContext httpContext, CancellationToken cancellationToken = default)
     {
         var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
@@ -276,8 +277,15 @@ public static class BarbersApi
             return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        var ok = await barberService.DeleteAsync(id, cancellationToken);
-        return ok ? TypedResults.NoContent() : TypedResults.NotFound();
+        // Removes the barber together with its login account, shop, clients and appointments. Deleting
+        // only the Barber record used to leave a working login (and all the data) behind.
+        var result = await accountDeletionService.DeleteBarberAsync(id, cancellationToken);
+        return result.Outcome switch
+        {
+            AccountDeletionOutcome.Deleted => TypedResults.NoContent(),
+            AccountDeletionOutcome.Forbidden => TypedResults.StatusCode(StatusCodes.Status403Forbidden),
+            _ => TypedResults.NotFound(),
+        };
     }
 
     private static IResult DuplicateUserName(string? userName) =>

@@ -37,6 +37,11 @@ public class MongoDbPasswordResetRepository : IPasswordResetRepository
         await _collection.UpdateOneAsync(filter, update);
     }
 
+    public async Task DeleteAllForUserAsync(string userId)
+    {
+        await _collection.DeleteManyAsync(Builders<PasswordResetToken>.Filter.Eq(t => t.UserId, userId));
+    }
+
     public async Task InvalidateAllForUserAsync(string userId)
     {
         var filter = Builders<PasswordResetToken>.Filter.Eq(t => t.UserId, userId);

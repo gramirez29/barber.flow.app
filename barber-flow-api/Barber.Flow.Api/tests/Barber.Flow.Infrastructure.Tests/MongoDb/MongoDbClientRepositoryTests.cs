@@ -217,4 +217,39 @@ public class MongoDbClientRepositoryTests
 
         Assert.Single(result);
     }
+
+    [Fact]
+    public async Task DeleteByCreatorAsync_RemovesOnlyThatOwnersClients()
+    {
+        var sut = CreateSut();
+        var mine1 = BuildClient("Ana", "Mora", "8888-0101");
+        var mine2 = BuildClient("Luis", "Rojas", "8888-0102");
+        var other = BuildClient("Otro", "Barbero", "8888-0103");
+        mine1.CreatedBy = mine2.CreatedBy = "barbero-a";
+        other.CreatedBy = "barbero-b";
+        await sut.CreateAsync(mine1);
+        await sut.CreateAsync(mine2);
+        await sut.CreateAsync(other);
+
+        var deleted = await sut.DeleteByCreatorAsync("barbero-a");
+
+        Assert.Equal(2, deleted);
+        Assert.Null(await sut.GetByIdAsync(mine1.Id));
+        Assert.Null(await sut.GetByIdAsync(mine2.Id));
+        Assert.NotNull(await sut.GetByIdAsync(other.Id));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task DeleteByCreatorAsync_BlankOwner_DeletesNothing(string owner)
+    {
+        var sut = CreateSut();
+        var client = await sut.CreateAsync(BuildClient());
+
+        var deleted = await sut.DeleteByCreatorAsync(owner);
+
+        Assert.Equal(0, deleted);
+        Assert.NotNull(await sut.GetByIdAsync(client.Id));
+    }
 }

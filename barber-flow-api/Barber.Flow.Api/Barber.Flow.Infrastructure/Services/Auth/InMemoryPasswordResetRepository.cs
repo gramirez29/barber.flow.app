@@ -33,6 +33,12 @@ public class InMemoryPasswordResetRepository : IPasswordResetRepository
         return Task.CompletedTask;
     }
 
+    public Task DeleteAllForUserAsync(string userId)
+    {
+        _tokens.RemoveAll(t => t.UserId == userId);
+        return Task.CompletedTask;
+    }
+
     public Task InvalidateAllForUserAsync(string userId)
     {
         var userTokens = _tokens.Where(t => t.UserId == userId);

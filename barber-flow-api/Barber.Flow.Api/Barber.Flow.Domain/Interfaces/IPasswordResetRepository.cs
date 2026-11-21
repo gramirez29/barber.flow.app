@@ -8,4 +8,7 @@ public interface IPasswordResetRepository
     Task<PasswordResetToken?> GetValidTokenAsync(string userId, string otpCode);
     Task MarkAsUsedAsync(string tokenId);
     Task InvalidateAllForUserAsync(string userId);
+
+    /// <summary>Permanently deletes every password-reset code of a user (account deletion).</summary>
+    Task DeleteAllForUserAsync(string userId);
 }

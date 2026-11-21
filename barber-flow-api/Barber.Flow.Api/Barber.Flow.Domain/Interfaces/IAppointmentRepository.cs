@@ -28,6 +28,12 @@ public interface IAppointmentRepository
     Task<bool> DeleteAsync(string id, CancellationToken cancellation = default);
 
     /// <summary>
+    /// Permanently deletes every appointment created by <paramref name="createdBy"/> (account deletion).
+    /// </summary>
+    /// <returns>How many appointments were removed.</returns>
+    Task<long> DeleteByCreatorAsync(string createdBy, CancellationToken cancellation = default);
+
+    /// <summary>
     /// Retrieves an appointment by its unique identifier.
     /// </summary>
     /// <param name="id">The unique identifier of the appointment.</param>
